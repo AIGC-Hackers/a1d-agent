@@ -20,6 +20,9 @@ importers:
       '@mastra/core':
         specifier: ai-v5
         version: 0.0.0-ai-v5-20250626003446(arktype@2.1.20)(openapi-types@12.1.3)(zod@3.25.67)
+      '@mastra/libsql':
+        specifier: ai-v5
+        version: 0.0.0-ai-v5-20250626003446(@mastra/core@0.0.0-ai-v5-20250626003446(arktype@2.1.20)(openapi-types@12.1.3)(zod@3.25.67))
       '@mastra/loggers':
         specifier: ai-v5
         version: 0.0.0-ai-v5-20250626003446(@mastra/core@0.0.0-ai-v5-20250626003446(arktype@2.1.20)(openapi-types@12.1.3)(zod@3.25.67))
@@ -805,6 +808,11 @@ packages:
     resolution: {integrity: sha512-5YL96d3XZkNVtwXEmyTtHdm2McFJtvyuYhk3PSWWf1E4dcT8nTI5sKxgM8hA/9Ya4h4X1RPwfyz3OGeFwE1Dmg==}
     peerDependencies:
       '@mastra/core': ^0.10.2-alpha.0
+
+  '@mastra/libsql@0.0.0-ai-v5-20250626003446':
+    resolution: {integrity: sha512-Ph6hbZjp3UebDjSWupW8ICDc8B97aFGRiUxkZ6bxDOA1AoUYJhI3H+OGJXmooAk29oE70mJcELm3wygECeC60A==}
+    peerDependencies:
+      '@mastra/core': 0.0.0-ai-v5-20250626003446
 
   '@mastra/loggers@0.0.0-ai-v5-20250626003446':
     resolution: {integrity: sha512-qUOaBtdwqKS08LUb7R2AhJkMeWspjNDvvm6ai+oJTijEBwryFXWboTxtTgsXsepurEXKStaQR5uAEmx8Vw6S5g==}
@@ -5127,12 +5135,10 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
-    optional: true
 
   '@libsql/core@0.15.9':
     dependencies:
       js-base64: 3.7.7
-    optional: true
 
   '@libsql/darwin-arm64@0.5.13':
     optional: true
@@ -5149,10 +5155,8 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
-    optional: true
 
-  '@libsql/isomorphic-fetch@0.3.1':
-    optional: true
+  '@libsql/isomorphic-fetch@0.3.1': {}
 
   '@libsql/isomorphic-ws@0.1.5':
     dependencies:
@@ -5161,7 +5165,6 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
-    optional: true
 
   '@libsql/linux-arm-gnueabihf@0.5.13':
     optional: true
@@ -5298,6 +5301,14 @@ snapshots:
       - supports-color
       - typescript
 
+  '@mastra/libsql@0.0.0-ai-v5-20250626003446(@mastra/core@0.0.0-ai-v5-20250626003446(arktype@2.1.20)(openapi-types@12.1.3)(zod@3.25.67))':
+    dependencies:
+      '@libsql/client': 0.15.9
+      '@mastra/core': 0.0.0-ai-v5-20250626003446(arktype@2.1.20)(openapi-types@12.1.3)(zod@3.25.67)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@mastra/loggers@0.0.0-ai-v5-20250626003446(@mastra/core@0.0.0-ai-v5-20250626003446(arktype@2.1.20)(openapi-types@12.1.3)(zod@3.25.67))':
     dependencies:
       '@mastra/core': 0.0.0-ai-v5-20250626003446(arktype@2.1.20)(openapi-types@12.1.3)(zod@3.25.67)
@@ -5394,8 +5405,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@neon-rs/load@0.0.4':
-    optional: true
+  '@neon-rs/load@0.0.4': {}
 
   '@neon-rs/load@0.1.82': {}
 
@@ -7312,7 +7322,6 @@ snapshots:
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 24.0.8
-    optional: true
 
   '@ungap/structured-clone@1.3.0': {}
 
@@ -7614,8 +7623,7 @@ snapshots:
 
   cycle@1.0.3: {}
 
-  data-uri-to-buffer@4.0.1:
-    optional: true
+  data-uri-to-buffer@4.0.1: {}
 
   date-fns@3.6.0: {}
 
@@ -7652,8 +7660,7 @@ snapshots:
 
   dequal@2.0.3: {}
 
-  detect-libc@2.0.2:
-    optional: true
+  detect-libc@2.0.2: {}
 
   detect-libc@2.0.4: {}
 
@@ -7898,7 +7905,6 @@ snapshots:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
-    optional: true
 
   fetch-event-stream@0.1.5: {}
 
@@ -7944,7 +7950,6 @@ snapshots:
   formdata-polyfill@4.0.10:
     dependencies:
       fetch-blob: 3.2.0
-    optional: true
 
   forwarded-parse@2.1.2: {}
 
@@ -8178,8 +8183,7 @@ snapshots:
 
   js-base64@3.7.2: {}
 
-  js-base64@3.7.7:
-    optional: true
+  js-base64@3.7.7: {}
 
   js-tiktoken@1.0.20:
     dependencies:
@@ -8232,7 +8236,6 @@ snapshots:
       '@libsql/linux-x64-gnu': 0.5.13
       '@libsql/linux-x64-musl': 0.5.13
       '@libsql/win32-x64-msvc': 0.5.13
-    optional: true
 
   lodash-es@4.17.21: {}
 
@@ -8375,8 +8378,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  node-domexception@1.0.0:
-    optional: true
+  node-domexception@1.0.0: {}
 
   node-fetch@2.7.0:
     dependencies:
@@ -8387,7 +8389,6 @@ snapshots:
       data-uri-to-buffer: 4.0.1
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
-    optional: true
 
   node-releases@2.0.19: {}
 
@@ -8623,8 +8624,7 @@ snapshots:
 
   process@0.11.10: {}
 
-  promise-limit@2.7.0:
-    optional: true
+  promise-limit@2.7.0: {}
 
   prompt@1.3.0:
     dependencies:
@@ -9199,8 +9199,7 @@ snapshots:
       - tsx
       - yaml
 
-  web-streams-polyfill@3.3.3:
-    optional: true
+  web-streams-polyfill@3.3.3: {}
 
   webidl-conversions@3.0.1: {}
 
@@ -9237,8 +9236,7 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  ws@8.18.3:
-    optional: true
+  ws@8.18.3: {}
 
   xstate@5.20.0: {}
 

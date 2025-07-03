@@ -27,6 +27,7 @@
     "@mastra/mcp": "ai-v5",
     "@mastra/memory": "ai-v5",
     "@mastra/pg": "ai-v5",
+    "@mastra/libsql": "ai-v5",
     "ai": "beta",
     "arktype": "^2.1.20",
     "confbox": "^0.2.2",

@@ -8,3 +8,8 @@
 | Research Agent | DrawOut.ai的专门研究子代理。唯一目的是对给定主题进行深度研究并产生全面、结构良好的markdown报告。研究内容将被其他代理用于创建视频脚本和分镜脚本 |
 
 
+
+
+## TODO
+
+- [ ] mastra cloud 无法正确构建项目, 需要等待 discord 上的回复
