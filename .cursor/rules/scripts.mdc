@@ -20,11 +20,14 @@ TypeScript utility scripts executed via Bun runtime for project automation.
 - Export named symbols, avoid `export default`
 - Complex logic: use named functions, not lambdas
 - Entry point: implement `main()` function
+- Shell execution: Use Bun's `$` for running shell commands
+- API preference: Prefer Bun native APIs over external dependencies when possible
 
 ### Script Structure
 ```typescript
 /// <reference types="@types/bun" />
-import { /* dependencies */ } from '/* paths */'
+import { $ } from 'bun'
+import { /* other dependencies */ } from '/* paths */'
 
 function main() {
   console.log('Starting...')
