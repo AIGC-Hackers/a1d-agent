@@ -4,17 +4,14 @@ import { PinoLogger } from '@mastra/loggers'
 import { streamSSE } from 'hono/streaming'
 
 import { weatherAgent } from './agents/weather-agent'
-import { storage } from './storage'
+import { logger, storage } from './factory'
 import { weatherWorkflow } from './workflows/weather-workflow'
 
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent },
   storage: storage.value,
-  logger: new PinoLogger({
-    name: 'Mastra',
-    level: 'info',
-  }),
+  logger: logger,
   server: {
     middleware: [
       // TODO: Test

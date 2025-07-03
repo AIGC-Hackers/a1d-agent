@@ -2,7 +2,7 @@ import { openrouter, OpenRouterModel } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 import { Memory } from '@mastra/memory'
 
-import { storage } from '../storage'
+import { storage } from '../factory'
 import { weatherTool } from '../tools/weather-tool'
 
 export const weatherAgent = new Agent({
