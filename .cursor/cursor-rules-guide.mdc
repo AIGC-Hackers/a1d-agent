@@ -1,0 +1,374 @@
+---
+description: Cursor rules 编写指南：上下文工程驱动的 AI 编程
+globs: **/*.mdc
+alwaysApply: false
+---
+
+# Cursor Rules 编写指南
+
+## 什么是 Cursor Rules?
+
+**定义**: 指导 AI 编程行为的配置文件
+
+**数学表达**: `Rule(context) → AI_behavior`
+
+**核心组件**:
+```yaml
+---
+description: 规则描述 (单句)
+globs: 文件匹配模式
+alwaysApply: true|false
+---
+# 规则内容 (markdown)
+```
+
+**激活机制**:
+- `alwaysApply: true` → 全局激活
+- `alwaysApply: false` + `globs` → 文件匹配激活
+- 无 `globs` → 手动激活 `@rule-name`
+
+**文件位置**: `.cursor/rules/*.mdc`
+
+## 如何编写 Cursor Rules
+
+### 基本语法
+
+**文件头**:
+```yaml
+---
+description: 功能描述 (≤ 50字)
+globs: 匹配模式 (无引号, 逗号分隔)
+alwaysApply: false
+---
+```
+
+**内容结构**:
+```markdown
+# 规则标题
+
+## 核心约束
+- 约束1: 具体要求
+- 约束2: 具体要求
+
+## 代码示例
+\```typescript
+// 极简示例
+\```
+
+## 检查清单
+- [ ] 检查项1
+- [ ] 检查项2
+```
+
+### 匹配模式语法
+
+**单一模式**: `src/**/*.ts`
+**多重模式**: `src/**/*.ts,tests/**/*.test.ts`
+**目录模式**: `backend/**/*,frontend/**/*`
+
+**❌ 错误**:
+```yaml
+globs: ["src/**/*.ts"]     # 数组格式
+globs: "src/**/*.ts"       # 引号包围
+globs: src/**/*.ts, tests  # 逗号后空格
+```
+
+**✅ 正确**:
+```yaml
+globs: src/**/*.ts
+globs: src/**/*.ts,tests/**/*.test.ts
+```
+
+## 上下文工程实践
+
+### 核心公式
+
+**上下文工程**: `Context(项目) + Context(需求) → 精确指令`
+
+**质量函数**: `代码质量 = f(上下文完整度, 约束明确度)`
+
+### 三层上下文模型
+
+**L1 - 环境上下文**: 技术栈 + 工具链 + 约束
+**L2 - 认知上下文**: 架构原则 + 设计模式 + 团队约定
+**L3 - 执行上下文**: 代码风格 + 工作流 + 质量标准
+
+### CARE 方法论
+
+**C - Collect**: 收集项目信息
+**A - Analyze**: 分析约束关系
+**R - Refine**: 精炼理解
+**E - Execute**: 执行任务
+
+### 上下文收集清单
+
+**技术维度**:
+- [ ] 语言版本: `node@2x`, `typescript@5.x`
+- [ ] 框架选择: `react`, `tanstack-start`, `vite`
+- [ ] 工具链: `pnpm | bun`, `vitest`, `eslint`
+
+**架构维度**:
+- [ ] 目录结构: `src/`, `components/`, `features/`
+- [ ] 状态管理: `zustand`, `@legends-ai/state`, `context-provider`
+- [ ] 数据流:  `server-function`, `drizzle`,  `orpc`
+
+**团队维度**:
+- [ ] 命名约定: `kebab-case`, `camelCase`
+- [ ] 代码风格: `prettier`, `eslint-config`
+- [ ] Git 流程: `feature-branch`, `conventional-commits`
+
+### 上下文验证协议
+
+**验证公式**: `理解准确度 = 用户确认 / 总假设数`
+
+**验证模板**:
+```markdown
+## 需求确认
+我理解您需要: [具体描述]
+技术约束: [约束列表]
+成功标准: [验收条件]
+
+这个理解正确吗? 有遗漏吗?
+```
+
+**选择题模式**:
+```markdown
+状态管理方案:
+A) Redux (项目现有)
+B) Zustand (轻量级)
+C) Context API (原生)
+
+推荐: A (保持一致性)
+```
+
+### 编写原则
+
+**信息密度**: `内容价值 / 文档长度 → max`
+
+**约束优先级**:
+1. **必须** (MUST): 违反导致错误
+2. **应该** (SHOULD): 违反降低质量
+3. **可以** (MAY): 可选优化
+
+**示例密度**: `1 示例 / 3 规则`
+
+### 文件组织
+
+**命名**: `数字-功能.mdc`
+```
+.cursor/rules/
+├── 001-core.mdc      # 核心约束
+├── 100-frontend.mdc  # 前端规则
+├── 200-backend.mdc   # 后端规则
+└── 900-style.mdc     # 代码风格
+```
+
+**优先级**: 数字越大优先级越高
+
+### 质量检查
+
+**长度约束**: `< 500 行`
+**可读性**: `具体 > 抽象`
+**可执行**: `有示例 + 有检查清单`
+
+**❌ 低质量**:
+```markdown
+# 写好代码
+遵循最佳实践，保持代码整洁
+```
+
+**✅ 高质量**:
+```markdown
+# TypeScript 类型约束
+- 函数必须有返回类型注解
+- 禁用 `any` 类型
+
+\```typescript
+// ✅ 正确
+const add = (a: number, b: number): number => a + b
+
+// ❌ 错误
+const add = (a, b) => a + b
+\```
+```
+
+## Example Rule Templates
+
+### 规则模板
+
+**上下文工程规则**:
+````yaml
+---
+description: 上下文工程工作流
+globs: src/**/*
+alwaysApply: true
+---
+
+# 上下文驱动开发
+
+## 编码前检查
+- [ ] 使用 `@codebase` 分析现有模式
+- [ ] 确认技术栈和依赖
+- [ ] 验证业务需求和约束
+- [ ] 检查测试和部署要求
+
+## 验证协议
+```markdown
+## 需求确认
+功能: [描述]
+约束: [列表]
+方案: [选择]
+
+确认无误?
+```
+
+## 质量标准
+- 通用解决方案 > 特定用例
+- 遵循项目架构模式
+- 包含错误处理和类型注解
+- 保持代码风格一致性
+````
+
+### 反模式识别
+
+**模式**: `问题 → 信号 → 解决方案`
+
+**假设驱动**:
+- 信号: AI 直接选择技术方案
+- 解决: 强制验证步骤
+
+**过度工程**:
+- 信号: 引入不必要的抽象
+- 解决: 明确"够用即可"原则
+
+**上下文孤岛**:
+- 信号: 重复收集相同信息
+- 解决: 建立项目级上下文缓存
+
+### 询问策略
+
+**❌ 低效**:
+```markdown
+"如何实现这个功能?"
+"用什么技术栈?"
+```
+
+**✅ 高效**:
+```markdown
+"项目使用 Redux，继续用还是换 Zustand?"
+"看到 GraphQL 配置，用它还是 REST?"
+```
+
+**公式**: `具体选择 > 开放问题`
+
+### 示例规则
+
+**React 组件**:
+````yaml
+---
+description: React 组件开发标准
+globs: src/components/**/*.tsx
+alwaysApply: false
+---
+
+# React 组件约束
+
+## 结构要求
+- 命名导出 (禁用 default export)
+- Props 类型在组件上方
+- Hooks 在组件顶部
+
+\```typescript
+type ButtonProps = {
+  label: string
+  onClick: () => void
+}
+
+export const Button = ({ label, onClick }: ButtonProps) => {
+  const [loading, setLoading] = useState(false)
+  // 实现
+}
+\```
+````
+
+**API 开发**:
+````yaml
+---
+description: API 开发规范
+globs: src/api/**/*.ts
+alwaysApply: false
+---
+
+# API 约束
+
+## 验证要求
+- 使用 zod 验证输入
+- 导出类型定义
+- 统一错误处理
+
+\```typescript
+import { z } from 'zod'
+
+const schema = z.object({
+  name: z.string().min(1),
+  email: z.string().email()
+})
+
+export type Input = z.infer<typeof schema>
+\```
+````
+
+### 调试指南
+
+**规则不生效**:
+- 检查 `globs` 语法
+- 确认文件路径
+- 验证 YAML 格式
+
+**规则冲突**:
+- 数字前缀决定优先级
+- 高数字覆盖低数字
+
+**性能优化**:
+- 避免 `alwaysApply: true`
+- 精确匹配 `globs` 模式
+- 控制规则文件大小 `< 500行`
+
+## 总结
+
+### 核心公式
+
+**成功编程** = `上下文工程 × 规则质量 × AI 能力`
+
+### 关键原则
+
+1. **明确性 > 假设**: 具体指令胜过模糊描述
+2. **验证 > 推测**: 确认理解胜过自行推断
+3. **约束 > 自由**: 明确边界胜过无限可能
+4. **示例 > 描述**: 代码示例胜过文字说明
+
+### 实施检查清单
+
+**规则编写**:
+- [ ] 文件头格式正确
+- [ ] `globs` 模式精确
+- [ ] 内容 < 500 行
+- [ ] 包含具体示例
+
+**上下文工程**:
+- [ ] 收集技术栈信息
+- [ ] 分析现有代码模式
+- [ ] 验证需求理解
+- [ ] 确认技术方案
+
+**质量保证**:
+- [ ] 规则可执行
+- [ ] 示例可运行
+- [ ] 约束可检查
+- [ ] 效果可测量
+
+### 最终目标
+
+**AI 从工具到伙伴**: `代码生成器 → 项目参与者`
+
+通过系统性的上下文工程和精确的规则设计，让 AI 真正理解项目，成为开发团队的智能伙伴。

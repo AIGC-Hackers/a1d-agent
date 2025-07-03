@@ -1,0 +1,43 @@
+---
+description: Scripts directory containing TypeScript utilities for project automation and environment setup
+globs: scripts/**/*.ts
+alwaysApply: false
+---
+# Scripts Directory Rules
+
+## Overview
+TypeScript utility scripts executed via Bun runtime for project automation.
+
+## Development Standards
+
+
+### Technical Stack
+- **Runtime**: Bun
+- **Language**: TypeScript with `/// <reference types="@types/bun" />`
+
+### Code Conventions
+- File naming: `kebab-case.ts`
+- Export named symbols, avoid `export default`
+- Complex logic: use named functions, not lambdas
+- Entry point: implement `main()` function
+
+### Script Structure
+```typescript
+/// <reference types="@types/bun" />
+import { /* dependencies */ } from '/* paths */'
+
+function main() {
+  console.log('Starting...')
+  // implementation
+  console.log('✅ Completed')
+}
+
+main()
+```
+
+## Execution
+```bash
+bun run scripts/<script-name>.ts
+```
+
+Dependencies assumed pre-installed. Scripts provide clear execution feedback via console output.
