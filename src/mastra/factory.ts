@@ -1,5 +1,5 @@
 import { lazy } from '@/lib/lazy'
-import { LibSQLStore } from '@mastra/libsql'
+// import { LibSQLStore } from '@mastra/libsql'
 import { PinoLogger } from '@mastra/loggers'
 import { PostgresStore } from '@mastra/pg'
 
@@ -23,9 +23,10 @@ function createStorage() {
   }
 
   logger.info('Using LibSQLStore for non-production environment')
-  return new LibSQLStore({
-    url: 'file:../mastra.db',
-  })
+  throw new Error('LibSQLStore is not supported in non-production environment')
+  // return new LibSQLStore({
+  //   url: 'file:../mastra.db',
+  // })
 }
 
 export const storage = lazy(() => createStorage())
