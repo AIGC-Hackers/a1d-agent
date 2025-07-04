@@ -21,7 +21,6 @@ export const runtimeEnvSchema = type({
   WAVESPEED_API_KEY: 'string',
 
   FAL_API_KEY: 'string',
-  NOTION_TOKEN: 'string',
   OPENROUTER_API_KEY: 'string',
 
   GEMINI_API_KEY: 'string',
