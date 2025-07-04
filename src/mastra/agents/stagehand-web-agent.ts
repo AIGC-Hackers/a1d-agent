@@ -1,4 +1,4 @@
-import { openai } from '@ai-sdk/openai'
+import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 import { Memory } from '@mastra/memory'
 
@@ -28,7 +28,7 @@ export const stagehandWebAgent = new Agent({
       Use the pageExtractTool to extract data from webpages.
       Use the pageNavigateTool to navigate to a URL.
 `,
-  model: openai('gpt-4o'),
+  model: openrouter('openai/gpt-4o'),
   memory: new Memory(),
   tools: {
     pageActTool: stagehandPageActTool,
