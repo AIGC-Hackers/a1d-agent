@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+dist
+output
+.mastra
+
+# Development
+.cursor
+.vscode
+.idea
+
+# Documentation
+docs
+README.md
+
+# Test
+vitest.config.ts
+**/*.test.ts
+**/*.spec.ts
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Cache
+.pnpm-store
+pnpm-debug.log*
