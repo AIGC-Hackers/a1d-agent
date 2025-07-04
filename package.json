@@ -23,7 +23,6 @@
     "@ai-sdk/provider": "beta",
     "@mastra/client-js": "ai-v5",
     "@mastra/core": "ai-v5",
-    "@mastra/libsql": "ai-v5",
     "@mastra/loggers": "ai-v5",
     "@mastra/mcp": "ai-v5",
     "@mastra/memory": "ai-v5",
