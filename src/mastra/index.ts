@@ -10,7 +10,7 @@ import { weatherWorkflow } from './workflows/weather-workflow'
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent },
-  storage: storage.value,
+  // storage: storage.value,
   logger: logger,
   server: {
     middleware: [
