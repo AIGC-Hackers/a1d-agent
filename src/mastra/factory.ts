@@ -14,15 +14,9 @@ function createLogger() {
 export const logger = createLogger()
 
 function createStorage() {
-  if (process.env.NODE_ENV === 'production') {
-    logger.info('Using PostgresStore for production environment')
-    return new PostgresStore({
-      connectionString: env.value.POSTGRES_URL,
-    })
-  }
-
-  logger.info('Using LibSQLStore for non-production environment')
-  throw new Error('LibSQLStore is not supported in non-production environment')
+  return new PostgresStore({
+    connectionString: env.value.POSTGRES_URL,
+  })
 }
 
 export const storage = lazy(() => createStorage())
