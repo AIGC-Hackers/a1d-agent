@@ -1,0 +1,66 @@
+# Multi-stage build for Node.js application with pnpm on ARM64
+FROM --platform=linux/arm64 node:latest AS base
+
+# Install curl for health checks and enable pnpm
+RUN apt-get update && apt-get install -y curl && \
+    corepack enable && \
+    corepack prepare pnpm@latest --activate && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+FROM base AS deps
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install production dependencies with cache mount
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm fetch --frozen-lockfile && \
+    pnpm install --frozen-lockfile --prod
+
+FROM base AS build
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install all dependencies (including dev) for building
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm fetch --frozen-lockfile && \
+    pnpm install --frozen-lockfile
+
+# Copy source code and build
+COPY . .
+RUN pnpm build
+
+# Production stage - use distroless or slim image
+FROM --platform=linux/arm64 node:latest AS production
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y curl tini && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Create non-root user
+RUN groupadd -g 1001 nodejs && \
+    useradd -m -u 1001 -g nodejs nodejs
+
+# Copy dependencies from deps stage and built application from build stage
+COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=build --chown=nodejs:nodejs /app/output ./output
+COPY --chown=nodejs:nodejs package.json pnpm-lock.yaml ./
+
+# Switch to non-root user
+USER nodejs
+
+# Expose application port
+EXPOSE 4111
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:4111/health || exit 1
+
+# Use tini for proper signal handling
+ENTRYPOINT ["/sbin/tini", "--"]
+
+# Start application
+CMD ["node", "--import=output/instrumentation.mjs", "output/index.mjs"]

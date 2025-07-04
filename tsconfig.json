@@ -11,11 +11,13 @@
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
     "src/**/*",
-    "drizzle.config.ts"
+    "drizzle.config.ts",
   ]
 }
