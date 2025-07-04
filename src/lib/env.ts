@@ -17,12 +17,14 @@ export const runtimeEnvSchema = type({
 
   X_302_API_KEY: 'string',
 
+  HUIYAN_API_KEY: 'string',
+
   // https://wavespeed.ai/
   WAVESPEED_API_KEY: 'string',
 
   FAL_API_KEY: 'string',
   OPENROUTER_API_KEY: 'string',
-
+  XAI_API_KEY: 'string',
   GEMINI_API_KEY: 'string',
 
   CLOUDFLARE_ACCOUNT_ID: 'string',

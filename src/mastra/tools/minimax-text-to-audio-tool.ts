@@ -3,8 +3,8 @@ import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
 
-export const textToSpeechTool = createTool({
-  id: 'text-to-speech',
+export const minimaxTextToAudioTool = createTool({
+  id: 'minimax-text-to-audio',
   description:
     'Creates a narration audio file for a shot. Call this tool when your `plan.md` requires you to generate the voiceover for a specific shot.',
   inputSchema: z.object({

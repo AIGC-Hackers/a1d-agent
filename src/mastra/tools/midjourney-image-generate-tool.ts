@@ -1,9 +1,10 @@
+import { sendEvent } from '@/server/event/publish'
 import { createTool } from '@mastra/core'
 import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
 
-const GenerateImageInputSchema = z.object({
+const MidjourneyImageGenerateInputSchema = z.object({
   prompt: z
     .string()
     .describe(
@@ -19,24 +20,33 @@ const GenerateImageInputSchema = z.object({
   ),
 })
 
-export const generateImageTool = createTool({
-  id: 'generate-image',
+export const midjourneyImageGenerateTool = createTool({
+  id: 'midjourney-image-generate',
   description:
     'Creates a static image for a scene or shot. Call this tool when your `plan.md` indicates that an image asset needs to be created for a specific shot.',
-  inputSchema: GenerateImageInputSchema,
+  inputSchema: MidjourneyImageGenerateInputSchema,
   outputSchema: z.object({
-    file_path: z.string().describe('The VFS path of the newly created image.'),
+    status: z.string(),
+    file_path: z.string(),
   }),
-  execute: async ({ context: input }) => {
-    throw new Error('Not implemented')
-  },
-})
+  execute: async ({ context: input, resourceId, threadId, runId }) => {
+    if (resourceId) {
+      void sendEvent('a1d-agent-toolcall', {
+        contentType: 'application/json',
+        body: {
+          resourceId,
+          threadId,
+          runId,
+          model: 'midjourney',
+          provider: '302',
+          input,
+        },
+      })
+    }
 
-export const generateImageBatchTool = createTool({
-  id: 'generate-image-batch',
-  description: 'Generatea batch of images',
-  inputSchema: GenerateImageInputSchema.array(),
-  execute: async ({ context: input }) => {
-    throw new Error('Not implemented')
+    return {
+      file_path: input.output.path,
+      status: 'success',
+    }
   },
 })
