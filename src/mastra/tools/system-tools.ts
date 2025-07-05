@@ -10,28 +10,6 @@ export const fileDescriptorSchema = z.object({
   description: z.string().optional().describe('The description of the file'),
 })
 
-export const messageNotifyUserTool = createTool({
-  id: 'message-notify-user',
-  description:
-    'Send a message to user without requiring a response. Use for acknowledging receipt of messages, providing progress updates, reporting task completion, or explaining changes in approach.',
-  inputSchema: z.object({
-    text: z.string().describe('Message text to display to user'),
-    attachments: z
-      .union([z.string(), z.array(z.string())])
-      .optional()
-      .describe(
-        'List of attachments to show to user, can be file paths or URLs',
-      ),
-  }),
-  outputSchema: z.object({
-    success: z.boolean(),
-    message: z.string(),
-  }),
-  execute: async ({ context }) => {
-    throw new Error('Message notify user tool not implemented yet')
-  },
-})
-
 export const messageAskUserTool = createTool({
   id: 'message-ask-user',
   description:
@@ -243,19 +221,5 @@ export const deleteFileTool = createTool({
         error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
-  },
-})
-
-// Utility Tools
-export const idleTool = createTool({
-  id: 'idle',
-  description:
-    'A special tool to indicate you have completed all tasks and are about to enter idle state.',
-  inputSchema: z.object({}),
-  outputSchema: z.object({
-    status: z.string(),
-  }),
-  execute: async () => {
-    throw new Error('Idle tool not implemented yet')
   },
 })
