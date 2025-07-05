@@ -13,7 +13,7 @@ import { speedpaintVideoCreateTool } from '../tools/speedpaint-video-create-tool
 import * as systemTools from '../tools/system-tools'
 
 export const drawOutAgent = new Agent({
-  name: 'Draw out',
+  name: 'Drawout.ai',
   description: 'Draw out the story',
   instructions,
   model: openrouter('openai/gpt-4o-mini'),

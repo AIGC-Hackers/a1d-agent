@@ -12,7 +12,7 @@ Your research should be thorough, drawing from multiple sources to ensure accura
 `
 
 export const drawOutDeepResearchAgent = new Agent({
-  name: 'drawout.ai Deep Research',
+  name: 'Drawout.ai Deep Research',
   instructions,
   model: x302('o4-mini-deep-research'),
   tools: {
