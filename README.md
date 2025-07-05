@@ -15,7 +15,9 @@ pnpm dev
 
 ## TODO
 
-- [ ] mastra cloud 无法正确构建项目, 需要等待 discord 上的回复
+- [x] <del>mastra cloud 无法正确构建项目, 需要等待 discord 上的回复</del>
+- [ ] mastra@ai-v5 无法在 cloud 上构建
+- [ ] upgrade to ai-v5
 - [ ] Eval ThinkSound
 
 ## MCP
