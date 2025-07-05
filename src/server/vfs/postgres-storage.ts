@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, like, or } from 'drizzle-orm'
 
 import { db, t } from '../db'
 import { type FileInfo, type Storage, type VFile } from './types'
@@ -17,8 +17,8 @@ export class PostgresStorage implements Storage {
 
     return {
       path: result.path,
-      description: result.description,
-      contentType: result.content_type,
+      description: result.description ?? undefined,
+      contentType: result.content_type ?? undefined,
       content: result.content,
     }
   }
@@ -44,10 +44,22 @@ export class PostgresStorage implements Storage {
       })
   }
 
-  async delete(path: string): Promise<void> {
-    await db.value
-      .delete(t.vfs)
-      .where(and(eq(t.vfs.path, path), eq(t.vfs.project_id, this.projectId)))
+  async delete(path: string, options?: { recursive?: boolean }): Promise<void> {
+    if (options?.recursive) {
+      const normalizedPath = path.endsWith('/') ? path : path + '/'
+      await db.value
+        .delete(t.vfs)
+        .where(
+          and(
+            eq(t.vfs.project_id, this.projectId),
+            or(eq(t.vfs.path, path), like(t.vfs.path, `${normalizedPath}%`)),
+          ),
+        )
+    } else {
+      await db.value
+        .delete(t.vfs)
+        .where(and(eq(t.vfs.path, path), eq(t.vfs.project_id, this.projectId)))
+    }
   }
 
   async list(): Promise<FileInfo[]> {
@@ -59,6 +71,9 @@ export class PostgresStorage implements Storage {
       },
     })
 
-    return results
+    return results.map((result) => ({
+      path: result.path,
+      description: result.description ?? undefined,
+    }))
   }
 }

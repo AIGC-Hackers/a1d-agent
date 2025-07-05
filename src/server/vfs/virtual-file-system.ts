@@ -1,4 +1,5 @@
 import { omit } from 'lodash-es'
+
 import { type FileInfo, type Storage, type VFile } from './types'
 
 export class VirtualFileSystem {
@@ -20,8 +21,11 @@ export class VirtualFileSystem {
     await this.storage.write(file)
   }
 
-  async deleteFile(path: string): Promise<void> {
-    await this.storage.delete(path)
+  async deleteFile(
+    path: string,
+    options?: { recursive?: boolean },
+  ): Promise<void> {
+    await this.storage.delete(path, options)
   }
 
   async listFiles(): Promise<FileInfo[]> {

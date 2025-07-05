@@ -19,9 +19,28 @@ export class MemoryStorage implements Storage {
     projectFiles.set(file.path, { ...file })
   }
 
-  async delete(path: string): Promise<void> {
+  async delete(path: string, options?: { recursive?: boolean }): Promise<void> {
     const projectFiles = MemoryStorage.projects.get(this.projectId)
-    projectFiles?.delete(path)
+    if (!projectFiles) {
+      return
+    }
+
+    if (options?.recursive) {
+      const pathsToDelete: string[] = []
+      const normalizedPath = path.endsWith('/') ? path : path + '/'
+
+      for (const filePath of projectFiles.keys()) {
+        if (filePath === path || filePath.startsWith(normalizedPath)) {
+          pathsToDelete.push(filePath)
+        }
+      }
+
+      for (const pathToDelete of pathsToDelete) {
+        projectFiles.delete(pathToDelete)
+      }
+    } else {
+      projectFiles.delete(path)
+    }
   }
 
   async list(): Promise<FileInfo[]> {

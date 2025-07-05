@@ -1,6 +1,7 @@
 import {
   createGoogleGenAIClient,
   GeminiModel,
+  getResponseText,
 } from '@/integration/google-genai'
 import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
@@ -65,12 +66,7 @@ export const googleSearchTool = createTool({
       },
     })
 
-    const parts = response.candidates?.[0]?.content?.parts ?? []
-    const textSegments = parts
-      .map((part) => part.text)
-      .filter((text): text is string => typeof text === 'string')
-
-    const responseText = textSegments.join('').trim()
+    const responseText = getResponseText(response)?.trim() ?? ''
 
     const notFound = {
       llmContent: `No search results or information found for query: "${input.query}"`,
