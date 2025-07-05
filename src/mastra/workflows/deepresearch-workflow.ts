@@ -65,7 +65,7 @@ const researchStep = createStep({
     const { query, depth, breadth } = inputData
 
     try {
-      const agent = mastra.getAgent('researchAgent')
+      const agent = mastra.getAgent('deepResearch')
       const researchPrompt = `Research the following topic thoroughly: "${query}" with depth ${depth} and breadth ${breadth}.
       Return findings in JSON format with queries, searchResults, learnings, and completedQueries.`
 
@@ -151,7 +151,7 @@ const approvalStep = createStep({
 })
 
 // Define the workflow
-export const researchWorkflow = createWorkflow({
+export const deepResearchWorkflow = createWorkflow({
   id: 'research-workflow',
   inputSchema: z.object({}),
   outputSchema: z.object({
@@ -161,7 +161,7 @@ export const researchWorkflow = createWorkflow({
   steps: [getUserQueryStep, researchStep, approvalStep],
 })
 
-researchWorkflow
+deepResearchWorkflow
   .then(getUserQueryStep)
   .then(researchStep)
   .then(approvalStep)

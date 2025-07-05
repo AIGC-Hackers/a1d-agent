@@ -15,10 +15,16 @@ import { testAgent } from './agents/test-agent'
 import { drawOutVideoCutoutAgent } from './agents/video-cutout-agent'
 import { weatherAgent } from './agents/weather-agent'
 import { logger, storage } from './factory'
+import { deepResearchGenerateReportWorkflow } from './workflows/deepresearch-generate-report-workflow'
+import { deepResearchWorkflow } from './workflows/deepresearch-workflow'
 import { weatherWorkflow } from './workflows/weather-workflow'
 
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow },
+  workflows: {
+    weatherWorkflow,
+    deepResearchWorkflow,
+    deepResearchGenerateReportWorkflow,
+  },
   agents: {
     test: testAgent,
     weather: weatherAgent,
@@ -34,7 +40,6 @@ export const mastra = new Mastra({
     drawOutDeepResearch: drawOutDeepResearchAgent,
     drawOutVideoCutout: drawOutVideoCutoutAgent,
   },
-
   storage: storage.value,
   logger: logger,
   server: {

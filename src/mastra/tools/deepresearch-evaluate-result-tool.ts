@@ -31,7 +31,7 @@ export const deepResearchEvaluateResultTool = createTool({
         }
       }
 
-      const evaluationAgent = mastra!.getAgent('evaluationAgent')
+      const evaluationAgent = mastra!.getAgent('deepResearchEvaluation')
 
       const response = await evaluationAgent.generate(
         [

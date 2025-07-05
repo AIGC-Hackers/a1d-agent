@@ -20,7 +20,7 @@ export const deepResearchExtractLearningsTool = createTool({
       const { query, result } = context
 
       const learningExtractionAgent = mastra!.getAgent(
-        'learningExtractionAgent',
+        'deepResearchLearningExtraction',
       )
 
       const response = await learningExtractionAgent.generate(

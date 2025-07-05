@@ -2,7 +2,7 @@ import fs from 'fs'
 import { createStep, createWorkflow } from '@mastra/core/workflows'
 import { z } from 'zod'
 
-import { researchWorkflow } from './deep-research-workflow'
+import { deepResearchWorkflow } from './deepresearch-workflow'
 
 // Map research output to report input and handle conditional logic
 const processResearchResultStep = createStep({
@@ -27,7 +27,7 @@ const processResearchResultStep = createStep({
     // If approved, generate report
     try {
       console.log('Generating report...')
-      const agent = mastra.getAgent('reportAgent')
+      const agent = mastra.getAgent('deepResearchReport')
       const response = await agent.generate([
         {
           role: 'user',
@@ -49,9 +49,9 @@ const processResearchResultStep = createStep({
 })
 
 // Create the report generation workflow that iteratively researches and generates reports
-export const generateReportWorkflow = createWorkflow({
+export const deepResearchGenerateReportWorkflow = createWorkflow({
   id: 'generate-report-workflow',
-  steps: [researchWorkflow, processResearchResultStep],
+  steps: [deepResearchWorkflow, processResearchResultStep],
   inputSchema: z.object({}),
   outputSchema: z.object({
     reportPath: z.string().optional(),
@@ -62,8 +62,8 @@ export const generateReportWorkflow = createWorkflow({
 // The workflow logic:
 // 1. Run researchWorkflow iteratively until approved
 // 2. Process results and generate report if approved
-generateReportWorkflow
-  .dowhile(researchWorkflow, async ({ inputData }) => {
+deepResearchGenerateReportWorkflow
+  .dowhile(deepResearchWorkflow, async ({ inputData }) => {
     const isCompleted = inputData.approved
     return isCompleted !== true
   })
