@@ -20,6 +20,10 @@ const MidjourneyImageGenerateInputSchema = z.object({
   ),
 })
 
+type MidjourneyImageGenerateInput = z.infer<
+  typeof MidjourneyImageGenerateInputSchema
+>
+
 export const midjourneyImageGenerateTool = createTool({
   id: 'midjourney-image-generate',
   description:
@@ -44,9 +48,27 @@ export const midjourneyImageGenerateTool = createTool({
       })
     }
 
+    return generateImage(input, { mock: true })
+  },
+})
+
+function generateImage(
+  input: MidjourneyImageGenerateInput,
+  settings?: {
+    mock?: boolean
+    provider?: 'wavespeed' | '302' | 'huiyan'
+  },
+) {
+  if (settings?.mock) {
     return {
       file_path: input.output.path,
       status: 'success',
     }
-  },
-})
+  }
+
+  // TODO: implement
+  return {
+    file_path: input.output.path,
+    status: 'success',
+  }
+}

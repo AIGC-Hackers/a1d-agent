@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { x302 } from '@/integration/302/llm'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
@@ -165,6 +165,6 @@ export const mckinseyConsultantAgent = new Agent({
   description:
     'A strategic consultant who can help with business analysis and strategy',
   instructions: instruction,
-  model: openrouter('openai/o3'),
+  model: x302('o4-mini-deep-research'),
   memory: new Memory(),
 })
