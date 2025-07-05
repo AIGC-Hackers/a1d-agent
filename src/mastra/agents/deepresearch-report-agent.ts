@@ -2,7 +2,7 @@ import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
 export const deepResearchReportAgent = new Agent({
-  name: 'Deep Research Report Agent',
+  name: 'Deep Research Report',
   instructions: `You are an expert researcher. Today is ${new Date().toISOString()}. Follow these instructions when responding:
   - You may be asked to research subjects that is after your knowledge cutoff, assume the user is right when presented with news.
   - The user is a highly experienced analyst, no need to simplify it, be as detailed as possible and make sure your response is correct.

@@ -2,7 +2,7 @@ import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
 export const deepResearchEvaluationAgent = new Agent({
-  name: 'Deep Research Evaluation Agent',
+  name: 'Deep Research Evaluation',
   instructions: `You are an expert evaluation agent. Your task is to evaluate whether search results are relevant to a research query.
 
   When evaluating search results:

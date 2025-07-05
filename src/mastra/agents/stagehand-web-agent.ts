@@ -8,7 +8,7 @@ import { stagehandPageNavigateTool } from '../tools/stagehand-page-navigate-tool
 import { stagehandPageObserveTool } from '../tools/stagehand-page-observe-tool'
 
 export const stagehandWebAgent = new Agent({
-  name: 'Stagehand Web Agent',
+  name: 'Stagehand Web',
   instructions: `
       You are a helpful web assistant that can navigate websites and extract information.
 

@@ -6,7 +6,7 @@ import { deepResearchExtractLearningsTool } from '../tools/deepresearch-extract-
 import { googleSearchTool } from '../tools/google-search-tool'
 
 export const deepResearchAgent = new Agent({
-  name: 'Deep Research Agent',
+  name: 'Deep Research',
   instructions: `You are an expert research agent. Your goal is to research topics thoroughly by:
 
   1. Generating specific search queries related to the main topic

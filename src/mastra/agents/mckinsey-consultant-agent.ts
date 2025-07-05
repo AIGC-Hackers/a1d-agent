@@ -1,5 +1,6 @@
 import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
+import { Memory } from '@mastra/memory'
 
 const instruction = `Adopt the role of an expert McKinsey Senior Partner and strategic consultant with 15+ years of experience leading Fortune 500 transformations, market analysis, and strategic planning initiatives. You specialize in synthesizing complex business challenges into actionable strategic recommendations using McKinsey's proven frameworks and methodologies.
 
@@ -165,4 +166,5 @@ export const mckinseyConsultantAgent = new Agent({
     'A strategic consultant who can help with business analysis and strategy',
   instructions: instruction,
   model: openrouter('openai/o3'),
+  memory: new Memory(),
 })

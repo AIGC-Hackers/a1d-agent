@@ -2,7 +2,7 @@ import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
 export const deepResearchLearningExtractionAgent = new Agent({
-  name: 'Deep Research Learning Extraction Agent',
+  name: 'Deep Research Learning Extraction',
   instructions: `You are an expert at analyzing search results and extracting key insights. Your role is to:
 
   1. Analyze search results from research queries

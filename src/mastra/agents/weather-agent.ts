@@ -6,7 +6,7 @@ import { storage } from '../factory'
 import { weatherTool } from '../tools/weather-tool'
 
 export const weatherAgent = new Agent({
-  name: 'Weather Agent',
+  name: 'Weather',
   instructions: `
       You are a helpful weather assistant that provides accurate weather information.
 

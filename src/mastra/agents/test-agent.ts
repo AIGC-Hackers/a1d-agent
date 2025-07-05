@@ -1,6 +1,7 @@
 import { openrouter } from '@/integration/openrouter'
 import { streamContext } from '@/lib/context'
 import { Agent, createTool } from '@mastra/core'
+import { Memory } from '@mastra/memory'
 import { formatAssistantStreamPart, formatDataStreamPart, streamText } from 'ai'
 import { ulid } from 'ulid'
 import { z } from 'zod'
@@ -45,10 +46,11 @@ const toolcallStreamTool = createTool({
 })
 
 export const testAgent = new Agent({
-  name: 'test-agent',
-  description: 'develop and test agent functionality',
+  name: 'Test agent',
+  description: 'Develop and test agent functionality',
   instructions:
     'you are a test agent,Complete agent functionality testing according to user instructions.',
   model: openrouter('x-ai/grok-3-mini'),
   tools: { stream: toolcallStreamTool },
+  memory: new Memory(),
 })
