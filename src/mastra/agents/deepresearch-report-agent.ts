@@ -1,9 +1,6 @@
 import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
-// Initialize model - using o3-mini as in the original implementation
-const reportModel = openrouter('openai/gpt-4.1')
-
 export const deepResearchReportAgent = new Agent({
   name: 'Deep Research Report Agent',
   instructions: `You are an expert researcher. Today is ${new Date().toISOString()}. Follow these instructions when responding:
@@ -28,5 +25,5 @@ export const deepResearchReportAgent = new Agent({
 
   Structure your reports with clear sections, headings, and focus on synthesizing the information
   into a cohesive narrative rather than simply listing facts.`,
-  model: reportModel,
+  model: openrouter('openai/gpt-4.1'),
 })

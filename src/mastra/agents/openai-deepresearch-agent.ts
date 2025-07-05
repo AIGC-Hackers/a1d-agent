@@ -11,8 +11,8 @@ You will be given a topic and an output path. You must save your findings to the
 Your research should be thorough, drawing from multiple sources to ensure accuracy and depth. The final report will be used by another agent to create a video script and storyboard.
 `
 
-export const openaiDeepResearchAgent = new Agent({
-  name: 'OpenAI Deep Research Agent',
+export const drawOutDeepResearchAgent = new Agent({
+  name: 'DrawOut.ai Deep Research Agent',
   instructions,
   model: x302('o4-mini-deep-research'),
   tools: {

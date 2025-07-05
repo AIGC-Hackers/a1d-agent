@@ -1,9 +1,6 @@
 import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
-// Initialize model
-const mainModel = openrouter('google/gemini-2.5-flash')
-
 export const deepResearchLearningExtractionAgent = new Agent({
   name: 'Deep Research Learning Extraction Agent',
   instructions: `You are an expert at analyzing search results and extracting key insights. Your role is to:
@@ -20,5 +17,5 @@ export const deepResearchLearningExtractionAgent = new Agent({
   - Consider the original research query context when extracting insights
 
   Your output should always include one key learning and up to 3 follow-up questions.`,
-  model: mainModel,
+  model: openrouter('google/gemini-2.5-flash'),
 })
