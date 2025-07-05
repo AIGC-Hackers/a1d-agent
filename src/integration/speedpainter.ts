@@ -28,7 +28,7 @@ export async function createSpeedPainterTask(
     method: 'POST',
     headers: {
       // Authorization: `Bearer ${token}`,
-      Authorization: `KEY ${env.value.SPEED_PAINTER_API_KEY}`,
+      Authorization: `KEY ${env.value.SPEEDPAINTER_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -91,7 +91,7 @@ export async function getTaskStatus(input: {
     method: 'GET',
     headers: {
       Accept: 'application/json',
-      Authorization: `KEY ${env.value.SPEED_PAINTER_API_KEY}`,
+      Authorization: `KEY ${env.value.SPEEDPAINTER_API_KEY}`,
     },
     signal: input.signal,
   })
@@ -122,7 +122,7 @@ export async function* getTaskStatusStream(input: {
     signal: input.signal,
     headers: {
       // Authorization: `Bearer ${input.token}`,
-      Authorization: `KEY ${env.value.SPEED_PAINTER_API_KEY}`,
+      Authorization: `KEY ${env.value.SPEEDPAINTER_API_KEY}`,
     },
   })
 
