@@ -4,12 +4,14 @@
   "description": "",
   "main": "src/mastra/index.ts",
   "scripts": {
-    "dev": "mastra dev",
+    "dev": "dotenvx run -- mastra dev",
     "build": "mastra build",
-    "start": "mastra start",
-    "env:gen": "bun scripts/gen-env-template.ts",
+    "start": "dotenvx run  -- mastra start",
+    "env:check": "dotenvx run -- bun scripts/env-check.ts",
+    "env:example": "dotenvx ext genexample",
     "format": "prettier --write src/",
-    "test": "vitest"
+    "typecheck": "tsc --noEmit",
+    "test": "dotenvx run -- vitest"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +23,10 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
     "@ai-sdk/provider": "^1.1.3",
+    "@ai-sdk/xai": "^1.2.16",
+    "@aws-sdk/client-s3": "^3.842.0",
+    "@browserbasehq/stagehand": "^2.4.1",
+    "@google/genai": "^1.8.0",
     "@mastra/client-js": "^0.10.9",
     "@mastra/core": "^0.10.10",
     "@mastra/loggers": "^0.10.3",
@@ -41,6 +47,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.45.2",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.2",
     "@types/bun": "^1.2.17",
     "@types/lodash-es": "^4.17.12",

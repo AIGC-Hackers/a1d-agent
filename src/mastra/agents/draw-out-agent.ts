@@ -1,34 +1,35 @@
 import type { RuntimeContext } from '@mastra/core/runtime-context'
-import { openrouter, OpenRouterModel } from '@/integration/openrouter'
+import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
+import { Memory } from '@mastra/memory'
 
-import { videoCompositionTool } from '../tools/video-compositing-tool'
-import { editImageTool } from '../tools/edit-image-tool'
-import {
-  generateImageBatchTool,
-  generateImageTool,
-} from '../tools/gemerate-image-tool'
-import { textToSpeechTool } from '../tools/text-to-speech-tool'
-import { generateSpeedpaintVideoTool } from '../tools/generate-speedpaint-tool'
-import { generateVideoTool } from '../tools/gengrate-video-tool'
+import { storage } from '../factory'
+import { drawOutVideoCutoutTool } from '../tools/draw-out-video-cutout-tool'
+import { kontextImageEditTool } from '../tools/kontext-image-edit-tool'
+import { midjourneyImageGenerateTool } from '../tools/midjourney-image-generate-tool'
+import { midjourneyVideoGenerateTool } from '../tools/midjourney-video-generate-tool'
+import { minimaxTextToAudioTool } from '../tools/minimax-text-to-audio-tool'
+import { speedpaintVideoCreateTool } from '../tools/speedpaint-video-create-tool'
 import * as systemTools from '../tools/system-tools'
 
 export const drawOutAgent = new Agent({
   name: 'Draw Out',
   description: 'Draw out the story',
   instructions,
-  model: openrouter(OpenRouterModel.OpenAIGpt4oMini),
+  model: openrouter('openai/gpt-4o-mini'),
+  memory: new Memory({
+    storage: storage.value,
+  }),
   tools: {
     fileWrite: systemTools.writeFileTool,
     fileRead: systemTools.readFileTool,
     fileDelete: systemTools.deleteFileTool,
-    generateVideo: generateVideoTool,
-    generateSpeedpaintVideo: generateSpeedpaintVideoTool,
-    generateImage: generateImageTool,
-    generateImageBatch: generateImageBatchTool,
-    videoComposition: videoCompositionTool,
-    editImage: editImageTool,
-    textToSpeech: textToSpeechTool,
+    midjourneyImageGenerate: midjourneyImageGenerateTool,
+    midjourneyVideoGenerate: midjourneyVideoGenerateTool,
+    speedpaintVideoCreate: speedpaintVideoCreateTool,
+    kontextImageEdit: kontextImageEditTool,
+    minimaxTextToAudio: minimaxTextToAudioTool,
+    drawOutVideoCutout: drawOutVideoCutoutTool,
   },
 })
 

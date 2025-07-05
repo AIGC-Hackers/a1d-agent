@@ -3,8 +3,8 @@ import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
 
-export const generateVideoTool = createTool({
-  id: 'generate-video',
+export const midjourneyVideoGenerateTool = createTool({
+  id: 'midjourney-video-generate',
   description: 'Generate a video',
   inputSchema: z.object({
     referenceImages: z
