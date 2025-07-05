@@ -153,41 +153,31 @@ export const writeFileTool = createTool({
 
 export const editFileTool = createTool({
   id: 'edit-file',
-  description: `Replaces text within a file. By default, replaces a single occurrence, but can replace multiple occurrences when \`expected_replacements\` is specified. This tool requires providing significant context around the change to ensure precise targeting. Always use the ${readFileTool.id} tool to examine the file's current content before attempting a text replacement.
+  description: `Replaces text within a file. Requires exact literal text matching with sufficient context (3+ lines before/after) to ensure unique identification. Use ${readFileTool.id} first to examine current content.
 
-      The user has the ability to modify the \`new_string\` content. If modified, this will be stated in the response.
+Parameters:
+- file_path: Absolute path starting with '/'
+- old_string: Exact literal text including all whitespace/indentation
+- new_string: Exact replacement text
+- expected_replacements: Number of occurrences to replace (default: 1)
 
-Expectation for required parameters:
-1. \`file_path\` MUST be an absolute path; otherwise an error will be thrown.
-2. \`old_string\` MUST be the exact literal text to replace (including all whitespace, indentation, newlines, and surrounding code etc.).
-3. \`new_string\` MUST be the exact literal text to replace \`old_string\` with (also including all whitespace, indentation, newlines, and surrounding code etc.). Ensure the resulting code is correct and idiomatic.
-4. NEVER escape \`old_string\` or \`new_string\`, that would break the exact literal text requirement.
-**Important:** If ANY of the above are not satisfied, the tool will fail. CRITICAL for \`old_string\`: Must uniquely identify the single instance to change. Include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. If this string matches multiple locations, or does not match exactly, the tool will fail.
-**Multiple replacements:** Set \`expected_replacements\` to the number of occurrences you want to replace. The tool will replace ALL occurrences that match \`old_string\` exactly. Ensure the number of replacements matches your expectation.`,
+The tool will fail if old_string doesn't match exactly or isn't unique (for single replacement).`,
 
   inputSchema: z.object({
     file_path: z
       .string()
-      .describe(
-        `The absolute path to the file to modify. Must start with '/'.`,
-      ),
+      .describe('Absolute file path'),
     old_string: z
       .string()
-      .describe(
-        'The exact literal text to replace, preferably unescaped. For single replacements (default), include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. For multiple replacements, specify expected_replacements parameter. If this string is not the exact literal text (i.e. you escaped it) or does not match exactly, the tool will fail.',
-      ),
+      .describe('Exact literal text to replace'),
     new_string: z
       .string()
-      .describe(
-        'The exact literal text to replace `old_string` with, preferably unescaped. Provide the EXACT text. Ensure the resulting code is correct and idiomatic.',
-      ),
+      .describe('Exact replacement text'),
     expected_replacements: z
       .number()
       .optional()
       .default(1)
-      .describe(
-        `Number of replacements expected. Defaults to 1 if not specified. Use when you want to replace multiple occurrences.`,
-      ),
+      .describe('Number of replacements expected'),
   }),
   outputSchema: z.object({
     success: z.boolean(),
