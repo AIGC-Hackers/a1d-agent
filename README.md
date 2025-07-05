@@ -14,3 +14,6 @@
 
 - [ ] mastra cloud 无法正确构建项目, 需要等待 discord 上的回复
 - [ ] Eval ThinkSound
+
+## MCP
+- https://mcpservers.org/remote-mcp-servers

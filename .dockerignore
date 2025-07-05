@@ -44,3 +44,4 @@ logs
 # Cache
 .pnpm-store
 pnpm-debug.log*
+.env.keys

@@ -4,14 +4,14 @@
   "description": "",
   "main": "src/mastra/index.ts",
   "scripts": {
-    "dev": "mastra dev",
+    "dev": "dotenvx run -- mastra dev",
     "build": "mastra build",
-    "start": "mastra start",
-    "env:gen": "bun scripts/gen-env-template.ts",
+    "start": "dotenvx run  -- mastra start",
+    "env:check": "dotenvx run -- bun scripts/env-check.ts",
+    "env:example": "dotenvx ext genexample",
     "format": "prettier --write src/",
-    "cf:typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "test": "dotenvx run -- vitest"
   },
   "keywords": [],
   "author": "",
@@ -47,6 +47,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.45.2",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.2",
     "@types/bun": "^1.2.17",
     "@types/lodash-es": "^4.17.12",

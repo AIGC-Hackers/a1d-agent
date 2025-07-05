@@ -1,4 +1,5 @@
 import { type } from 'arktype'
+
 import { lazy } from './lazy'
 
 export const runtimeEnvSchema = type({
@@ -13,7 +14,7 @@ export const runtimeEnvSchema = type({
   MINIMAX_API_KEY: 'string',
   MINIMAX_GROUP_ID: 'string',
 
-  SPEED_PAINTER_API_KEY: 'string',
+  SPEEDPAINTER_API_KEY: 'string',
 
   X_302_API_KEY: 'string',
 
@@ -22,7 +23,7 @@ export const runtimeEnvSchema = type({
   // https://wavespeed.ai/
   WAVESPEED_API_KEY: 'string',
 
-  FAL_API_KEY: 'string',
+  // FAL_API_KEY: 'string',
   OPENROUTER_API_KEY: 'string',
   XAI_API_KEY: 'string',
   GEMINI_API_KEY: 'string',
@@ -32,14 +33,11 @@ export const runtimeEnvSchema = type({
   CLOUDFLARE_SECRET_KEY: 'string',
   CLOUDFLARE_R2_BUCKET_NAME: 'string = "dev"',
 
-  // 隐式依赖
-  // BETTER_AUTH_SECRET: 'string',
-  // BETTER_AUTH_URL: 'string.url',
   // ----------------------------------
   // AUTH
   // ----------------------------------
-  GOOGLE_CLOUD_LOCALTION: 'string',
-  GOOGLE_CLOUD_PROJECT_ID: 'string',
+  // GOOGLE_CLOUD_LOCALTION: 'string',
+  // GOOGLE_CLOUD_PROJECT_ID: 'string',
 })
 
 // export const env = runtimeEnvSchema.assert(process.env)
