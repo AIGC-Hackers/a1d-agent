@@ -1,5 +1,5 @@
 import { sendEvent } from '@/server/event/publish'
-import { createTool } from '@mastra/core'
+import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
