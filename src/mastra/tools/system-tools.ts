@@ -164,20 +164,10 @@ Parameters:
 The tool will fail if old_string doesn't match exactly or isn't unique (for single replacement).`,
 
   inputSchema: z.object({
-    file_path: z
-      .string()
-      .describe('Absolute file path'),
-    old_string: z
-      .string()
-      .describe('Exact literal text to replace'),
-    new_string: z
-      .string()
-      .describe('Exact replacement text'),
-    expected_replacements: z
-      .number()
-      .optional()
-      .default(1)
-      .describe('Number of replacements expected'),
+    file_path: z.string(),
+    old_string: z.string(),
+    new_string: z.string(),
+    expected_replacements: z.number().optional().default(1),
   }),
   outputSchema: z.object({
     success: z.boolean(),
