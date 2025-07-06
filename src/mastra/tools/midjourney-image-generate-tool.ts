@@ -1,39 +1,36 @@
+import { generateImageStream } from '@/integration/huiyan/midjourney'
+import { invariant } from '@/lib/invariant'
 import { sendEvent } from '@/server/event/publish'
+import { uploadQuadrantImage } from '@/server/midjourney-jobs'
 import { createTool } from '@mastra/core/tools'
+import { firstValueFrom } from 'rxjs'
 import { z } from 'zod'
 
-import { fileDescriptorSchema } from './system-tools'
-
-const MidjourneyImageGenerateInputSchema = z.object({
-  prompt: z
-    .string()
-    .describe(
-      'A detailed text description of the image content. This should be derived from the `storyboard.md`.',
-    ),
-  style: z
-    .string()
-    .describe(
-      'The visual style for the image, which should be consistent with the `style` defined in `project.md`.',
-    ),
-  output: fileDescriptorSchema.describe(
-    'The exact VFS path where the image must be saved, following the structure `scenes/scene-XX/shot-YY/image-ZZ.png`.',
-  ),
-})
-
-type MidjourneyImageGenerateInput = z.infer<
-  typeof MidjourneyImageGenerateInputSchema
->
+import { logger } from '../factory'
 
 export const midjourneyImageGenerateTool = createTool({
   id: 'midjourney-image-generate',
-  description:
-    'Creates a static image for a scene or shot. Call this tool when your `plan.md` indicates that an image asset needs to be created for a specific shot.',
-  inputSchema: MidjourneyImageGenerateInputSchema,
+  description: 'Generate images using Midjourney. ',
+  inputSchema: z.object({
+    prompt: z.string(),
+  }),
   outputSchema: z.object({
     status: z.string(),
-    file_path: z.string(),
+    result: z.array(
+      z.object({
+        id: z.string(),
+        resource_id: z.string().optional(),
+        job_id: z.string(),
+        file_name: z.string().optional(),
+        file_size: z.number(),
+        key: z.string(),
+      }),
+    ),
+    error: z.string().optional(),
   }),
-  execute: async ({ context: input, resourceId, threadId, runId }) => {
+  execute: async (context) => {
+    const { context: input, resourceId, threadId, runId } = context
+
     if (resourceId) {
       void sendEvent('a1d-agent-toolcall', {
         contentType: 'application/json',
@@ -42,33 +39,60 @@ export const midjourneyImageGenerateTool = createTool({
           threadId,
           runId,
           model: 'midjourney',
-          provider: '302',
+          provider: 'huiyan',
           input,
         },
       })
     }
 
-    return generateImage(input, { mock: true })
+    try {
+      const result = await firstValueFrom(
+        generateImageStream({
+          prompt: input.prompt,
+          // webhookUrl: 'https://example.com/webhook',
+        }),
+      )
+
+      if (result.progress === 100) {
+        const imageUrl = result.imageUrl!
+        invariant(imageUrl, 'imageUrl is required')
+        const uploadRecords = await uploadQuadrantImage({
+          resourceId,
+          jobId: result.id,
+          imageUrl,
+          bucket: 'midjourney-images',
+        })
+
+        return {
+          status: 'success',
+          result: uploadRecords.map((it) => {
+            return {
+              id: it.id,
+              resource_id: it.resource_id ?? undefined,
+              job_id: it.job_id,
+              file_name: it.file_name ?? undefined,
+              file_size: it.file_size,
+              key: it.key,
+            }
+          }),
+        }
+      }
+
+      return {
+        status: 'error',
+        result: [],
+        error: 'Unknown error',
+      }
+    } catch (error) {
+      logger.error(
+        `Failed to generate or upload image for resourceId=${resourceId}, prompt="${input.prompt}": ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+      )
+
+      return {
+        status: 'error',
+        result: [],
+        error: error instanceof Error ? error.message : String(error),
+      }
+    }
   },
 })
-
-function generateImage(
-  input: MidjourneyImageGenerateInput,
-  settings?: {
-    mock?: boolean
-    provider?: 'wavespeed' | '302' | 'huiyan'
-  },
-) {
-  if (settings?.mock) {
-    return {
-      file_path: input.output.path,
-      status: 'success',
-    }
-  }
-
-  // TODO: implement
-  return {
-    file_path: input.output.path,
-    status: 'success',
-  }
-}

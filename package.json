@@ -5,13 +5,14 @@
   "main": "src/mastra/index.ts",
   "scripts": {
     "dev": "dotenvx run -- mastra dev",
+    "dev:inngest": "pnpx inngest-cli@latest dev -u http://localhost:4111/api/inngest",
     "build": "mastra build",
     "start": "dotenvx run  -- mastra start",
     "env:check": "dotenvx run -- bun scripts/env-check.ts",
     "env:example": "dotenvx ext genexample",
     "format": "prettier --write src/",
     "typecheck": "tsc --noEmit",
-    "test": "dotenvx run -- vitest"
+    "test": "dotenvx run -- vitest run"
   },
   "keywords": [],
   "author": "",
@@ -27,8 +28,10 @@
     "@aws-sdk/client-s3": "^3.842.0",
     "@browserbasehq/stagehand": "^2.4.1",
     "@google/genai": "^1.8.0",
+    "@inngest/realtime": "^0.3.1",
     "@mastra/client-js": "^0.10.9",
     "@mastra/core": "^0.10.10",
+    "@mastra/inngest": "^0.11.2",
     "@mastra/loggers": "^0.10.3",
     "@mastra/mcp": "^0.10.5",
     "@mastra/memory": "^0.11.1",
@@ -39,9 +42,12 @@
     "drizzle-orm": "^0.44.2",
     "fetch-event-stream": "^0.1.5",
     "hono": "^4.8.3",
+    "inngest": "^3.40.0",
     "lodash-es": "^4.17.21",
+    "openai": "^5.8.2",
     "postgres": "^3.4.7",
     "rxjs": "^7.8.2",
+    "sharp": "^0.34.2",
     "ulid": "^3.0.1",
     "unctx": "^2.4.1",
     "zod": "^3.25.67"
@@ -56,6 +62,7 @@
     "mastra": "^0.10.8",
     "prettier": "^3.6.2",
     "typescript": "^5.8.3",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   }
 }

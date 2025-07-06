@@ -1,8 +1,6 @@
-import { openrouter, OpenRouterModel } from '@/integration/openrouter'
+import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
-import { Memory } from '@mastra/memory'
 
-import { storage } from '../factory'
 import { weatherTool } from '../tools/weather-tool'
 
 export const weatherAgent = new Agent({
@@ -21,7 +19,4 @@ export const weatherAgent = new Agent({
 `,
   model: openrouter('openai/gpt-4o-mini'),
   tools: { weatherTool },
-  memory: new Memory({
-    storage: storage.value,
-  }),
 })

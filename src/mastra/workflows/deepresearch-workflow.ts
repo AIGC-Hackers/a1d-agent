@@ -1,8 +1,9 @@
-import { createStep, createWorkflow } from '@mastra/core/workflows'
 import { z } from 'zod'
 
+import { inngestWorkflows } from '../factory'
+
 // Step 1: Get user query
-const getUserQueryStep = createStep({
+const getUserQueryStep = inngestWorkflows.createStep({
   id: 'get-user-query',
   inputSchema: z.object({}),
   outputSchema: z.object({
@@ -50,7 +51,7 @@ const getUserQueryStep = createStep({
 })
 
 // Step 2: Research
-const researchStep = createStep({
+const researchStep = inngestWorkflows.createStep({
   id: 'research',
   inputSchema: z.object({
     query: z.string(),
@@ -117,7 +118,7 @@ const researchStep = createStep({
 })
 
 // Step 3: Get user approval
-const approvalStep = createStep({
+const approvalStep = inngestWorkflows.createStep({
   id: 'approval',
   inputSchema: z.object({
     researchData: z.any(),
@@ -151,8 +152,8 @@ const approvalStep = createStep({
 })
 
 // Define the workflow
-export const deepResearchWorkflow = createWorkflow({
-  id: 'research-workflow',
+export const deepResearchWorkflow = inngestWorkflows.createWorkflow({
+  id: 'deepresearch-workflow',
   inputSchema: z.object({}),
   outputSchema: z.object({
     approved: z.boolean(),

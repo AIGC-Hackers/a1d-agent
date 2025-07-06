@@ -19,6 +19,8 @@ pnpm dev
 - [ ] mastra@ai-v5 无法在 cloud 上构建
 - [ ] upgrade to ai-v5
 - [ ] Eval ThinkSound
+- [ ] 4o-mini-deep-research 在 302 中无法使用
+
 
 ## MCP
 - https://mcpservers.org/remote-mcp-servers

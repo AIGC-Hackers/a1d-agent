@@ -1,4 +1,5 @@
 import { openrouter } from '@/integration/openrouter'
+import { xai } from '@/integration/xai'
 import { streamContext } from '@/lib/context'
 import { Agent, createTool } from '@mastra/core'
 import { Memory } from '@mastra/memory'
@@ -50,7 +51,7 @@ export const testAgent = new Agent({
   description: 'Develop and test agent functionality',
   instructions:
     'you are a test agent,Complete agent functionality testing according to user instructions.',
-  model: openrouter('x-ai/grok-3-mini'),
+  model: xai('grok-3-mini-fast-latest'),
   tools: { stream: toolcallStreamTool },
   memory: new Memory(),
 })

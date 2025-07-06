@@ -1,7 +1,8 @@
 import { openai } from '@ai-sdk/openai'
 import { Agent } from '@mastra/core/agent'
-import { createStep, createWorkflow } from '@mastra/core/workflows'
 import { z } from 'zod'
+
+import { inngestWorkflows } from '../factory'
 
 const llm = openai('gpt-4o-mini')
 
@@ -84,7 +85,7 @@ function getWeatherCondition(code: number): string {
   return conditions[code] || 'Unknown'
 }
 
-const fetchWeather = createStep({
+const fetchWeather = inngestWorkflows.createStep({
   id: 'fetch-weather',
   description: 'Fetches weather forecast for a given city',
   inputSchema: z.object({
@@ -138,7 +139,7 @@ const fetchWeather = createStep({
   },
 })
 
-const planActivities = createStep({
+const planActivities = inngestWorkflows.createStep({
   id: 'plan-activities',
   description: 'Suggests activities based on weather conditions',
   inputSchema: forecastSchema,
@@ -176,15 +177,16 @@ const planActivities = createStep({
   },
 })
 
-const weatherWorkflow = createWorkflow({
-  id: 'weather-workflow',
-  inputSchema: z.object({
-    city: z.string().describe('The city to get the weather for'),
-  }),
-  outputSchema: z.object({
-    activities: z.string(),
-  }),
-})
+const weatherWorkflow = inngestWorkflows
+  .createWorkflow({
+    id: 'weather-workflow',
+    inputSchema: z.object({
+      city: z.string().describe('The city to get the weather for'),
+    }),
+    outputSchema: z.object({
+      activities: z.string(),
+    }),
+  })
   .then(fetchWeather)
   .then(planActivities)
 
