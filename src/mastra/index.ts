@@ -1,5 +1,4 @@
 import { Mastra } from '@mastra/core/mastra'
-import { serve as inngestServe } from '@mastra/inngest'
 
 import { deepResearchAgent } from './agents/deepresearch-agent'
 import { deepResearchEvaluationAgent } from './agents/deepresearch-evaluation-agent'
@@ -12,8 +11,7 @@ import { mckinseyConsultantAgent } from './agents/mckinsey-consultant-agent'
 import { stagehandWebAgent } from './agents/stagehand-web-agent'
 import { testAgent } from './agents/test-agent'
 import { weatherAgent } from './agents/weather-agent'
-import { inngest, logger, storage } from './factory'
-import { incrementWorkflow } from './workflows/counter-workflow'
+import { logger, storage } from './factory'
 import { deepResearchGenerateReportWorkflow } from './workflows/deepresearch-generate-report-workflow'
 import { deepResearchWorkflow } from './workflows/deepresearch-workflow'
 import { weatherWorkflow } from './workflows/weather-workflow'
@@ -21,13 +19,14 @@ import { weatherWorkflow } from './workflows/weather-workflow'
 export const mastra = new Mastra({
   workflows: {
     weatherWorkflow,
+
     deepResearchWorkflow,
     deepResearchGenerateReportWorkflow,
-    incrementWorkflow,
   },
   agents: {
     test: testAgent,
     weather: weatherAgent,
+
     deepResearch: deepResearchAgent,
     deepResearchEvaluation: deepResearchEvaluationAgent,
     deepResearchLearningExtraction: deepResearchLearningExtractionAgent,
@@ -42,21 +41,4 @@ export const mastra = new Mastra({
   },
   storage: storage.value,
   logger: logger,
-  server: {
-    apiRoutes: [
-      {
-        path: '/api/inngest',
-        method: 'ALL',
-        createHandler: async ({ mastra }) => inngestServe({ mastra, inngest }),
-        // The inngestServe function integrates Mastra workflows with Inngest by:
-        // 1. Creating Inngest functions for each workflow with unique IDs (workflow.${workflowId})
-        // 2. Setting up event handlers that:
-        //    - Generate unique run IDs for each workflow execution
-        //    - Create an InngestExecutionEngine to manage step execution
-        //    - Handle workflow state persistence and real-time updates
-        // 3. Establishing a publish-subscribe system for real-time monitoring
-        //    through the workflow:${workflowId}:${runId} channel
-      },
-    ],
-  },
 })

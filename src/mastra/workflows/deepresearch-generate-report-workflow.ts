@@ -1,11 +1,11 @@
 import fs from 'fs'
+import { createStep, createWorkflow } from '@mastra/core'
 import { z } from 'zod'
 
-import { inngestWorkflows } from '../factory'
 import { deepResearchWorkflow } from './deepresearch-workflow'
 
 // Map research output to report input and handle conditional logic
-const processResearchResultStep = inngestWorkflows.createStep({
+const processResearchResultStep = createStep({
   id: 'process-research-result',
   inputSchema: z.object({
     approved: z.boolean(),
@@ -49,7 +49,7 @@ const processResearchResultStep = inngestWorkflows.createStep({
 })
 
 // Create the report generation workflow that iteratively researches and generates reports
-export const deepResearchGenerateReportWorkflow = inngestWorkflows.createWorkflow({
+export const deepResearchGenerateReportWorkflow = createWorkflow({
   id: 'deepresearch-generate-report-workflow',
   steps: [deepResearchWorkflow, processResearchResultStep],
   inputSchema: z.object({}),

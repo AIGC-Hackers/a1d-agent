@@ -1,10 +1,9 @@
-import { openai } from '@ai-sdk/openai'
+import { openrouter } from '@/integration/openrouter'
+import { createStep, createWorkflow } from '@mastra/core'
 import { Agent } from '@mastra/core/agent'
 import { z } from 'zod'
 
-import { inngestWorkflows } from '../factory'
-
-const llm = openai('gpt-4o-mini')
+const llm = openrouter('openai/gpt-4.1')
 
 const agent = new Agent({
   name: 'Weather Agent',
@@ -85,7 +84,7 @@ function getWeatherCondition(code: number): string {
   return conditions[code] || 'Unknown'
 }
 
-const fetchWeather = inngestWorkflows.createStep({
+const fetchWeather = createStep({
   id: 'fetch-weather',
   description: 'Fetches weather forecast for a given city',
   inputSchema: z.object({
@@ -139,7 +138,7 @@ const fetchWeather = inngestWorkflows.createStep({
   },
 })
 
-const planActivities = inngestWorkflows.createStep({
+const planActivities = createStep({
   id: 'plan-activities',
   description: 'Suggests activities based on weather conditions',
   inputSchema: forecastSchema,
@@ -177,16 +176,15 @@ const planActivities = inngestWorkflows.createStep({
   },
 })
 
-const weatherWorkflow = inngestWorkflows
-  .createWorkflow({
-    id: 'weather-workflow',
-    inputSchema: z.object({
-      city: z.string().describe('The city to get the weather for'),
-    }),
-    outputSchema: z.object({
-      activities: z.string(),
-    }),
-  })
+const weatherWorkflow = createWorkflow({
+  id: 'weather-workflow',
+  inputSchema: z.object({
+    city: z.string().describe('The city to get the weather for'),
+  }),
+  outputSchema: z.object({
+    activities: z.string(),
+  }),
+})
   .then(fetchWeather)
   .then(planActivities)
 
