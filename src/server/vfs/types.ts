@@ -1,9 +1,11 @@
+import { Result } from '@/lib/result'
+
 export class VFSError extends Error {
   constructor(
     message: string,
     public code: string,
     public path?: string,
-    public cause?: Error
+    public cause?: Error,
   ) {
     super(message)
     this.name = 'VFSError'
@@ -13,10 +15,8 @@ export class VFSError extends Error {
 export enum VFSErrorCode {
   FILE_NOT_FOUND = 'FILE_NOT_FOUND',
   INVALID_PATH = 'INVALID_PATH',
-  OPERATION_FAILED = 'OPERATION_FAILED'
+  OPERATION_FAILED = 'OPERATION_FAILED',
 }
-
-import { Result } from '@/lib/result';
 
 export interface FileInfo {
   path: string
@@ -38,7 +38,10 @@ export type VFile = {
 export type Storage = {
   read(path: string): Promise<Result<VFile | null, VFSError>>
   write(file: VFile): Promise<Result<void, VFSError>>
-  delete(path: string, options?: { recursive?: boolean }): Promise<Result<void, VFSError>>
+  delete(
+    path: string,
+    options?: { recursive?: boolean },
+  ): Promise<Result<void, VFSError>>
   list(): Promise<Result<FileInfo[], VFSError>>
   moveFile?(fromPath: string, toPath: string): Promise<Result<void, VFSError>>
   copyFile?(fromPath: string, toPath: string): Promise<Result<void, VFSError>>

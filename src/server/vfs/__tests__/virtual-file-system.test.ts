@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { VirtualFileSystem } from '../virtual-file-system'
-import { MemoryStorage } from '../memory-storage'
-import { Result } from '@/lib/result';
-import { VFSError, VFSErrorCode } from '../types';
+import { Result } from '@/lib/result'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
 import type { VFile } from '../types'
+import { MemoryStorage } from '../memory-storage'
+import { VFSError, VFSErrorCode } from '../types'
+import { VirtualFileSystem } from '../virtual-file-system'
 
 describe('VirtualFileSystem', () => {
   let vfs: VirtualFileSystem
@@ -80,14 +81,14 @@ describe('VirtualFileSystem', () => {
       content: 'Hello, World!',
       contentType: 'text/plain',
       description: 'Test file',
-      metadata: { created: '2023-01-01' }
+      metadata: { created: '2023-01-01' },
     }
 
     describe('writeFile', () => {
       it('should write a file successfully', async () => {
         const writeResult = await vfs.writeFile(testFile)
         expect(writeResult.success).toBe(true)
-        
+
         // Verify file was written
         const readResult = await vfs.readFile(testFile.path)
         expect(readResult.success).toBe(true)
@@ -103,15 +104,15 @@ describe('VirtualFileSystem', () => {
       it('should overwrite existing file', async () => {
         const writeResult1 = await vfs.writeFile(testFile)
         expect(writeResult1.success).toBe(true)
-        
+
         const updatedFile: VFile = {
           ...testFile,
-          content: 'Updated content'
+          content: 'Updated content',
         }
-        
+
         const writeResult2 = await vfs.writeFile(updatedFile)
         expect(writeResult2.success).toBe(true)
-        
+
         const readResult = await vfs.readFile(testFile.path)
         expect(readResult.success).toBe(true)
         if (readResult.success) {
@@ -122,9 +123,9 @@ describe('VirtualFileSystem', () => {
       it('should reject invalid path', async () => {
         const invalidFile: VFile = {
           ...testFile,
-          path: 'invalid-path'
+          path: 'invalid-path',
         }
-        
+
         const result = await vfs.writeFile(invalidFile)
         expect(result.success).toBe(false)
         if (!result.success) {
@@ -142,7 +143,7 @@ describe('VirtualFileSystem', () => {
       it('should read existing file', async () => {
         const result = await vfs.readFile(testFile.path)
         expect(result.success).toBe(true)
-        
+
         if (result.success) {
           expect(result.data.path).toBe(testFile.path)
           expect(result.data.content).toBe(testFile.content)
@@ -155,10 +156,12 @@ describe('VirtualFileSystem', () => {
       it('should return error for non-existent file', async () => {
         const nonExistentPath = '/non-existent.txt'
         const result = await vfs.readFile(nonExistentPath)
-        
+
         expect(result.success).toBe(false)
         if (!result.success) {
-          expect(result.error.message).toBe(`File not found: ${nonExistentPath}`)
+          expect(result.error.message).toBe(
+            `File not found: ${nonExistentPath}`,
+          )
           expect(result.error.code).toBe(VFSErrorCode.FILE_NOT_FOUND)
           expect(result.error.path).toBe(nonExistentPath)
         }
@@ -173,7 +176,7 @@ describe('VirtualFileSystem', () => {
       it('should delete existing file', async () => {
         const deleteResult = await vfs.deleteFile(testFile.path)
         expect(deleteResult.success).toBe(true)
-        
+
         // Verify file was deleted
         const readResult = await vfs.readFile(testFile.path)
         expect(readResult.success).toBe(false)
@@ -191,22 +194,27 @@ describe('VirtualFileSystem', () => {
         // Create multiple files with common prefix
         await vfs.writeFile({ ...testFile, path: '/folder/file1.txt' })
         await vfs.writeFile({ ...testFile, path: '/folder/file2.txt' })
-        await vfs.writeFile({ ...testFile, path: '/folder/subfolder/file3.txt' })
+        await vfs.writeFile({
+          ...testFile,
+          path: '/folder/subfolder/file3.txt',
+        })
         await vfs.writeFile({ ...testFile, path: '/other.txt' })
-        
-        const deleteResult = await vfs.deleteFile('/folder', { recursive: true })
+
+        const deleteResult = await vfs.deleteFile('/folder', {
+          recursive: true,
+        })
         expect(deleteResult.success).toBe(true)
-        
+
         // Verify recursive deletion
         const readResult1 = await vfs.readFile('/folder/file1.txt')
         expect(readResult1.success).toBe(false)
-        
+
         const readResult2 = await vfs.readFile('/folder/file2.txt')
         expect(readResult2.success).toBe(false)
-        
+
         const readResult3 = await vfs.readFile('/folder/subfolder/file3.txt')
         expect(readResult3.success).toBe(false)
-        
+
         // Verify other files are not affected
         const otherFileResult = await vfs.readFile('/other.txt')
         expect(otherFileResult.success).toBe(true)
@@ -227,26 +235,30 @@ describe('VirtualFileSystem', () => {
 
       it('should list all files', async () => {
         const file1: VFile = { ...testFile, path: '/file1.txt' }
-        const file2: VFile = { ...testFile, path: '/file2.txt', content: 'Different content' }
-        
+        const file2: VFile = {
+          ...testFile,
+          path: '/file2.txt',
+          content: 'Different content',
+        }
+
         await vfs.writeFile(file1)
         await vfs.writeFile(file2)
-        
+
         const result = await vfs.listFiles()
         expect(result.success).toBe(true)
-        
+
         if (result.success) {
           expect(result.data).toHaveLength(2)
-          expect(result.data.map(f => f.path)).toContain('/file1.txt')
-          expect(result.data.map(f => f.path)).toContain('/file2.txt')
-          
-          const file1Info = result.data.find(f => f.path === '/file1.txt')
+          expect(result.data.map((f) => f.path)).toContain('/file1.txt')
+          expect(result.data.map((f) => f.path)).toContain('/file2.txt')
+
+          const file1Info = result.data.find((f) => f.path === '/file1.txt')
           expect(file1Info).toMatchObject({
             path: '/file1.txt',
             size: file1.content.length,
             contentType: file1.contentType,
             description: file1.description,
-            metadata: file1.metadata
+            metadata: file1.metadata,
           })
           expect(file1Info?.lastModified).toBeInstanceOf(Date)
         }
@@ -260,14 +272,14 @@ describe('VirtualFileSystem', () => {
 
       it('should move file successfully', async () => {
         const newPath = '/moved.txt'
-        
+
         const moveResult = await vfs.moveFile(testFile.path, newPath)
         expect(moveResult.success).toBe(true)
-        
+
         // Verify old path doesn't exist
         const oldPathResult = await vfs.readFile(testFile.path)
         expect(oldPathResult.success).toBe(false)
-        
+
         // Verify file exists at new path
         const newPathResult = await vfs.readFile(newPath)
         expect(newPathResult.success).toBe(true)
@@ -311,17 +323,17 @@ describe('VirtualFileSystem', () => {
 
       it('should copy file successfully', async () => {
         const copyPath = '/copy.txt'
-        
+
         const copyResult = await vfs.copyFile(testFile.path, copyPath)
         expect(copyResult.success).toBe(true)
-        
+
         // Verify original file still exists
         const originalResult = await vfs.readFile(testFile.path)
         expect(originalResult.success).toBe(true)
         if (originalResult.success) {
           expect(originalResult.data.content).toBe(testFile.content)
         }
-        
+
         // Verify copy exists with same content
         const copyReadResult = await vfs.readFile(copyPath)
         expect(copyReadResult.success).toBe(true)
@@ -366,27 +378,35 @@ describe('VirtualFileSystem', () => {
       const storage2 = new MemoryStorage('project-2')
       const vfs1 = new VirtualFileSystem(storage1)
       const vfs2 = new VirtualFileSystem(storage2)
-      
+
       const baseFile: VFile = {
         path: '/shared.txt',
         content: 'Hello, World!',
         contentType: 'text/plain',
         description: 'Test file',
-        metadata: { created: '2023-01-01' }
+        metadata: { created: '2023-01-01' },
       }
-      
-      const file1: VFile = { ...baseFile, path: '/shared.txt', content: 'Project 1 content' }
-      const file2: VFile = { ...baseFile, path: '/shared.txt', content: 'Project 2 content' }
-      
+
+      const file1: VFile = {
+        ...baseFile,
+        path: '/shared.txt',
+        content: 'Project 1 content',
+      }
+      const file2: VFile = {
+        ...baseFile,
+        path: '/shared.txt',
+        content: 'Project 2 content',
+      }
+
       await vfs1.writeFile(file1)
       await vfs2.writeFile(file2)
-      
+
       const readResult1 = await vfs1.readFile('/shared.txt')
       const readResult2 = await vfs2.readFile('/shared.txt')
-      
+
       expect(readResult1.success).toBe(true)
       expect(readResult2.success).toBe(true)
-      
+
       if (readResult1.success && readResult2.success) {
         expect(readResult1.data.content).toBe('Project 1 content')
         expect(readResult2.data.content).toBe('Project 2 content')
@@ -398,12 +418,12 @@ describe('VirtualFileSystem', () => {
         read: () => Promise.resolve(Result.ok(null)),
         write: () => Promise.resolve(Result.ok(undefined)),
         delete: () => Promise.resolve(Result.ok(undefined)),
-        list: () => Promise.resolve(Result.ok([]))
+        list: () => Promise.resolve(Result.ok([])),
         // No moveFile or copyFile methods
       }
-      
+
       const vfsLimited = new VirtualFileSystem(limitedStorage)
-      
+
       const moveResult = await vfsLimited.moveFile('/from.txt', '/to.txt')
       expect(moveResult.success).toBe(false)
       if (!moveResult.success) {
@@ -411,7 +431,7 @@ describe('VirtualFileSystem', () => {
         expect(moveResult.error.code).toBe(VFSErrorCode.OPERATION_FAILED)
         expect(moveResult.error.path).toBe('/from.txt')
       }
-      
+
       const copyResult = await vfsLimited.copyFile('/from.txt', '/to.txt')
       expect(copyResult.success).toBe(false)
       if (!copyResult.success) {

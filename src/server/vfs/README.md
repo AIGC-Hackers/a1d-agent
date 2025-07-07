@@ -33,8 +33,8 @@ The VFS module implements a flat file storage system where files are identified 
 ### Basic Usage
 
 ```typescript
-import { VirtualFileSystem } from './virtual-file-system'
 import { MemoryStorage } from './memory-storage'
+import { VirtualFileSystem } from './virtual-file-system'
 
 // Create VFS instance
 const storage = new MemoryStorage('my-project')
@@ -45,7 +45,7 @@ await vfs.writeFile({
   path: '/hello.txt',
   content: 'Hello, World!',
   contentType: 'text/plain',
-  description: 'A greeting file'
+  description: 'A greeting file',
 })
 
 // Read a file
@@ -66,9 +66,9 @@ try {
   const file = await vfs.readFile('/non-existent.txt')
 } catch (error) {
   if (error instanceof VFSError) {
-    console.log('Error code:', error.code)     // FILE_NOT_FOUND
-    console.log('File path:', error.path)      // /non-existent.txt
-    console.log('Message:', error.message)     // File not found: /non-existent.txt
+    console.log('Error code:', error.code) // FILE_NOT_FOUND
+    console.log('File path:', error.path) // /non-existent.txt
+    console.log('Message:', error.message) // File not found: /non-existent.txt
   }
 }
 ```
@@ -97,7 +97,7 @@ await vfs.writeFile({
   content: JSON.stringify({ setting: 'value' }),
   contentType: 'application/json',
   description: 'Application configuration',
-  metadata: { version: 1 }
+  metadata: { version: 1 },
 })
 ```
 
@@ -128,7 +128,7 @@ List all files in the storage with metadata.
 
 ```typescript
 const files = await vfs.listFiles()
-files.forEach(file => {
+files.forEach((file) => {
   console.log(`${file.path}: ${file.size} bytes`)
 })
 ```
@@ -157,10 +157,10 @@ Represents a file in the virtual file system.
 
 ```typescript
 type VFile = {
-  path: string                    // Absolute path (must start with '/')
-  content: string                 // File content
-  contentType?: string           // MIME type (e.g., 'text/plain')
-  description?: string           // Human-readable description
+  path: string // Absolute path (must start with '/')
+  content: string // File content
+  contentType?: string // MIME type (e.g., 'text/plain')
+  description?: string // Human-readable description
   metadata?: Record<string, unknown> // Custom metadata
 }
 ```
@@ -172,7 +172,7 @@ File information returned by `listFiles()`.
 ```typescript
 interface FileInfo {
   path: string
-  size: number                   // Content length in bytes
+  size: number // Content length in bytes
   lastModified: Date
   contentType?: string
   description?: string
@@ -199,9 +199,9 @@ class VFSError extends Error {
 
 ```typescript
 enum VFSErrorCode {
-  FILE_NOT_FOUND = 'FILE_NOT_FOUND',     // File does not exist
-  INVALID_PATH = 'INVALID_PATH',         // Path validation failed
-  OPERATION_FAILED = 'OPERATION_FAILED'  // Storage operation failed
+  FILE_NOT_FOUND = 'FILE_NOT_FOUND', // File does not exist
+  INVALID_PATH = 'INVALID_PATH', // Path validation failed
+  OPERATION_FAILED = 'OPERATION_FAILED', // Storage operation failed
 }
 ```
 
@@ -225,6 +225,7 @@ MemoryStorage.clearAll()
 ```
 
 **Features:**
+
 - Fast operations
 - Project isolation
 - Supports all file operations
@@ -242,6 +243,7 @@ const vfs = new VirtualFileSystem(storage)
 ```
 
 **Features:**
+
 - Persistent storage
 - ACID transactions
 - Project isolation
@@ -263,9 +265,9 @@ All file paths must follow these rules:
 '/config/app.json'
 
 // ❌ Invalid paths
-'relative/path.txt'    // Must be absolute
-''                     // Cannot be empty
-'/'.repeat(1001)      // Too long
+'relative/path.txt' // Must be absolute
+'' // Cannot be empty
+'/'.repeat(1001) // Too long
 ```
 
 ## Error Handling Best Practices
@@ -284,15 +286,15 @@ async function safeReadFile(vfs: VirtualFileSystem, path: string) {
         case VFSErrorCode.FILE_NOT_FOUND:
           console.log(`File ${path} does not exist`)
           return null
-        
+
         case VFSErrorCode.INVALID_PATH:
           console.error(`Invalid path: ${path}`)
           throw error
-        
+
         case VFSErrorCode.OPERATION_FAILED:
           console.error(`Storage error: ${error.message}`)
           throw error
-        
+
         default:
           throw error
       }
@@ -308,8 +310,8 @@ The VFS is designed to work seamlessly with AI agent tools:
 
 ```typescript
 // In your tool implementation
-import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
 import { MemoryStorage } from '@/server/vfs/memory-storage'
+import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
 
 export const readFileTool = createTool({
   id: 'read-file',
@@ -324,18 +326,18 @@ export const readFileTool = createTool({
   }),
   execute: async ({ context: input, threadId }) => {
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
-    
+
     try {
       const file = await vfs.readFile(input.file)
       return {
         content: file.content,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         content: '',
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   },
@@ -351,6 +353,7 @@ pnpm test virtual-file-system.test
 ```
 
 Test coverage includes:
+
 - Path validation
 - All file operations
 - Error handling
@@ -360,12 +363,14 @@ Test coverage includes:
 ## Performance Considerations
 
 ### Memory Storage
+
 - **Fast**: All operations are in-memory
 - **Scalable**: Suitable for hundreds of files
 - **Memory usage**: ~1KB per file + content size
 - **Cleanup**: Use `clear()` or `clearAll()` to free memory
 
 ### PostgreSQL Storage
+
 - **Persistent**: Data survives restarts
 - **ACID**: Transactional consistency
 - **Scalable**: Handles large numbers of files

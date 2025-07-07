@@ -1,5 +1,7 @@
-import { Result } from '@/lib/result';
-import { type FileInfo, type Storage, type VFile, VFSError, VFSErrorCode } from './types';
+import { Result } from '@/lib/result'
+
+import type { FileInfo, Storage, VFile } from './types'
+import { VFSError, VFSErrorCode } from './types'
 
 export class MemoryStorage implements Storage {
   private static readonly projects = new Map<string, Map<string, VFile>>()
@@ -21,7 +23,10 @@ export class MemoryStorage implements Storage {
     return Result.ok(undefined)
   }
 
-  async delete(path: string, options?: { recursive?: boolean }): Promise<Result<void, VFSError>> {
+  async delete(
+    path: string,
+    options?: { recursive?: boolean },
+  ): Promise<Result<void, VFSError>> {
     const projectFiles = MemoryStorage.projects.get(this.projectId)
     if (!projectFiles) {
       return Result.ok(undefined)
@@ -66,15 +71,26 @@ export class MemoryStorage implements Storage {
     return Result.ok(results)
   }
 
-  async moveFile(fromPath: string, toPath: string): Promise<Result<void, VFSError>> {
+  async moveFile(
+    fromPath: string,
+    toPath: string,
+  ): Promise<Result<void, VFSError>> {
     const projectFiles = MemoryStorage.projects.get(this.projectId)
     if (!projectFiles) {
-      return Result.err(new VFSError('Project not found', VFSErrorCode.OPERATION_FAILED, fromPath))
+      return Result.err(
+        new VFSError(
+          'Project not found',
+          VFSErrorCode.OPERATION_FAILED,
+          fromPath,
+        ),
+      )
     }
 
     const file = projectFiles.get(fromPath)
     if (!file) {
-      return Result.err(new VFSError('File not found', VFSErrorCode.FILE_NOT_FOUND, fromPath))
+      return Result.err(
+        new VFSError('File not found', VFSErrorCode.FILE_NOT_FOUND, fromPath),
+      )
     }
 
     projectFiles.delete(fromPath)
@@ -82,15 +98,26 @@ export class MemoryStorage implements Storage {
     return Result.ok(undefined)
   }
 
-  async copyFile(fromPath: string, toPath: string): Promise<Result<void, VFSError>> {
+  async copyFile(
+    fromPath: string,
+    toPath: string,
+  ): Promise<Result<void, VFSError>> {
     const projectFiles = MemoryStorage.projects.get(this.projectId)
     if (!projectFiles) {
-      return Result.err(new VFSError('Project not found', VFSErrorCode.OPERATION_FAILED, fromPath))
+      return Result.err(
+        new VFSError(
+          'Project not found',
+          VFSErrorCode.OPERATION_FAILED,
+          fromPath,
+        ),
+      )
     }
 
     const file = projectFiles.get(fromPath)
     if (!file) {
-      return Result.err(new VFSError('File not found', VFSErrorCode.FILE_NOT_FOUND, fromPath))
+      return Result.err(
+        new VFSError('File not found', VFSErrorCode.FILE_NOT_FOUND, fromPath),
+      )
     }
 
     projectFiles.set(toPath, { ...file, path: toPath })
