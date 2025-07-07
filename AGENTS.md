@@ -73,13 +73,9 @@ The project integrates with numerous AI services:
 - **Configuration**: `vitest.config.ts`
 - **Command**: `pnpm test <path/to/test.ts>`
 
-## Plan-Driven Architecture
-
-All agent behavior is guided by a `plan.md` file that contains structured execution plans. Agents read and follow these plans to determine their actions and workflows.
-
 ## Environment Management
 
-- Uses `dotenvx` for environment variable management
+- Uses `dotenvx run -- <command>` for environment variable management
 - Environment validation via `pnpm env:check`
 - Multiple AI service API keys required (see package.json dependencies)
 
