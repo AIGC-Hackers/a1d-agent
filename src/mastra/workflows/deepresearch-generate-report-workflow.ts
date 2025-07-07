@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { createStep, createWorkflow } from '@mastra/core/workflows'
+import { createStep, createWorkflow } from '@mastra/core'
 import { z } from 'zod'
 
 import { deepResearchWorkflow } from './deepresearch-workflow'
@@ -50,7 +50,7 @@ const processResearchResultStep = createStep({
 
 // Create the report generation workflow that iteratively researches and generates reports
 export const deepResearchGenerateReportWorkflow = createWorkflow({
-  id: 'generate-report-workflow',
+  id: 'deepresearch-generate-report-workflow',
   steps: [deepResearchWorkflow, processResearchResultStep],
   inputSchema: z.object({}),
   outputSchema: z.object({

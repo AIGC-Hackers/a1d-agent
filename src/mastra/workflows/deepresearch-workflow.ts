@@ -1,4 +1,4 @@
-import { createStep, createWorkflow } from '@mastra/core/workflows'
+import { createStep, createWorkflow } from '@mastra/core'
 import { z } from 'zod'
 
 // Step 1: Get user query
@@ -152,7 +152,7 @@ const approvalStep = createStep({
 
 // Define the workflow
 export const deepResearchWorkflow = createWorkflow({
-  id: 'research-workflow',
+  id: 'deepresearch-workflow',
   inputSchema: z.object({}),
   outputSchema: z.object({
     approved: z.boolean(),
