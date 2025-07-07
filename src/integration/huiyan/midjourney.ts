@@ -52,7 +52,7 @@ export function submitImagine(props: SubmitImagineInput) {
   return fromFetch('https://api.huiyan-ai.cn/mj/submit/imagine', {
     method: 'POST',
     headers: {
-      'mj-api-secret': env.value.HUIYAN_MJ_API_KEY,
+      'mj-api-secret': env.value.HUIYAN_C_API_KEY,
       'Content-Type': 'application/json',
     },
     redirect: 'follow',
@@ -80,7 +80,7 @@ export function getJobProgress(props: {
   return fromFetch(`https://api.huiyan-ai.cn/mj/task/${props.jobId}/fetch`, {
     method: 'GET',
     headers: {
-      'mj-api-secret': env.value.HUIYAN_MJ_API_KEY,
+      'mj-api-secret': env.value.HUIYAN_C_API_KEY,
     },
   }).pipe(
     switchMapResponseToJson<MidjourneyImageJob>(),
@@ -105,7 +105,7 @@ export function cancelMidjourneyImageJob(props: { jobId: string }) {
   return fromFetch(`https://api.huiyan-ai.cn/mj/task/${props.jobId}/cancel`, {
     method: 'POST',
     headers: {
-      'mj-api-secret': env.value.HUIYAN_MJ_API_KEY,
+      'mj-api-secret': env.value.HUIYAN_C_API_KEY,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({}),
