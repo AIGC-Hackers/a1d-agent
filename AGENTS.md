@@ -8,6 +8,7 @@ This file provides guidance to AI agents working in this repository.
 
 ## Development Commands
 - `dotenvx run -- <command>`: Run a command with the correct environment variables.
+- `pnpm x path/to/script.ts`: Run ts script with the correct environment variables.
 - `pnpm dev`: Start development server with Mastra CLI.
 - `pnpm build`: Build the project.
 - `pnpm start`: Start production server.
@@ -16,7 +17,6 @@ This file provides guidance to AI agents working in this repository.
 - `pnpm typecheck`: Run TypeScript type checking.
 - `pnpm format`: Format code with Prettier.
 - `pnpm env:check`: Validate environment variables.
-- `dotenvx run -- bun run <path/to/script.ts>`: Run a script in Bun.
 
 ## Code Style & Conventions
 
