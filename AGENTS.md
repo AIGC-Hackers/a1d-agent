@@ -12,8 +12,7 @@ This file provides guidance to AI agents working in this repository.
 - `pnpm dev`: Start development server with Mastra CLI.
 - `pnpm build`: Build the project.
 - `pnpm start`: Start production server.
-- `pnpm test`: Run all tests with Vitest.
-- `pnpm test <path/to/test.ts>`: Run a specific test file.
+- `pnpm test <test-name | path/to/test.ts>`: Run all tests with Vitest.
 - `pnpm typecheck`: Run TypeScript type checking.
 - `pnpm format`: Format code with Prettier.
 - `pnpm env:check`: Validate environment variables.
@@ -82,6 +81,7 @@ The project integrates with numerous AI services:
 ## Key Files to Understand
 
 - `src/mastra/index.ts` - Main Mastra instance and agent registration
+- `src/lib/env.ts` - Environment variable management, you should use `env.value.<ENV_VAR_NAME>` always.
 - `src/mastra/factory.ts` - Core factories for storage, logger, VFS
 - `src/server/vfs/` - Virtual File System implementation
 - `src/integration/` - External service integrations
