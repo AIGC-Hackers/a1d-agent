@@ -1,7 +1,7 @@
 import { Result } from '@/lib/result'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import type { VFile } from '../types'
+import type { FileInfo, VFile } from '../types'
 import { MemoryStorage } from '../memory-storage'
 import { VFSError, VFSErrorCode } from '../types'
 import { VirtualFileSystem } from '../virtual-file-system'
@@ -415,10 +415,14 @@ describe('VirtualFileSystem', () => {
 
     it('should handle storage without move/copy operations', async () => {
       const limitedStorage = {
-        read: () => Promise.resolve(Result.ok(null)),
-        write: () => Promise.resolve(Result.ok(undefined)),
-        delete: () => Promise.resolve(Result.ok(undefined)),
-        list: () => Promise.resolve(Result.ok([])),
+        read: () =>
+          Promise.resolve(Result.ok(null) as Result<VFile | null, VFSError>),
+        write: () =>
+          Promise.resolve(Result.ok(undefined) as Result<void, VFSError>),
+        delete: () =>
+          Promise.resolve(Result.ok(undefined) as Result<void, VFSError>),
+        list: () =>
+          Promise.resolve(Result.ok([]) as Result<FileInfo[], VFSError>),
         // No moveFile or copyFile methods
       }
 

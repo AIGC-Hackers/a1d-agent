@@ -304,7 +304,8 @@ function createImageGenerationTest(): () => Observable<TestEvent> {
         {
           prompt: 'A cute cartoon cat sitting on a rainbow',
           model: 'abab6-4',
-          resolution: '512x512',
+          width: 512,
+          height: 512,
           n: 1,
         },
         defaultMinimaxContext,
