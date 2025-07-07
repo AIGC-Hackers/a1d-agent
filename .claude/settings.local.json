@@ -38,5 +38,9 @@
         ]
       }
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "context7",
+    "mastra"
+  ]
 }
