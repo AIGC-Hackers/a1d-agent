@@ -19,7 +19,7 @@ export class PostgresStorage implements Storage {
       path: result.path,
       description: result.description ?? undefined,
       contentType: result.content_type ?? undefined,
-      content: result.content,
+      content: result.content
     }
   }
 
@@ -31,10 +31,10 @@ export class PostgresStorage implements Storage {
         description: file.description,
         content_type: file.contentType,
         content: file.content,
-        project_id: this.projectId,
+        project_id: this.projectId
       })
       .onConflictDoUpdate({
-        target: t.vfs.path,
+        target: [t.vfs.path, t.vfs.project_id],
         set: {
           description: file.description,
           content_type: file.contentType,
@@ -68,12 +68,40 @@ export class PostgresStorage implements Storage {
       columns: {
         path: true,
         description: true,
+        content: true,
+        content_type: true,
+        updated_at: true
       },
     })
 
     return results.map((result) => ({
       path: result.path,
-      description: result.description ?? undefined,
+      size: result.content.length,
+      lastModified: result.updated_at || new Date(),
+      contentType: result.content_type ?? undefined,
+      description: result.description ?? undefined
     }))
+  }
+
+  async moveFile(fromPath: string, toPath: string): Promise<void> {
+    await db.value
+      .update(t.vfs)
+      .set({ 
+        path: toPath, 
+        updated_at: new Date() 
+      })
+      .where(and(eq(t.vfs.path, fromPath), eq(t.vfs.project_id, this.projectId)))
+  }
+
+  async copyFile(fromPath: string, toPath: string): Promise<void> {
+    const sourceFile = await this.read(fromPath)
+    if (!sourceFile) {
+      throw new Error('Source file not found')
+    }
+    
+    await this.write({
+      ...sourceFile,
+      path: toPath
+    })
   }
 }

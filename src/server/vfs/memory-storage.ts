@@ -53,10 +53,43 @@ export class MemoryStorage implements Storage {
     for (const file of projectFiles.values()) {
       results.push({
         path: file.path,
+        size: file.content.length,
+        lastModified: new Date(),
+        contentType: file.contentType,
         description: file.description,
+        metadata: file.metadata,
       })
     }
     return results
+  }
+
+  async moveFile(fromPath: string, toPath: string): Promise<void> {
+    const projectFiles = MemoryStorage.projects.get(this.projectId)
+    if (!projectFiles) {
+      throw new Error('Project not found')
+    }
+
+    const file = projectFiles.get(fromPath)
+    if (!file) {
+      throw new Error('File not found')
+    }
+
+    projectFiles.delete(fromPath)
+    projectFiles.set(toPath, { ...file, path: toPath })
+  }
+
+  async copyFile(fromPath: string, toPath: string): Promise<void> {
+    const projectFiles = MemoryStorage.projects.get(this.projectId)
+    if (!projectFiles) {
+      throw new Error('Project not found')
+    }
+
+    const file = projectFiles.get(fromPath)
+    if (!file) {
+      throw new Error('File not found')
+    }
+
+    projectFiles.set(toPath, { ...file, path: toPath })
   }
 
   clear(): void {
