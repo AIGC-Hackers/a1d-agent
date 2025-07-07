@@ -16,6 +16,8 @@ export enum VFSErrorCode {
   OPERATION_FAILED = 'OPERATION_FAILED'
 }
 
+import { Result } from '@/lib/result';
+
 export interface FileInfo {
   path: string
   size: number
@@ -34,10 +36,10 @@ export type VFile = {
 }
 
 export type Storage = {
-  read(path: string): Promise<VFile | null>
-  write(file: VFile): Promise<void>
-  delete(path: string, options?: { recursive?: boolean }): Promise<void>
-  list(): Promise<FileInfo[]>
-  moveFile?(fromPath: string, toPath: string): Promise<void>
-  copyFile?(fromPath: string, toPath: string): Promise<void>
+  read(path: string): Promise<Result<VFile | null, VFSError>>
+  write(file: VFile): Promise<Result<void, VFSError>>
+  delete(path: string, options?: { recursive?: boolean }): Promise<Result<void, VFSError>>
+  list(): Promise<Result<FileInfo[], VFSError>>
+  moveFile?(fromPath: string, toPath: string): Promise<Result<void, VFSError>>
+  copyFile?(fromPath: string, toPath: string): Promise<Result<void, VFSError>>
 }

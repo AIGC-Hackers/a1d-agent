@@ -3,8 +3,6 @@ import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
 import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
 
-import { logger } from '../factory'
-
 export const fileDescriptorSchema = z.object({
   path: z.string().describe('File path'),
   description: z.string().optional().describe('File description'),
@@ -32,20 +30,19 @@ export const readFileTool = createTool({
 
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
 
-    try {
-      const file = await vfs.readFile(input.file)
-
-      return {
-        content: file.content,
-        success: true,
-      }
-    } catch (error) {
-      logger.error('Read file tool error:', { error })
+    const fileResult = await vfs.readFile(input.file)
+    
+    if (!fileResult.success) {
       return {
         content: '',
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: fileResult.error.message,
       }
+    }
+
+    return {
+      content: fileResult.data.content,
+      success: true,
     }
   },
 })
@@ -76,39 +73,39 @@ export const writeFileTool = createTool({
 
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
 
-    try {
-      if (input.append) {
-        const file = await vfs.readFile(input.file)
-
-        const leadingNewline = input.leading_newline ? '\n' : ''
-        const trailingNewline = input.trailing_newline ? '\n' : ''
-        const appendedContent =
-          file.content + leadingNewline + input.content + trailingNewline
-
-        await vfs.writeFile({
-          path: input.file,
-          content: appendedContent,
-          description: input.description,
-          contentType: input.content_type,
-        })
-      } else {
-        await vfs.writeFile({
-          path: input.file,
-          content: input.content,
-          description: input.description,
-          contentType: input.content_type,
-        })
+    let finalContent = input.content
+    
+    if (input.append) {
+      const existingFileResult = await vfs.readFile(input.file)
+      
+      if (!existingFileResult.success) {
+        return {
+          success: false,
+          error: `Failed to read existing file for append: ${existingFileResult.error.message}`,
+        }
       }
+      
+      const leadingNewline = input.leading_newline ? '\n' : ''
+      const trailingNewline = input.trailing_newline ? '\n' : ''
+      finalContent = existingFileResult.data.content + leadingNewline + input.content + trailingNewline
+    }
 
-      return {
-        success: true,
-      }
-    } catch (error) {
-      logger.error('Write file tool error:', { error })
+    const writeResult = await vfs.writeFile({
+      path: input.file,
+      content: finalContent,
+      description: input.description,
+      contentType: input.content_type,
+    })
+
+    if (!writeResult.success) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: `Failed to write file: ${writeResult.error.message}`,
       }
+    }
+
+    return {
+      success: true,
     }
   },
 })
@@ -140,81 +137,90 @@ export const editFileTool = createTool({
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
     const expectedReplacements = input.expected_replacements ?? 1
 
-    try {
-      // Read the file first
-      const file = await vfs.readFile(input.file_path)
-
-      // Count occurrences of old_string
-      const occurrences = (
-        file.content.match(new RegExp(escapeRegExp(input.old_string), 'g')) ||
-        []
-      ).length
-
-      if (occurrences === 0) {
-        return {
-          success: false,
-          replacements: 0,
-          error: 'Text to replace not found in file',
-        }
-      }
-
-      if (expectedReplacements === 1 && occurrences > 1) {
-        return {
-          success: false,
-          replacements: 0,
-          error: `Found ${occurrences} occurrences but expected exactly 1. Text is not unique enough.`,
-        }
-      }
-
-      if (expectedReplacements > occurrences) {
-        return {
-          success: false,
-          replacements: 0,
-          error: `Expected ${expectedReplacements} replacements but only found ${occurrences} occurrences`,
-        }
-      }
-
-      // Perform the replacement
-      let newContent = file.content
-      let actualReplacements = 0
-
-      if (expectedReplacements === occurrences) {
-        // Replace all occurrences
-        newContent = file.content.replaceAll(input.old_string, input.new_string)
-        actualReplacements = occurrences
-      } else {
-        // Replace only the expected number of occurrences
-        for (let i = 0; i < expectedReplacements; i++) {
-          const index = newContent.indexOf(input.old_string)
-          if (index !== -1) {
-            newContent =
-              newContent.substring(0, index) +
-              input.new_string +
-              newContent.substring(index + input.old_string.length)
-            actualReplacements++
-          }
-        }
-      }
-
-      // Write the updated file back
-      await vfs.writeFile({
-        path: input.file_path,
-        content: newContent,
-        contentType: file.contentType,
-        metadata: file.metadata,
-      })
-
-      return {
-        success: true,
-        replacements: actualReplacements,
-      }
-    } catch (error) {
-      logger.error('Edit file tool error:', { error })
+    // Read the file first
+    const fileResult = await vfs.readFile(input.file_path)
+    
+    if (!fileResult.success) {
       return {
         success: false,
         replacements: 0,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: `Failed to read file: ${fileResult.error.message}`,
       }
+    }
+    
+    const file = fileResult.data
+
+    // Count occurrences of old_string
+    const occurrences = (
+      file.content.match(new RegExp(escapeRegExp(input.old_string), 'g')) ||
+      []
+    ).length
+
+    if (occurrences === 0) {
+      return {
+        success: false,
+        replacements: 0,
+        error: 'Text to replace not found in file',
+      }
+    }
+
+    if (expectedReplacements === 1 && occurrences > 1) {
+      return {
+        success: false,
+        replacements: 0,
+        error: `Found ${occurrences} occurrences but expected exactly 1. Text is not unique enough.`,
+      }
+    }
+
+    if (expectedReplacements > occurrences) {
+      return {
+        success: false,
+        replacements: 0,
+        error: `Expected ${expectedReplacements} replacements but only found ${occurrences} occurrences`,
+      }
+    }
+
+    // Perform the replacement
+    let newContent = file.content
+    let actualReplacements = 0
+
+    if (expectedReplacements === occurrences) {
+      // Replace all occurrences
+      newContent = file.content.replaceAll(input.old_string, input.new_string)
+      actualReplacements = occurrences
+    } else {
+      // Replace only the expected number of occurrences
+      for (let i = 0; i < expectedReplacements; i++) {
+        const index = newContent.indexOf(input.old_string)
+        if (index !== -1) {
+          newContent =
+            newContent.substring(0, index) +
+            input.new_string +
+            newContent.substring(index + input.old_string.length)
+          actualReplacements++
+        }
+      }
+    }
+
+    // Write the updated file back
+    const writeResult = await vfs.writeFile({
+      path: input.file_path,
+      content: newContent,
+      contentType: file.contentType,
+      metadata: file.metadata,
+    })
+    
+    if (!writeResult.success) {
+      return {
+        success: false,
+        replacements: 0,
+        error: `Failed to write updated file: ${writeResult.error.message}`,
+      }
+    }
+
+    return {
+      success: true,
+      replacements: actualReplacements,
     }
   },
 })
@@ -245,22 +251,21 @@ export const deleteFileTool = createTool({
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
     const filePaths = Array.isArray(input.files) ? input.files : [input.files]
 
-    try {
-      for (const filePath of filePaths) {
-        await vfs.deleteFile(filePath, {
-          recursive: input.recursive,
-        })
+    for (const filePath of filePaths) {
+      const deleteResult = await vfs.deleteFile(filePath, {
+        recursive: input.recursive,
+      })
+      
+      if (!deleteResult.success) {
+        return {
+          success: false,
+          error: `Failed to delete file ${filePath}: ${deleteResult.error.message}`,
+        }
       }
+    }
 
-      return {
-        success: true,
-      }
-    } catch (error) {
-      logger.error('Delete file tool error:', { error })
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
+    return {
+      success: true,
     }
   },
 })
