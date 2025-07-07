@@ -1,65 +1,105 @@
-import { type } from 'arktype'
 import { Observable, switchMap } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 
 import type { MinimaxContext } from './config'
 import { getMinimaxHeaders } from './config'
 
-// Pattern: Only use schema for user input with business constraints
-const voiceCloneInputSchema = type({
-  audio_file: type('File').narrow(
-    (it, ctx) =>
-      it.size <= 1024 * 1024 * 50 ||
-      ctx.reject('audio file must be less than 50MB'),
-  ),
-  name: 'string',
-  'description?': 'string',
-})
-
-export type VoiceCloneInput = typeof voiceCloneInputSchema.infer
-
-export type VoiceCloneOutput = {
-  voice_id: string
-  name: string
-  status: 'processing' | 'ready' | 'failed'
-  created_at: string
-  error?: {
-    code: string
-    message: string
-  }
+// Base response type for voice cloning API
+export type VoiceCloneBaseResp = {
+  status_code: number
+  status_msg: string
 }
 
-// Pattern: Example with FormData - demonstrates why generic request wrappers are problematic
-export function cloneVoice(
-  input: VoiceCloneInput,
-  context: MinimaxContext,
-): Observable<VoiceCloneOutput> {
-  // Validate user input with business rules (file size constraint)
-  const validatedInput = voiceCloneInputSchema.assert(input)
+// File upload types
+export type FileUploadInput = {
+  file: File
+  purpose: 'voice_clone'
+}
 
-  const formData = new FormData()
-  formData.append('audio_file', validatedInput.audio_file)
-  formData.append('name', validatedInput.name)
-  formData.append('group_id', context.groupId)
-
-  if (validatedInput.description) {
-    formData.append('description', validatedInput.description)
+export type FileUploadOutput = {
+  file: {
+    file_id: number
+    bytes: number
+    created_at: number
+    filename: string
+    purpose: string
   }
+  base_resp: VoiceCloneBaseResp
+}
 
-  const url = `${context.baseUrl}/voice_cloning`
+// Upload file for voice cloning
+export function uploadFile(
+  input: FileUploadInput,
+  context: MinimaxContext,
+): Observable<FileUploadOutput> {
+  const formData = new FormData()
+  formData.append('file', input.file)
+  formData.append('purpose', input.purpose)
+
+  const url = `${context.baseUrl}/v1/files/upload?GroupId=${context.groupId}`
 
   return fromFetch(url, {
     method: 'POST',
     headers: {
+      Authority: 'api.minimax.io',
       Authorization: `Bearer ${context.apiKey}`,
-      // Note: Don't set Content-Type for FormData, let browser set it with boundary
     },
     body: formData,
   }).pipe(
     switchMap(async (response) => {
       if (!response.ok) {
+        const text = await response.text()
         if (import.meta.env.DEV) {
-          const text = await response.text()
+          console.error(
+            `File upload failed: ${response.status} ${response.statusText}\n<response>\n${text}</response>`,
+          )
+        }
+        throw new Error(
+          `File upload failed: ${response.status} ${response.statusText}`,
+        )
+      }
+      return response.json() as Promise<FileUploadOutput>
+    }),
+  )
+}
+
+// Voice cloning types
+export type VoiceCloneInput = {
+  file_id: number
+  voice_id: string
+  need_noise_reduction?: boolean
+  text?: string
+  model?: 'speech-02-hd' | 'speech-02-turbo' | 'speech-01-hd' | 'speech-01-turbo'
+  accuracy?: number
+  need_volume_normalization?: boolean
+}
+
+export type VoiceCloneOutput = {
+  input_sensitive: boolean
+  input_sensitive_type: number
+  base_resp: VoiceCloneBaseResp
+}
+
+// Clone voice from uploaded file
+export function cloneVoice(
+  input: VoiceCloneInput,
+  context: MinimaxContext,
+): Observable<VoiceCloneOutput> {
+  const url = `${context.baseUrl}/v1/voice_clone?GroupId=${context.groupId}`
+
+  return fromFetch(url, {
+    method: 'POST',
+    headers: {
+      Authority: 'api.minimax.io',
+      Authorization: `Bearer ${context.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  }).pipe(
+    switchMap(async (response) => {
+      if (!response.ok) {
+        const text = await response.text()
+        if (import.meta.env.DEV) {
           console.error(
             `Voice cloning failed: ${response.status} ${response.statusText}\n<response>\n${text}</response>`,
           )
@@ -80,7 +120,7 @@ export type Voice = {
   description?: string
   status: 'ready' | 'processing' | 'failed'
   created_at: string
-  is_preset?: boolean // System-provided voices
+  is_preset?: boolean
 }
 
 export type ListVoicesOutput = {
@@ -96,7 +136,9 @@ export function listVoices(
   },
   context?: MinimaxContext,
 ): Observable<ListVoicesOutput> {
-  const url = new URL(`${context?.baseUrl}/voices`)
+  // Note: This API endpoint is not documented in the official MiniMax voice cloning docs
+  // The actual endpoint may be different or may not exist
+  const url = new URL(`${context?.baseUrl}/v1/voices?GroupId=${context?.groupId}`)
 
   if (params?.page) {
     url.searchParams.append('page', params.page.toString())
@@ -117,6 +159,12 @@ export function listVoices(
   }).pipe(
     switchMap(async (response) => {
       if (!response.ok) {
+        const text = await response.text()
+        if (import.meta.env.DEV) {
+          console.error(
+            `List voices failed: ${response.status} ${response.statusText}\n<response>\n${text}</response>`,
+          )
+        }
         throw new Error(
           `List voices failed: ${response.status} ${response.statusText}`,
         )

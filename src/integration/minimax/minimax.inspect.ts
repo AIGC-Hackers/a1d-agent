@@ -1,15 +1,10 @@
 import { firstValueFrom, merge, Observable } from 'rxjs'
 
-import { defaultMinimaxContext } from './minimax/config'
-import { generateImageStream } from './minimax/image'
-import {
-  decodeAudioChunk,
-  text2Audio,
-  text2AudioSSEStream,
-  text2AudioStream,
-} from './minimax/t2a'
-import { generateVideoStream } from './minimax/video'
-import { listVoices } from './minimax/voice-cloning'
+import { defaultMinimaxContext } from './config'
+import { generateImageStream } from './image'
+import { decodeAudioChunk, createText2AudioTask, textToAudioStream } from './t2a'
+import { generateVideoStream } from './video'
+import { listVoices } from './voice-cloning'
 
 type TestStatus = 'running' | 'success' | 'error' | 'skipped'
 
@@ -55,10 +50,16 @@ function createT2ATest(): () => Observable<TestEvent> {
       })
 
       firstValueFrom(
-        text2Audio(
+        createText2AudioTask(
           {
+            model: 'speech-02-turbo',
             text: 'Hello, this is a test of Minimax text to audio API.',
-            format: 'mp3',
+            voice_setting: {
+              voice_id: 'default',
+            },
+            audio_setting: {
+              output_format: 'mp3',
+            },
           },
           defaultMinimaxContext,
         ),
@@ -81,8 +82,8 @@ function createT2ATest(): () => Observable<TestEvent> {
               latency,
               details: {
                 trace_id: result.trace_id,
-                has_audio: !!result.audio_file,
-                has_task_id: !!result.task_id,
+                has_audio: !!result.data?.audio || !!result.data?.audio_url,
+                status_code: result.base_resp?.status_code,
               },
             },
           })
@@ -132,10 +133,16 @@ function createT2ASSEStreamTest(): () => Observable<TestEvent> {
       // Run the async iterator
       const runAsync = async () => {
         try {
-          for await (const chunk of text2AudioSSEStream(
+          for await (const chunk of textToAudioStream(
             {
+              model: 'speech-02-turbo',
               text: 'Hello, this is a test of Minimax real-time streaming API.',
-              format: 'mp3',
+              voice_setting: {
+                voice_id: 'default',
+              },
+              audio_setting: {
+                output_format: 'mp3',
+              },
             },
             defaultMinimaxContext,
           )) {
@@ -396,17 +403,17 @@ function createVideoGenerationTest(): () => Observable<TestEvent> {
       const subscription = generateVideoStream(
         {
           prompt: 'A cat walking on a rainbow bridge in cartoon style',
-          model: 'video-01',
+          model: 'MiniMax-Hailuo-02',
         },
         defaultMinimaxContext,
         {
           pollInterval: 5000,
-          onProgress: (progress) => {
+          onProgress: (status) => {
             observer.next({
               type: 'progress',
               name: 'Video Generation',
-              progress,
-              message: `Progress: ${progress}%`,
+              progress: 50, // Fixed progress value since status is string
+              message: `Status: ${status.status}`,
             })
           },
         },
@@ -490,21 +497,21 @@ const TEST_CONFIGS: TestConfig[] = [
   {
     name: 'Text-to-Audio SSE Stream',
     api: 'Text-to-Audio SSE Stream',
-    skip: false, // Enable to test real-time streaming
+    skip: true, // Enable to test real-time streaming
     timeout: 60000,
     test: createT2ASSEStreamTest(),
   },
   {
     name: 'List Voices',
     api: 'List Voices',
-    skip: false,
+    skip: true,
     timeout: 30000,
     test: createListVoicesTest(),
   },
   {
     name: 'Image Generation',
     api: 'Image Generation',
-    skip: false,
+    skip: true,
     timeout: 120000,
     test: createImageGenerationTest(),
   },

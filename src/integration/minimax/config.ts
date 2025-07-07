@@ -12,7 +12,7 @@ export type MinimaxContext = {
 export const defaultMinimaxContext: MinimaxContext = {
   apiKey: env.value.MINIMAX_API_KEY,
   groupId: env.value.MINIMAX_GROUP_ID,
-  baseUrl: 'https://api.minimax.chat/v1', // May need to be updated based on actual API docs
+  baseUrl: 'https://api.minimax.io', // Updated to match official docs
 }
 
 // Common headers for Minimax API

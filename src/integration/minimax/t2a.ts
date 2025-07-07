@@ -7,25 +7,94 @@ import { getMinimaxHeaders } from './config'
 
 // Pattern: Use TypeScript types for API contracts - trust the API documentation
 // AI guidance: Model the actual API response structure with good field comments
-export type Text2AudioInput = {
-  text: string // Text content to convert to audio
+export type VoiceSetting = {
   voice_id?: string // Voice ID for synthesis
-  speed?: number // Speech speed (0.5-2.0)
-  vol?: number // Volume (0.1-1.0)
+  speed?: number // Speech speed
+  vol?: number // Volume
   pitch?: number // Pitch adjustment
-  format?: 'mp3' | 'wav' | 'pcm' // Output audio format
-  sample_rate?: number // Sample rate (8000, 16000, 24000, 48000)
+}
+
+export type AudioSetting = {
+  output_format?: 'mp3' | 'wav' | 'pcm' // Output audio format
+  sample_rate?: number // Sample rate
+  bitrate?: number // Audio bitrate
+  channel?: number // Audio channel count
+}
+
+export type PronunciationDict = {
+  tone: string[] // Array of pronunciation replacements in format ["燕少飞/(yan4)(shao3)(fei1)", "达菲/(da2)(fei1)", "omg/oh my god"]
+}
+
+export type TimberWeight = {
+  voice_id: string // System voice ID
+  weight: number // Weight value in range [1, 100], supports up to 4 voices
+}
+
+export type TimberWeights = TimberWeight[] // Array of voice weights for mixing
+
+export type Text2AudioInput = {
+  model: 'speech-02-hd' | 'speech-02-turbo' | 'speech-01-hd' | 'speech-01-turbo' // Available models
+  text: string // Text to be synthesized. Character limit < 5000 chars
+  voice_setting?: VoiceSetting // Voice settings (requires voice_id if timber_weights not provided)
+  audio_setting?: AudioSetting // Audio settings
+  pronunciation_dict?: PronunciationDict // Pronunciation dictionary for manual tone/pronunciation control
+  timber_weights?: TimberWeights // Voice mixing weights (required if voice_id not provided)
+  stream?: boolean // Whether to enable streaming
+  language_boost?:
+    | 'Chinese'
+    | 'Chinese,Yue'
+    | 'English'
+    | 'Arabic'
+    | 'Russian'
+    | 'Spanish'
+    | 'French'
+    | 'Portuguese'
+    | 'German'
+    | 'Turkish'
+    | 'Dutch'
+    | 'Ukrainian'
+    | 'Vietnamese'
+    | 'Indonesian'
+    | 'Japanese'
+    | 'Italian'
+    | 'Korean'
+    | 'Thai'
+    | 'Polish'
+    | 'Romanian'
+    | 'Greek'
+    | 'Czech'
+    | 'Finnish'
+    | 'Hindi'
+    | 'auto' // Language enhancement
+  subtitle_enable?: boolean // Whether to enable subtitles (only for non-streaming)
+  output_format?: 'url' | 'hex' // Output format (only for non-streaming)
+}
+
+export type ExtraInfo = {
+  audio_length?: number
+  audio_sample_rate?: number
+  audio_size?: number
+  audio_bitrate?: number
+  word_count?: number
+  audio_format?: string
+  usage_characters?: number
+}
+
+export type BaseResp = {
+  status_code?: number
+  status_msg?: string
 }
 
 export type Text2AudioOutput = {
+  data?: {
+    audio?: string // Hex-encoded audio data
+    audio_url?: string // Audio URL if output_format is 'url'
+    status?: number
+  } | null
   trace_id: string
-  audio_file?: string // Direct audio URL if synchronous
-  task_id?: string // Task ID for async processing
-  status?: 'processing' | 'completed' | 'failed'
-  error?: {
-    code: string
-    message: string
-  }
+  subtitle_file?: string // Subtitle download link
+  extra_info?: ExtraInfo
+  base_resp?: BaseResp
 }
 
 // Pattern: Simple response handler - no schema validation for internal APIs
@@ -46,19 +115,19 @@ async function handleJsonResponse<T>(response: Response): Promise<T> {
 
 // Pattern: API client function with minimal validation
 // AI guidance: Separate authentication config from request data, trust TypeScript types
-export function text2Audio(
+export function createText2AudioTask(
   input: Text2AudioInput,
   context: MinimaxContext,
 ): Observable<Text2AudioOutput> {
-  const url = `${context.baseUrl}/t2a_v2`
+  const url = `${context.baseUrl}/v1/t2a_v2?GroupId=${context.groupId}`
 
   return fromFetch(url, {
     method: 'POST',
-    headers: getMinimaxHeaders(context),
-    body: JSON.stringify({
-      ...input,
-      group_id: context.groupId,
-    }),
+    headers: {
+      ...getMinimaxHeaders(context),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
   }).pipe(
     switchMap((response) => handleJsonResponse<Text2AudioOutput>(response)),
   )
@@ -66,14 +135,15 @@ export function text2Audio(
 
 // Pattern: Polling API for long-running tasks - submit job then poll for completion
 export type AudioTaskStatus = {
-  task_id: string
-  status: 'processing' | 'completed' | 'failed'
-  audio_file?: string
-  progress?: number
-  error?: {
-    code: string
-    message: string
-  }
+  data?: {
+    audio?: string
+    audio_url?: string
+    status?: number
+  } | null
+  trace_id: string
+  subtitle_file?: string
+  extra_info?: ExtraInfo
+  base_resp?: BaseResp
 }
 
 export function pollAudioTask(
@@ -84,7 +154,7 @@ export function pollAudioTask(
   context: MinimaxContext,
 ): Observable<AudioTaskStatus> {
   const { taskId, pollInterval = 2000 } = params
-  const url = `${context.baseUrl}/query/t2a_v2/${taskId}`
+  const url = `${context.baseUrl}/v1/query/t2a_v2/${taskId}?GroupId=${context.groupId}`
 
   return timer(0, pollInterval).pipe(
     switchMap(() =>
@@ -96,32 +166,9 @@ export function pollAudioTask(
       ),
     ),
     takeWhile(
-      (task) => task.status === 'processing',
-      true, // Emit the final completed/failed state
+      (task) => !task.data?.audio && !task.data?.audio_url,
+      true, // Emit the final completed state
     ),
-  )
-}
-
-// Higher-level function that combines submission and polling
-export function text2AudioStream(
-  input: Text2AudioInput,
-  context: MinimaxContext,
-  pollInterval?: number,
-): Observable<Text2AudioOutput | AudioTaskStatus> {
-  return text2Audio(input, context).pipe(
-    switchMap((result) => {
-      // If we get a direct audio file, we're done
-      if (result.audio_file) {
-        return [result]
-      }
-
-      // Otherwise, poll for the task completion
-      if (result.task_id) {
-        return pollAudioTask({ taskId: result.task_id, pollInterval }, context)
-      }
-
-      throw new Error('No audio file or task ID in response')
-    }),
   )
 }
 
@@ -131,29 +178,23 @@ export type AudioStreamChunk = {
   audio: string // Hex-encoded audio chunk
   trace_id?: string
   status?: number
-  extra_info?: {
-    audio_length: number
-    audio_sample_rate: number
-    audio_size: number
-    audio_bitrate: number
-    word_count: number
-    audio_format: string
-    usage_characters: number
-  }
+  extra_info?: ExtraInfo
 }
 
-export async function* text2AudioSSEStream(
+export async function* textToAudioStream(
   input: Text2AudioInput,
   context: MinimaxContext,
 ): AsyncIterableIterator<AudioStreamChunk> {
-  const url = `${context.baseUrl}/t2a_v2`
+  const url = `${context.baseUrl}/v1/t2a_v2?GroupId=${context.groupId}`
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: getMinimaxHeaders(context),
+    headers: {
+      ...getMinimaxHeaders(context),
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       ...input,
-      group_id: context.groupId,
       stream: true, // Enable SSE streaming
     }),
   })
