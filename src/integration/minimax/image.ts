@@ -1,4 +1,4 @@
-import { Observable, switchMap, timer, takeWhile } from 'rxjs'
+import { Observable, switchMap, takeWhile, timer } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 
 import type { MinimaxContext } from './config'
@@ -148,9 +148,9 @@ export function generateImageStream(
       // Otherwise poll for completion
       if (result.task_id) {
         return pollImageTask(
-          { 
-            taskId: result.task_id, 
-            pollInterval: options?.pollInterval 
+          {
+            taskId: result.task_id,
+            pollInterval: options?.pollInterval,
           },
           context,
         ).pipe(

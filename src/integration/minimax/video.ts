@@ -1,4 +1,4 @@
-import { Observable, switchMap, timer, takeWhile } from 'rxjs'
+import { Observable, switchMap, takeWhile, timer } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 
 import type { MinimaxContext } from './config'
@@ -124,9 +124,9 @@ export function generateVideoStream(
 
       // Poll for completion
       return pollVideoTask(
-        { 
-          taskId: result.task_id, 
-          pollInterval: options?.pollInterval 
+        {
+          taskId: result.task_id,
+          pollInterval: options?.pollInterval,
         },
         context,
       ).pipe(

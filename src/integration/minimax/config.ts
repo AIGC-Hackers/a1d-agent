@@ -19,6 +19,6 @@ export const defaultMinimaxContext: MinimaxContext = {
 export function getMinimaxHeaders(context: MinimaxContext) {
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${context.apiKey}`,
+    Authorization: `Bearer ${context.apiKey}`,
   }
 }

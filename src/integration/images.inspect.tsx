@@ -1,5 +1,5 @@
 import { env } from '@/lib/env'
-import { Observable, firstValueFrom, merge, Subscription } from 'rxjs'
+import { firstValueFrom, merge, Observable, Subscription } from 'rxjs'
 
 import type { X302Context } from './302/config'
 import { generateImageStream as generate302MidjourneyStream } from './302/midjourney'
@@ -9,10 +9,15 @@ import { submitWavespeedFluxKontextPro } from './wavespeed/flux-kontext-pro'
 
 type TestStatus = 'running' | 'success' | 'error' | 'skipped'
 
-type TestEvent = 
+type TestEvent =
   | { type: 'start'; name: string }
   | { type: 'progress'; name: string; progress: number; message?: string }
-  | { type: 'log'; name: string; message: string; level: 'info' | 'error' | 'warning' }
+  | {
+      type: 'log'
+      name: string
+      message: string
+      level: 'info' | 'error' | 'warning'
+    }
   | { type: 'complete'; name: string; result: TestResult }
 
 type TestResult = {
@@ -38,46 +43,67 @@ type TestConfig = {
 }
 
 function create302MidjourneyTest(prompt?: string): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
-    let jobId: string | undefined
-    let subscription: Subscription | undefined
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
+      let jobId: string | undefined
+      let subscription: Subscription | undefined
 
-    observer.next({ type: 'start', name: '302.AI Midjourney' })
+      observer.next({ type: 'start', name: '302.AI Midjourney' })
 
-    const ctx: X302Context = {
-      apiKey: env.value.X_302_API_KEY,
-    }
+      const ctx: X302Context = {
+        apiKey: env.value.X_302_API_KEY,
+      }
 
-    subscription = generate302MidjourneyStream(
-      {
-        prompt: prompt || 'a simple red circle on white background',
-        botType: 'MID_JOURNEY',
-        onSubmit: (data) => {
-          jobId = data.jobId
-          observer.next({ 
-            type: 'log', 
-            name: '302.AI Midjourney', 
-            message: `Job submitted: ${data.jobId}`, 
-            level: 'info' 
-          })
+      subscription = generate302MidjourneyStream(
+        {
+          prompt: prompt || 'a simple red circle on white background',
+          botType: 'MID_JOURNEY',
+          onSubmit: (data) => {
+            jobId = data.jobId
+            observer.next({
+              type: 'log',
+              name: '302.AI Midjourney',
+              message: `Job submitted: ${data.jobId}`,
+              level: 'info',
+            })
+          },
+          pollInterval: 2000,
+          timeout: 300000,
         },
-        pollInterval: 2000,
-        timeout: 300000,
-      },
-      ctx,
-    ).subscribe({
-      next: (job) => {
-        const progress = parseInt(job.progress || '0')
-        observer.next({ 
-          type: 'progress', 
-          name: '302.AI Midjourney', 
-          progress,
-          message: `Progress: ${progress}%`
-        })
-        
-        if (job.progress === '100' && job.imageUrl) {
+        ctx,
+      ).subscribe({
+        next: (job) => {
+          const progress = parseInt(job.progress || '0')
+          observer.next({
+            type: 'progress',
+            name: '302.AI Midjourney',
+            progress,
+            message: `Progress: ${progress}%`,
+          })
+
+          if (job.progress === '100' && job.imageUrl) {
+            const latency = Date.now() - startTime
+            observer.next({
+              type: 'complete',
+              name: '302.AI Midjourney',
+              result: {
+                name: '302.AI Midjourney',
+                provider: '302.AI',
+                model: 'Midjourney',
+                status: 'success',
+                latency,
+                jobId: job.id,
+                imageUrl: job.imageUrl,
+              },
+            })
+            observer.complete()
+          }
+        },
+        error: (error) => {
           const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
           observer.next({
             type: 'complete',
             name: '302.AI Midjourney',
@@ -85,126 +111,134 @@ function create302MidjourneyTest(prompt?: string): () => Observable<TestEvent> {
               name: '302.AI Midjourney',
               provider: '302.AI',
               model: 'Midjourney',
-              status: 'success',
+              status: 'error',
               latency,
-              jobId: job.id,
-              imageUrl: job.imageUrl,
-            }
+              jobId,
+              error: errorMessage,
+            },
           })
           observer.complete()
-        }
-      },
-      error: (error) => {
-        const latency = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        observer.next({
-          type: 'complete',
-          name: '302.AI Midjourney',
-          result: {
-            name: '302.AI Midjourney',
-            provider: '302.AI',
-            model: 'Midjourney',
-            status: 'error',
-            latency,
-            jobId,
-            error: errorMessage,
-          }
-        })
-        observer.complete()
-      },
-    })
+        },
+      })
 
-    return () => {
-      subscription?.unsubscribe()
-    }
-  })
+      return () => {
+        subscription?.unsubscribe()
+      }
+    })
 }
 
 function createRecraftTest(prompt?: string): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
 
-    observer.next({ type: 'start', name: '302.AI Recraft' })
-    observer.next({ 
-      type: 'log', 
-      name: '302.AI Recraft', 
-      message: 'Starting Recraft generation...', 
-      level: 'info' 
-    })
+      observer.next({ type: 'start', name: '302.AI Recraft' })
+      observer.next({
+        type: 'log',
+        name: '302.AI Recraft',
+        message: 'Starting Recraft generation...',
+        level: 'info',
+      })
 
-    firstValueFrom(
-      generateRecraft({
-        prompt: prompt || 'a simple red circle on white background',
-        image_size: { width: 512, height: 512 },
-        style: 'digital_illustration/hand_drawn',
-      }),
-    ).then(result => {
-      const latency = Date.now() - startTime
-      observer.next({
-        type: 'complete',
-        name: '302.AI Recraft',
-        result: {
-          name: '302.AI Recraft',
-          provider: '302.AI',
-          model: 'Recraft',
-          status: 'success',
-          latency,
-          imageUrl: result.images?.[0]?.url,
-        }
-      })
-      observer.complete()
-    }).catch(error => {
-      const latency = Date.now() - startTime
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      observer.next({
-        type: 'complete',
-        name: '302.AI Recraft',
-        result: {
-          name: '302.AI Recraft',
-          provider: '302.AI',
-          model: 'Recraft',
-          status: 'error',
-          latency,
-          error: errorMessage,
-        }
-      })
-      observer.complete()
+      firstValueFrom(
+        generateRecraft({
+          prompt: prompt || 'a simple red circle on white background',
+          image_size: { width: 512, height: 512 },
+          style: 'digital_illustration/hand_drawn',
+        }),
+      )
+        .then((result) => {
+          const latency = Date.now() - startTime
+          observer.next({
+            type: 'complete',
+            name: '302.AI Recraft',
+            result: {
+              name: '302.AI Recraft',
+              provider: '302.AI',
+              model: 'Recraft',
+              status: 'success',
+              latency,
+              imageUrl: result.images?.[0]?.url,
+            },
+          })
+          observer.complete()
+        })
+        .catch((error) => {
+          const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          observer.next({
+            type: 'complete',
+            name: '302.AI Recraft',
+            result: {
+              name: '302.AI Recraft',
+              provider: '302.AI',
+              model: 'Recraft',
+              status: 'error',
+              latency,
+              error: errorMessage,
+            },
+          })
+          observer.complete()
+        })
     })
-  })
 }
 
-function createHuiyanMidjourneyTest(prompt?: string): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
-    let jobId: string | undefined
-    let subscription: Subscription | undefined
+function createHuiyanMidjourneyTest(
+  prompt?: string,
+): () => Observable<TestEvent> {
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
+      let jobId: string | undefined
+      let subscription: Subscription | undefined
 
-    observer.next({ type: 'start', name: 'Huiyan Midjourney' })
+      observer.next({ type: 'start', name: 'Huiyan Midjourney' })
 
-    subscription = generateHuiyanMidjourneyStream({
-      prompt: prompt || 'a simple red circle on white background',
-      onSubmit: (data) => {
-        jobId = data.jobId
-        observer.next({ 
-          type: 'log', 
-          name: 'Huiyan Midjourney', 
-          message: `Job submitted: ${data.jobId}`, 
-          level: 'info' 
-        })
-      },
-      pollInterval: 2000,
-      timeout: 300000,
-    }).subscribe({
-      next: (job) => {
-        observer.next({ 
-          type: 'progress', 
-          name: 'Huiyan Midjourney', 
-          progress: job.progress,
-          message: `Progress: ${job.progress}%`
-        })
-        
-        if (job.progress === 100 && job.imageUrl) {
+      subscription = generateHuiyanMidjourneyStream({
+        prompt: prompt || 'a simple red circle on white background',
+        onSubmit: (data) => {
+          jobId = data.jobId
+          observer.next({
+            type: 'log',
+            name: 'Huiyan Midjourney',
+            message: `Job submitted: ${data.jobId}`,
+            level: 'info',
+          })
+        },
+        pollInterval: 2000,
+        timeout: 300000,
+      }).subscribe({
+        next: (job) => {
+          observer.next({
+            type: 'progress',
+            name: 'Huiyan Midjourney',
+            progress: job.progress,
+            message: `Progress: ${job.progress}%`,
+          })
+
+          if (job.progress === 100 && job.imageUrl) {
+            const latency = Date.now() - startTime
+            observer.next({
+              type: 'complete',
+              name: 'Huiyan Midjourney',
+              result: {
+                name: 'Huiyan Midjourney',
+                provider: 'Huiyan',
+                model: 'Midjourney',
+                status: 'success',
+                latency,
+                jobId: job.id,
+                imageUrl: job.imageUrl,
+              },
+            })
+            observer.complete()
+          }
+        },
+        error: (error) => {
           const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
           observer.next({
             type: 'complete',
             name: 'Huiyan Midjourney',
@@ -212,112 +246,97 @@ function createHuiyanMidjourneyTest(prompt?: string): () => Observable<TestEvent
               name: 'Huiyan Midjourney',
               provider: 'Huiyan',
               model: 'Midjourney',
-              status: 'success',
+              status: 'error',
               latency,
-              jobId: job.id,
-              imageUrl: job.imageUrl,
-            }
+              jobId,
+              error: errorMessage,
+            },
           })
           observer.complete()
-        }
-      },
-      error: (error) => {
-        const latency = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        observer.next({
-          type: 'complete',
-          name: 'Huiyan Midjourney',
-          result: {
-            name: 'Huiyan Midjourney',
-            provider: 'Huiyan',
-            model: 'Midjourney',
-            status: 'error',
-            latency,
-            jobId,
-            error: errorMessage,
-          }
-        })
-        observer.complete()
-      },
-    })
+        },
+      })
 
-    return () => {
-      subscription?.unsubscribe()
-    }
-  })
+      return () => {
+        subscription?.unsubscribe()
+      }
+    })
 }
 
 function createWavespeedFluxTest(prompt?: string): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
 
-    observer.next({ type: 'start', name: 'Wavespeed Flux' })
-    observer.next({ 
-      type: 'log', 
-      name: 'Wavespeed Flux', 
-      message: 'Starting Wavespeed Flux generation...', 
-      level: 'info' 
-    })
-
-    submitWavespeedFluxKontextPro({
-      prompt: prompt || 'a simple red circle on white background',
-      image:
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-    }).then(result => {
-      const latency = Date.now() - startTime
-      
-      if (result.code === 200) {
-        observer.next({ 
-          type: 'log', 
-          name: 'Wavespeed Flux', 
-          message: `Job ID: ${result.data.id}`, 
-          level: 'info' 
-        })
-        observer.next({
-          type: 'complete',
-          name: 'Wavespeed Flux',
-          result: {
-            name: 'Wavespeed Flux',
-            provider: 'Wavespeed',
-            model: 'Flux Kontext Pro',
-            status: 'success',
-            latency,
-            jobId: result.data?.id,
-          }
-        })
-      } else {
-        observer.next({
-          type: 'complete',
-          name: 'Wavespeed Flux',
-          result: {
-            name: 'Wavespeed Flux',
-            provider: 'Wavespeed',
-            model: 'Flux Kontext Pro',
-            status: 'error',
-            latency,
-            error: `Failed with code ${result.code}: ${result.message}`,
-          }
-        })
-      }
-      observer.complete()
-    }).catch(error => {
-      const latency = Date.now() - startTime
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      observer.next({ type: 'start', name: 'Wavespeed Flux' })
       observer.next({
-        type: 'complete',
+        type: 'log',
         name: 'Wavespeed Flux',
-        result: {
-          name: 'Wavespeed Flux',
-          provider: 'Wavespeed',
-          model: 'Flux Kontext Pro',
-          status: 'error',
-          latency,
-          error: errorMessage,
-        }
+        message: 'Starting Wavespeed Flux generation...',
+        level: 'info',
       })
-      observer.complete()
+
+      submitWavespeedFluxKontextPro({
+        prompt: prompt || 'a simple red circle on white background',
+        image:
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      })
+        .then((result) => {
+          const latency = Date.now() - startTime
+
+          if (result.code === 200) {
+            observer.next({
+              type: 'log',
+              name: 'Wavespeed Flux',
+              message: `Job ID: ${result.data.id}`,
+              level: 'info',
+            })
+            observer.next({
+              type: 'complete',
+              name: 'Wavespeed Flux',
+              result: {
+                name: 'Wavespeed Flux',
+                provider: 'Wavespeed',
+                model: 'Flux Kontext Pro',
+                status: 'success',
+                latency,
+                jobId: result.data?.id,
+              },
+            })
+          } else {
+            observer.next({
+              type: 'complete',
+              name: 'Wavespeed Flux',
+              result: {
+                name: 'Wavespeed Flux',
+                provider: 'Wavespeed',
+                model: 'Flux Kontext Pro',
+                status: 'error',
+                latency,
+                error: `Failed with code ${result.code}: ${result.message}`,
+              },
+            })
+          }
+          observer.complete()
+        })
+        .catch((error) => {
+          const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          observer.next({
+            type: 'complete',
+            name: 'Wavespeed Flux',
+            result: {
+              name: 'Wavespeed Flux',
+              provider: 'Wavespeed',
+              model: 'Flux Kontext Pro',
+              status: 'error',
+              latency,
+              error: errorMessage,
+            },
+          })
+          observer.complete()
+        })
     })
-  })
 }
 
 // Test configurations
@@ -360,11 +379,13 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
   console.log('🎨 Testing Image Generation Integrations...\n')
 
   // Filter out skipped tests
-  const activeConfigs = configs.filter(config => !config.skip)
-  const skippedConfigs = configs.filter(config => config.skip)
+  const activeConfigs = configs.filter((config) => !config.skip)
+  const skippedConfigs = configs.filter((config) => config.skip)
 
   if (skippedConfigs.length > 0) {
-    console.log(`⏭️  Skipping: ${skippedConfigs.map(c => c.name).join(', ')}\n`)
+    console.log(
+      `⏭️  Skipping: ${skippedConfigs.map((c) => c.name).join(', ')}\n`,
+    )
   }
 
   if (activeConfigs.length === 0) {
@@ -378,10 +399,10 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
   const progressMap = new Map<string, number>()
 
   // Create observables for all active tests
-  const testObservables = activeConfigs.map(config => config.test())
+  const testObservables = activeConfigs.map((config) => config.test())
 
   // Wait for all tests to complete
-  await new Promise<void>(resolve => {
+  await new Promise<void>((resolve) => {
     // Merge all observables to handle events
     merge(...testObservables).subscribe({
       next: (event) => {
@@ -400,7 +421,9 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
             break
           case 'complete':
             results.push(event.result)
-            console.log(`[${event.name}] Completed with status: ${event.result.status}`)
+            console.log(
+              `[${event.name}] Completed with status: ${event.result.status}`,
+            )
             break
         }
       },
@@ -409,7 +432,7 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
       },
       complete: () => {
         // Add skipped tests to results
-        skippedConfigs.forEach(config => {
+        skippedConfigs.forEach((config) => {
           results.push({
             name: config.name,
             provider: config.provider,
@@ -429,16 +452,24 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
               result.status === 'success'
                 ? '✅ Success'
                 : result.status === 'skipped'
-                ? '⏭️  Skipped'
-                : '❌ Error',
+                  ? '⏭️  Skipped'
+                  : '❌ Error',
             'Latency(ms)': result.status === 'skipped' ? '-' : result.latency,
-            'Job ID': result.jobId || (result.status === 'skipped' ? '-' : 'N/A'),
-            'Image URL': result.status === 'skipped' ? '-' : (result.imageUrl ? '✅ Generated' : 'N/A'),
+            'Job ID':
+              result.jobId || (result.status === 'skipped' ? '-' : 'N/A'),
+            'Image URL':
+              result.status === 'skipped'
+                ? '-'
+                : result.imageUrl
+                  ? '✅ Generated'
+                  : 'N/A',
             Error: result.error || '',
           })),
         )
 
-        const successCount = results.filter((r) => r.status === 'success').length
+        const successCount = results.filter(
+          (r) => r.status === 'success',
+        ).length
         const errorCount = results.filter((r) => r.status === 'error').length
         const activeResults = results.filter((r) => r.status !== 'skipped')
         const avgLatency =
@@ -449,9 +480,9 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
         console.log(
           `\n📈 Summary: ${successCount}/${activeResults.length} providers working, ${errorCount} failed, avg latency: ${avgLatency.toFixed(0)}ms`,
         )
-        
+
         resolve()
-      }
+      },
     })
   })
 }

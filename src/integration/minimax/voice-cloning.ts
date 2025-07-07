@@ -9,7 +9,8 @@ import { getMinimaxHeaders } from './config'
 const voiceCloneInputSchema = type({
   audio_file: type('File').narrow(
     (it, ctx) =>
-      it.size <= 1024 * 1024 * 50 || ctx.reject('audio file must be less than 50MB'),
+      it.size <= 1024 * 1024 * 50 ||
+      ctx.reject('audio file must be less than 50MB'),
   ),
   name: 'string',
   'description?': 'string',
@@ -35,12 +36,12 @@ export function cloneVoice(
 ): Observable<VoiceCloneOutput> {
   // Validate user input with business rules (file size constraint)
   const validatedInput = voiceCloneInputSchema.assert(input)
-  
+
   const formData = new FormData()
   formData.append('audio_file', validatedInput.audio_file)
   formData.append('name', validatedInput.name)
   formData.append('group_id', context.groupId)
-  
+
   if (validatedInput.description) {
     formData.append('description', validatedInput.description)
   }
@@ -50,7 +51,7 @@ export function cloneVoice(
   return fromFetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${context.apiKey}`,
+      Authorization: `Bearer ${context.apiKey}`,
       // Note: Don't set Content-Type for FormData, let browser set it with boundary
     },
     body: formData,
@@ -96,7 +97,7 @@ export function listVoices(
   context?: MinimaxContext,
 ): Observable<ListVoicesOutput> {
   const url = new URL(`${context?.baseUrl}/voices`)
-  
+
   if (params?.page) {
     url.searchParams.append('page', params.page.toString())
   }
@@ -104,7 +105,10 @@ export function listVoices(
     url.searchParams.append('page_size', params.page_size.toString())
   }
   if (params?.include_presets !== undefined) {
-    url.searchParams.append('include_presets', params.include_presets.toString())
+    url.searchParams.append(
+      'include_presets',
+      params.include_presets.toString(),
+    )
   }
 
   return fromFetch(url.toString(), {

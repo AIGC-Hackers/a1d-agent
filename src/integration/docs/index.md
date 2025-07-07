@@ -1,4 +1,3 @@
-
 ## Wavespeed
 
 - Introduction: https://wavespeed.ai/docs
@@ -13,20 +12,19 @@
 ## 302
 
 - GPT-Image:
-	- Image generate: https://302ai.apifox.cn/api-288853804
-	- Image edit: https://302ai.apifox.cn/api-288853817
+  - Image generate: https://302ai.apifox.cn/api-288853804
+  - Image edit: https://302ai.apifox.cn/api-288853817
 - Midjourney Image:
-	- Imagine: https://302ai.apifox.cn/api-160578879
-	- Get taks status: https://302ai.apifox.cn/api-160579461
-	- Cancel task: https://302ai.apifox.cn/api-190907177
+  - Imagine: https://302ai.apifox.cn/api-160578879
+  - Get taks status: https://302ai.apifox.cn/api-160579461
+  - Cancel task: https://302ai.apifox.cn/api-190907177
 
 - Midjourney Video
-	- Generate: https://302ai.apifox.cn/api-315639885
-	- Extension: https://302ai.apifox.cn/api-315673619
-	- Get task status: https://302ai.apifox.cn/api-315642081
+  - Generate: https://302ai.apifox.cn/api-315639885
+  - Extension: https://302ai.apifox.cn/api-315673619
+  - Get task status: https://302ai.apifox.cn/api-315642081
 - Recraft Image:
-	- Recraft V3 image: https://302ai.apifox.cn/api-228942858
-
+  - Recraft V3 image: https://302ai.apifox.cn/api-228942858
 
 - Google Imagine v4: https://302ai.apifox.cn/api-298871178
 

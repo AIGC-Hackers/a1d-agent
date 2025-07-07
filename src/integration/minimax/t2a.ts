@@ -1,6 +1,6 @@
-import { Observable, switchMap, timer, takeWhile } from 'rxjs'
-import { fromFetch } from 'rxjs/fetch'
 import { events } from 'fetch-event-stream'
+import { Observable, switchMap, takeWhile, timer } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 
 import type { MinimaxContext } from './config'
 import { getMinimaxHeaders } from './config'
@@ -51,7 +51,7 @@ export function text2Audio(
   context: MinimaxContext,
 ): Observable<Text2AudioOutput> {
   const url = `${context.baseUrl}/t2a_v2`
-  
+
   return fromFetch(url, {
     method: 'POST',
     headers: getMinimaxHeaders(context),
@@ -60,9 +60,7 @@ export function text2Audio(
       group_id: context.groupId,
     }),
   }).pipe(
-    switchMap((response) =>
-      handleJsonResponse<Text2AudioOutput>(response),
-    ),
+    switchMap((response) => handleJsonResponse<Text2AudioOutput>(response)),
   )
 }
 
@@ -94,9 +92,7 @@ export function pollAudioTask(
         method: 'GET',
         headers: getMinimaxHeaders(context),
       }).pipe(
-        switchMap((response) =>
-          handleJsonResponse<AudioTaskStatus>(response),
-        ),
+        switchMap((response) => handleJsonResponse<AudioTaskStatus>(response)),
       ),
     ),
     takeWhile(
@@ -118,15 +114,12 @@ export function text2AudioStream(
       if (result.audio_file) {
         return [result]
       }
-      
+
       // Otherwise, poll for the task completion
       if (result.task_id) {
-        return pollAudioTask(
-          { taskId: result.task_id, pollInterval },
-          context,
-        )
+        return pollAudioTask({ taskId: result.task_id, pollInterval }, context)
       }
-      
+
       throw new Error('No audio file or task ID in response')
     }),
   )
@@ -154,7 +147,7 @@ export async function* text2AudioSSEStream(
   context: MinimaxContext,
 ): AsyncIterableIterator<AudioStreamChunk> {
   const url = `${context.baseUrl}/t2a_v2`
-  
+
   const response = await fetch(url, {
     method: 'POST',
     headers: getMinimaxHeaders(context),
@@ -176,7 +169,7 @@ export async function* text2AudioSSEStream(
     if (event.data && event.data !== '[DONE]') {
       try {
         const data = JSON.parse(event.data)
-        
+
         // Check if this is an audio chunk
         if (data.data?.audio) {
           yield {

@@ -1,17 +1,27 @@
-import { Observable, firstValueFrom, merge } from 'rxjs'
+import { firstValueFrom, merge, Observable } from 'rxjs'
 
 import { defaultMinimaxContext } from './minimax/config'
-import { text2Audio, text2AudioStream, text2AudioSSEStream, decodeAudioChunk } from './minimax/t2a'
-import { listVoices } from './minimax/voice-cloning'
 import { generateImageStream } from './minimax/image'
+import {
+  decodeAudioChunk,
+  text2Audio,
+  text2AudioSSEStream,
+  text2AudioStream,
+} from './minimax/t2a'
 import { generateVideoStream } from './minimax/video'
+import { listVoices } from './minimax/voice-cloning'
 
 type TestStatus = 'running' | 'success' | 'error' | 'skipped'
 
-type TestEvent = 
+type TestEvent =
   | { type: 'start'; name: string }
   | { type: 'progress'; name: string; progress: number; message?: string }
-  | { type: 'log'; name: string; message: string; level: 'info' | 'error' | 'warning' }
+  | {
+      type: 'log'
+      name: string
+      message: string
+      level: 'info' | 'error' | 'warning'
+    }
   | { type: 'complete'; name: string; result: TestResult }
 
 type TestResult = {
@@ -32,425 +42,439 @@ type TestConfig = {
 }
 
 function createT2ATest(): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
-    
-    observer.next({ type: 'start', name: 'Text-to-Audio' })
-    observer.next({ 
-      type: 'log', 
-      name: 'Text-to-Audio', 
-      message: 'Submitting text for audio generation...', 
-      level: 'info' 
-    })
-    
-    firstValueFrom(
-      text2Audio(
-        {
-          text: 'Hello, this is a test of Minimax text to audio API.',
-          format: 'mp3',
-        },
-        defaultMinimaxContext,
-      )
-    ).then(result => {
-      const latency = Date.now() - startTime
-      observer.next({ 
-        type: 'log', 
-        name: 'Text-to-Audio', 
-        message: `Trace ID: ${result.trace_id}`, 
-        level: 'info' 
-      })
-      observer.next({
-        type: 'complete',
-        name: 'Text-to-Audio',
-        result: {
-          name: 'Text-to-Audio',
-          api: 'Text-to-Audio',
-          status: 'success',
-          latency,
-          details: {
-            trace_id: result.trace_id,
-            has_audio: !!result.audio_file,
-            has_task_id: !!result.task_id,
-          },
-        }
-      })
-      observer.complete()
-    }).catch(error => {
-      const latency = Date.now() - startTime
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      observer.next({ 
-        type: 'log', 
-        name: 'Text-to-Audio', 
-        message: `Error: ${errorMessage}`, 
-        level: 'error' 
-      })
-      observer.next({
-        type: 'complete',
-        name: 'Text-to-Audio',
-        result: {
-          name: 'Text-to-Audio',
-          api: 'Text-to-Audio',
-          status: 'error',
-          latency,
-          error: errorMessage,
-        }
-      })
-      observer.complete()
-    })
-  })
-}
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
 
-function createT2ASSEStreamTest(): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
-    let totalBytes = 0
-    let chunkCount = 0
-    
-    observer.next({ type: 'start', name: 'Text-to-Audio SSE Stream' })
-    observer.next({ 
-      type: 'log', 
-      name: 'Text-to-Audio SSE Stream', 
-      message: 'Starting SSE streaming...', 
-      level: 'info' 
-    })
-    
-    // Run the async iterator
-    const runAsync = async () => {
-      try {
-        for await (const chunk of text2AudioSSEStream(
+      observer.next({ type: 'start', name: 'Text-to-Audio' })
+      observer.next({
+        type: 'log',
+        name: 'Text-to-Audio',
+        message: 'Submitting text for audio generation...',
+        level: 'info',
+      })
+
+      firstValueFrom(
+        text2Audio(
           {
-            text: 'Hello, this is a test of Minimax real-time streaming API.',
+            text: 'Hello, this is a test of Minimax text to audio API.',
             format: 'mp3',
           },
           defaultMinimaxContext,
-        )) {
-          chunkCount++
-          const audioBytes = decodeAudioChunk(chunk.audio)
-          totalBytes += audioBytes.length
-          
-          observer.next({ 
-            type: 'log', 
-            name: 'Text-to-Audio SSE Stream', 
-            message: `Chunk #${chunkCount}: ${audioBytes.length} bytes (total: ${totalBytes} bytes)`, 
-            level: 'info' 
+        ),
+      )
+        .then((result) => {
+          const latency = Date.now() - startTime
+          observer.next({
+            type: 'log',
+            name: 'Text-to-Audio',
+            message: `Trace ID: ${result.trace_id}`,
+            level: 'info',
           })
-          
-          // Report progress based on chunk count
-          observer.next({ 
-            type: 'progress', 
-            name: 'Text-to-Audio SSE Stream', 
-            progress: Math.min(chunkCount * 10, 90), // Estimate progress
-            message: `Received ${chunkCount} chunks`
-          })
-          
-          if (chunk.trace_id && chunkCount === 1) {
-            observer.next({ 
-              type: 'log', 
-              name: 'Text-to-Audio SSE Stream', 
-              message: `Trace ID: ${chunk.trace_id}`, 
-              level: 'info' 
-            })
-          }
-        }
-        
-        const latency = Date.now() - startTime
-        observer.next({
-          type: 'complete',
-          name: 'Text-to-Audio SSE Stream',
-          result: {
-            name: 'Text-to-Audio SSE Stream',
-            api: 'Text-to-Audio SSE Stream',
-            status: 'success',
-            latency,
-            details: {
-              total_chunks: chunkCount,
-              total_bytes: totalBytes,
-              avg_chunk_size: Math.round(totalBytes / chunkCount),
+          observer.next({
+            type: 'complete',
+            name: 'Text-to-Audio',
+            result: {
+              name: 'Text-to-Audio',
+              api: 'Text-to-Audio',
+              status: 'success',
+              latency,
+              details: {
+                trace_id: result.trace_id,
+                has_audio: !!result.audio_file,
+                has_task_id: !!result.task_id,
+              },
             },
+          })
+          observer.complete()
+        })
+        .catch((error) => {
+          const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          observer.next({
+            type: 'log',
+            name: 'Text-to-Audio',
+            message: `Error: ${errorMessage}`,
+            level: 'error',
+          })
+          observer.next({
+            type: 'complete',
+            name: 'Text-to-Audio',
+            result: {
+              name: 'Text-to-Audio',
+              api: 'Text-to-Audio',
+              status: 'error',
+              latency,
+              error: errorMessage,
+            },
+          })
+          observer.complete()
+        })
+    })
+}
+
+function createT2ASSEStreamTest(): () => Observable<TestEvent> {
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
+      let totalBytes = 0
+      let chunkCount = 0
+
+      observer.next({ type: 'start', name: 'Text-to-Audio SSE Stream' })
+      observer.next({
+        type: 'log',
+        name: 'Text-to-Audio SSE Stream',
+        message: 'Starting SSE streaming...',
+        level: 'info',
+      })
+
+      // Run the async iterator
+      const runAsync = async () => {
+        try {
+          for await (const chunk of text2AudioSSEStream(
+            {
+              text: 'Hello, this is a test of Minimax real-time streaming API.',
+              format: 'mp3',
+            },
+            defaultMinimaxContext,
+          )) {
+            chunkCount++
+            const audioBytes = decodeAudioChunk(chunk.audio)
+            totalBytes += audioBytes.length
+
+            observer.next({
+              type: 'log',
+              name: 'Text-to-Audio SSE Stream',
+              message: `Chunk #${chunkCount}: ${audioBytes.length} bytes (total: ${totalBytes} bytes)`,
+              level: 'info',
+            })
+
+            // Report progress based on chunk count
+            observer.next({
+              type: 'progress',
+              name: 'Text-to-Audio SSE Stream',
+              progress: Math.min(chunkCount * 10, 90), // Estimate progress
+              message: `Received ${chunkCount} chunks`,
+            })
+
+            if (chunk.trace_id && chunkCount === 1) {
+              observer.next({
+                type: 'log',
+                name: 'Text-to-Audio SSE Stream',
+                message: `Trace ID: ${chunk.trace_id}`,
+                level: 'info',
+              })
+            }
           }
-        })
-        observer.complete()
-      } catch (error) {
-        const latency = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        observer.next({ 
-          type: 'log', 
-          name: 'Text-to-Audio SSE Stream', 
-          message: `Error: ${errorMessage}`, 
-          level: 'error' 
-        })
-        observer.next({
-          type: 'complete',
-          name: 'Text-to-Audio SSE Stream',
-          result: {
+
+          const latency = Date.now() - startTime
+          observer.next({
+            type: 'complete',
             name: 'Text-to-Audio SSE Stream',
-            api: 'Text-to-Audio SSE Stream',
-            status: 'error',
-            latency,
-            error: errorMessage,
-          }
-        })
-        observer.complete()
+            result: {
+              name: 'Text-to-Audio SSE Stream',
+              api: 'Text-to-Audio SSE Stream',
+              status: 'success',
+              latency,
+              details: {
+                total_chunks: chunkCount,
+                total_bytes: totalBytes,
+                avg_chunk_size: Math.round(totalBytes / chunkCount),
+              },
+            },
+          })
+          observer.complete()
+        } catch (error) {
+          const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          observer.next({
+            type: 'log',
+            name: 'Text-to-Audio SSE Stream',
+            message: `Error: ${errorMessage}`,
+            level: 'error',
+          })
+          observer.next({
+            type: 'complete',
+            name: 'Text-to-Audio SSE Stream',
+            result: {
+              name: 'Text-to-Audio SSE Stream',
+              api: 'Text-to-Audio SSE Stream',
+              status: 'error',
+              latency,
+              error: errorMessage,
+            },
+          })
+          observer.complete()
+        }
       }
-    }
-    
-    runAsync()
-  })
+
+      runAsync()
+    })
 }
 
 function createListVoicesTest(): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
-    
-    observer.next({ type: 'start', name: 'List Voices' })
-    observer.next({ 
-      type: 'log', 
-      name: 'List Voices', 
-      message: 'Fetching available voices...', 
-      level: 'info' 
-    })
-    
-    firstValueFrom(
-      listVoices(
-        {
-          page_size: 10,
-          include_presets: true,
-        },
-        defaultMinimaxContext,
-      )
-    ).then(result => {
-      const latency = Date.now() - startTime
-      observer.next({ 
-        type: 'log', 
-        name: 'List Voices', 
-        message: `Found ${result.total} voices`, 
-        level: 'info' 
-      })
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
+
+      observer.next({ type: 'start', name: 'List Voices' })
       observer.next({
-        type: 'complete',
+        type: 'log',
         name: 'List Voices',
-        result: {
-          name: 'List Voices',
-          api: 'List Voices',
-          status: 'success',
-          latency,
-          details: {
-            total_voices: result.total,
-            voices_returned: result.voices.length,
+        message: 'Fetching available voices...',
+        level: 'info',
+      })
+
+      firstValueFrom(
+        listVoices(
+          {
+            page_size: 10,
+            include_presets: true,
           },
-        }
-      })
-      observer.complete()
-    }).catch(error => {
-      const latency = Date.now() - startTime
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      observer.next({ 
-        type: 'log', 
-        name: 'List Voices', 
-        message: `Error: ${errorMessage}`, 
-        level: 'error' 
-      })
-      observer.next({
-        type: 'complete',
-        name: 'List Voices',
-        result: {
-          name: 'List Voices',
-          api: 'List Voices',
-          status: 'error',
-          latency,
-          error: errorMessage,
-        }
-      })
-      observer.complete()
+          defaultMinimaxContext,
+        ),
+      )
+        .then((result) => {
+          const latency = Date.now() - startTime
+          observer.next({
+            type: 'log',
+            name: 'List Voices',
+            message: `Found ${result.total} voices`,
+            level: 'info',
+          })
+          observer.next({
+            type: 'complete',
+            name: 'List Voices',
+            result: {
+              name: 'List Voices',
+              api: 'List Voices',
+              status: 'success',
+              latency,
+              details: {
+                total_voices: result.total,
+                voices_returned: result.voices.length,
+              },
+            },
+          })
+          observer.complete()
+        })
+        .catch((error) => {
+          const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          observer.next({
+            type: 'log',
+            name: 'List Voices',
+            message: `Error: ${errorMessage}`,
+            level: 'error',
+          })
+          observer.next({
+            type: 'complete',
+            name: 'List Voices',
+            result: {
+              name: 'List Voices',
+              api: 'List Voices',
+              status: 'error',
+              latency,
+              error: errorMessage,
+            },
+          })
+          observer.complete()
+        })
     })
-  })
 }
 
 function createImageGenerationTest(): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
-    let finalResult: any
-    
-    observer.next({ type: 'start', name: 'Image Generation' })
-    observer.next({ 
-      type: 'log', 
-      name: 'Image Generation', 
-      message: 'Submitting image generation request...', 
-      level: 'info' 
-    })
-    
-    const subscription = generateImageStream(
-      {
-        prompt: 'A cute cartoon cat sitting on a rainbow',
-        model: 'abab6-4',
-        resolution: '512x512',
-        n: 1,
-      },
-      defaultMinimaxContext,
-      {
-        onProgress: (progress) => {
-          observer.next({ 
-            type: 'progress', 
-            name: 'Image Generation', 
-            progress,
-            message: `Progress: ${progress}%`
-          })
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
+      let finalResult: any
+
+      observer.next({ type: 'start', name: 'Image Generation' })
+      observer.next({
+        type: 'log',
+        name: 'Image Generation',
+        message: 'Submitting image generation request...',
+        level: 'info',
+      })
+
+      const subscription = generateImageStream(
+        {
+          prompt: 'A cute cartoon cat sitting on a rainbow',
+          model: 'abab6-4',
+          resolution: '512x512',
+          n: 1,
         },
-      }
-    ).subscribe({
-      next: (result) => {
-        finalResult = result
-      },
-      error: (error) => {
-        const latency = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        observer.next({ 
-          type: 'log', 
-          name: 'Image Generation', 
-          message: `Error: ${errorMessage}`, 
-          level: 'error' 
-        })
-        observer.next({
-          type: 'complete',
-          name: 'Image Generation',
-          result: {
+        defaultMinimaxContext,
+        {
+          onProgress: (progress) => {
+            observer.next({
+              type: 'progress',
+              name: 'Image Generation',
+              progress,
+              message: `Progress: ${progress}%`,
+            })
+          },
+        },
+      ).subscribe({
+        next: (result) => {
+          finalResult = result
+        },
+        error: (error) => {
+          const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          observer.next({
+            type: 'log',
             name: 'Image Generation',
-            api: 'Image Generation',
-            status: 'error',
-            latency,
-            error: errorMessage,
-          }
-        })
-        observer.complete()
-      },
-      complete: () => {
-        const latency = Date.now() - startTime
-        observer.next({ 
-          type: 'log', 
-          name: 'Image Generation', 
-          message: 'Generation completed', 
-          level: 'info' 
-        })
-        observer.next({
-          type: 'complete',
-          name: 'Image Generation',
-          result: {
+            message: `Error: ${errorMessage}`,
+            level: 'error',
+          })
+          observer.next({
+            type: 'complete',
             name: 'Image Generation',
-            api: 'Image Generation',
-            status: 'success',
-            latency,
-            details: {
-              has_images: !!(finalResult?.images?.length > 0),
-              image_count: finalResult?.images?.length || 0,
-              images: finalResult?.images,
+            result: {
+              name: 'Image Generation',
+              api: 'Image Generation',
+              status: 'error',
+              latency,
+              error: errorMessage,
             },
-          }
-        })
-        observer.complete()
+          })
+          observer.complete()
+        },
+        complete: () => {
+          const latency = Date.now() - startTime
+          observer.next({
+            type: 'log',
+            name: 'Image Generation',
+            message: 'Generation completed',
+            level: 'info',
+          })
+          observer.next({
+            type: 'complete',
+            name: 'Image Generation',
+            result: {
+              name: 'Image Generation',
+              api: 'Image Generation',
+              status: 'success',
+              latency,
+              details: {
+                has_images: !!(finalResult?.images?.length > 0),
+                image_count: finalResult?.images?.length || 0,
+                images: finalResult?.images,
+              },
+            },
+          })
+          observer.complete()
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
       }
     })
-    
-    return () => {
-      subscription.unsubscribe()
-    }
-  })
 }
 
 function createVideoGenerationTest(): () => Observable<TestEvent> {
-  return () => new Observable<TestEvent>(observer => {
-    const startTime = Date.now()
-    let finalResult: any
-    
-    observer.next({ type: 'start', name: 'Video Generation' })
-    observer.next({ 
-      type: 'log', 
-      name: 'Video Generation', 
-      message: 'Submitting video generation request...', 
-      level: 'info' 
-    })
-    
-    const subscription = generateVideoStream(
-      {
-        prompt: 'A cat walking on a rainbow bridge in cartoon style',
-        model: 'video-01',
-      },
-      defaultMinimaxContext,
-      {
-        pollInterval: 5000,
-        onProgress: (progress) => {
-          observer.next({ 
-            type: 'progress', 
-            name: 'Video Generation', 
-            progress,
-            message: `Progress: ${progress}%`
-          })
+  return () =>
+    new Observable<TestEvent>((observer) => {
+      const startTime = Date.now()
+      let finalResult: any
+
+      observer.next({ type: 'start', name: 'Video Generation' })
+      observer.next({
+        type: 'log',
+        name: 'Video Generation',
+        message: 'Submitting video generation request...',
+        level: 'info',
+      })
+
+      const subscription = generateVideoStream(
+        {
+          prompt: 'A cat walking on a rainbow bridge in cartoon style',
+          model: 'video-01',
         },
-      }
-    ).subscribe({
-      next: (result) => {
-        finalResult = result
-        if ('task_id' in result) {
-          observer.next({ 
-            type: 'log', 
-            name: 'Video Generation', 
-            message: `Task ID: ${result.task_id}`, 
-            level: 'info' 
+        defaultMinimaxContext,
+        {
+          pollInterval: 5000,
+          onProgress: (progress) => {
+            observer.next({
+              type: 'progress',
+              name: 'Video Generation',
+              progress,
+              message: `Progress: ${progress}%`,
+            })
+          },
+        },
+      ).subscribe({
+        next: (result) => {
+          finalResult = result
+          if ('task_id' in result) {
+            observer.next({
+              type: 'log',
+              name: 'Video Generation',
+              message: `Task ID: ${result.task_id}`,
+              level: 'info',
+            })
+          }
+        },
+        error: (error) => {
+          const latency = Date.now() - startTime
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          observer.next({
+            type: 'log',
+            name: 'Video Generation',
+            message: `Error: ${errorMessage}`,
+            level: 'error',
           })
-        }
-      },
-      error: (error) => {
-        const latency = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        observer.next({ 
-          type: 'log', 
-          name: 'Video Generation', 
-          message: `Error: ${errorMessage}`, 
-          level: 'error' 
-        })
-        observer.next({
-          type: 'complete',
-          name: 'Video Generation',
-          result: {
+          observer.next({
+            type: 'complete',
             name: 'Video Generation',
-            api: 'Video Generation',
-            status: 'error',
-            latency,
-            error: errorMessage,
-          }
-        })
-        observer.complete()
-      },
-      complete: () => {
-        const latency = Date.now() - startTime
-        observer.next({ 
-          type: 'log', 
-          name: 'Video Generation', 
-          message: 'Generation completed', 
-          level: 'info' 
-        })
-        observer.next({
-          type: 'complete',
-          name: 'Video Generation',
-          result: {
-            name: 'Video Generation',
-            api: 'Video Generation',
-            status: 'success',
-            latency,
-            details: {
-              has_video: !!finalResult?.video_url,
-              video_url: finalResult?.video_url,
-              cover_image_url: finalResult?.cover_image_url,
+            result: {
+              name: 'Video Generation',
+              api: 'Video Generation',
+              status: 'error',
+              latency,
+              error: errorMessage,
             },
-          }
-        })
-        observer.complete()
+          })
+          observer.complete()
+        },
+        complete: () => {
+          const latency = Date.now() - startTime
+          observer.next({
+            type: 'log',
+            name: 'Video Generation',
+            message: 'Generation completed',
+            level: 'info',
+          })
+          observer.next({
+            type: 'complete',
+            name: 'Video Generation',
+            result: {
+              name: 'Video Generation',
+              api: 'Video Generation',
+              status: 'success',
+              latency,
+              details: {
+                has_video: !!finalResult?.video_url,
+                video_url: finalResult?.video_url,
+                cover_image_url: finalResult?.cover_image_url,
+              },
+            },
+          })
+          observer.complete()
+        },
+      })
+
+      return () => {
+        subscription.unsubscribe()
       }
     })
-    
-    return () => {
-      subscription.unsubscribe()
-    }
-  })
 }
 
 // Test configurations
@@ -497,29 +521,31 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
   console.log(`Base URL: ${defaultMinimaxContext.baseUrl}`)
   console.log(`Group ID: ${defaultMinimaxContext.groupId}`)
   console.log(`API Key: ${defaultMinimaxContext.apiKey.substring(0, 10)}...\n`)
-  
+
   // Filter out skipped tests
-  const activeConfigs = configs.filter(config => !config.skip)
-  const skippedConfigs = configs.filter(config => config.skip)
-  
+  const activeConfigs = configs.filter((config) => !config.skip)
+  const skippedConfigs = configs.filter((config) => config.skip)
+
   if (skippedConfigs.length > 0) {
-    console.log(`⏭️  Skipping: ${skippedConfigs.map(c => c.name).join(', ')}\n`)
+    console.log(
+      `⏭️  Skipping: ${skippedConfigs.map((c) => c.name).join(', ')}\n`,
+    )
   }
-  
+
   if (activeConfigs.length === 0) {
     console.log('❌ No tests to run (all tests are skipped)')
     return
   }
-  
+
   console.log('Starting tests...\n')
-  
+
   const results: TestResult[] = []
-  
+
   // Create observables for all active tests
-  const testObservables = activeConfigs.map(config => config.test())
-  
+  const testObservables = activeConfigs.map((config) => config.test())
+
   // Wait for all tests to complete
-  await new Promise<void>(resolve => {
+  await new Promise<void>((resolve) => {
     // Merge all observables to handle events
     merge(...testObservables).subscribe({
       next: (event) => {
@@ -537,7 +563,9 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
             break
           case 'complete':
             results.push(event.result)
-            console.log(`[${event.name}] Completed with status: ${event.result.status}`)
+            console.log(
+              `[${event.name}] Completed with status: ${event.result.status}`,
+            )
             break
         }
       },
@@ -546,7 +574,7 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
       },
       complete: () => {
         // Add skipped tests to results
-        skippedConfigs.forEach(config => {
+        skippedConfigs.forEach((config) => {
           results.push({
             name: config.name,
             api: config.api,
@@ -554,7 +582,7 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
             latency: 0,
           })
         })
-        
+
         // Display results table
         console.log('\n📊 Test Results:')
         console.table(
@@ -564,28 +592,30 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
               result.status === 'success'
                 ? '✅ Success'
                 : result.status === 'skipped'
-                ? '⏭️  Skipped'
-                : '❌ Error',
+                  ? '⏭️  Skipped'
+                  : '❌ Error',
             'Latency(ms)': result.status === 'skipped' ? '-' : result.latency,
             Details: result.details ? JSON.stringify(result.details) : '-',
             Error: result.error || '',
           })),
         )
-        
-        const successCount = results.filter((r) => r.status === 'success').length
+
+        const successCount = results.filter(
+          (r) => r.status === 'success',
+        ).length
         const errorCount = results.filter((r) => r.status === 'error').length
         const activeResults = results.filter((r) => r.status !== 'skipped')
         const avgLatency =
           activeResults
             .filter((r) => r.status === 'success')
             .reduce((sum, r) => sum + r.latency, 0) / successCount || 0
-        
+
         console.log(
           `\n📈 Summary: ${successCount}/${activeResults.length} APIs working, ${errorCount} failed, avg latency: ${avgLatency.toFixed(0)}ms`,
         )
-        
+
         resolve()
-      }
+      },
     })
   })
 }
