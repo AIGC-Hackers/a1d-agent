@@ -3,126 +3,117 @@ import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
 import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
 
-import { logger } from '../factory'
-
 export const fileDescriptorSchema = z.object({
-  path: z.string().describe('The relative path of the file'),
-  description: z.string().optional().describe('The description of the file'),
-})
-
-export const messageAskUserTool = createTool({
-  id: 'message-ask-user',
-  description:
-    'Ask user a question and wait for response. Use for requesting clarification, asking for confirmation, or gathering additional information.',
-  inputSchema: z.object({
-    text: z.string().describe('Question text to present to user'),
-    attachments: z
-      .union([z.string(), z.array(z.string())])
-      .optional()
-      .describe('List of question-related files or reference materials'),
-    suggest_user_takeover: z
-      .enum(['none', 'browser'])
-      .optional()
-      .describe('Suggested operation for user takeover'),
-  }),
-  outputSchema: z.object({
-    response: z.string(),
-    success: z.boolean(),
-  }),
-  execute: async ({ context }) => {
-    throw new Error('Message ask user tool not implemented yet')
-  },
+  path: z.string().describe('File path'),
+  description: z.string().optional().describe('File description'),
 })
 
 export const readFileTool = createTool({
   id: 'read-file',
-  description:
-    'Read file content. Use for checking file contents, analyzing logs, or reading configuration files.',
+  description: 'Read file content from virtual storage.',
   inputSchema: z.object({
-    file: z.string().describe('Absolute path of the file to read'),
-    start_line: z
-      .number()
-      .optional()
-      .describe('Starting line to read from, 0-based'),
-    end_line: z.number().optional().describe('Ending line number (exclusive)'),
+    file: z.string().describe('File path (must start with /)'),
   }),
   outputSchema: z.object({
     content: z.string(),
     success: z.boolean(),
     error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
-    throw new Error('File read tool not implemented yet')
+  execute: async ({ context: input, threadId }) => {
+    if (!threadId) {
+      return {
+        content: '',
+        success: false,
+        error: 'threadId is required',
+      }
+    }
+
+    const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
+
+    const fileResult = await vfs.readFile(input.file)
+
+    if (!fileResult.success) {
+      return {
+        content: '',
+        success: false,
+        error: fileResult.error.message,
+      }
+    }
+
+    return {
+      content: fileResult.data.content,
+      success: true,
+    }
   },
 })
 
 export const writeFileTool = createTool({
   id: 'write-file',
-  description:
-    'Overwrite or append content to a file. Use for creating new files, appending content, or modifying existing files.',
+  description: 'Create or update file content in virtual storage.',
   inputSchema: z.object({
-    file: z.string().describe('Absolute path of the file to write to'),
-    content: z.string().describe('Text content to write'),
-    content_type: z
-      .string()
-      .optional()
-      .describe('MIME type of the file created'),
-    description: z
-      .string()
-      .optional()
-      .describe('Description of the file created'),
-    append: z.boolean().optional().describe('Whether to use append mode'),
+    file: z.string().describe('File path (must start with /)'),
+    content: z.string().describe('File content'),
+    content_type: z.string().optional().describe('MIME type'),
+    description: z.string().optional().describe('File description'),
+    append: z.boolean().optional().describe('Append to existing content'),
     leading_newline: z
       .boolean()
       .optional()
-      .describe('Whether to add a leading newline'),
+      .describe('Add newline before content'),
     trailing_newline: z
       .boolean()
       .optional()
-      .describe('Whether to add a trailing newline'),
+      .describe('Add newline after content'),
   }),
   outputSchema: z.object({
     success: z.boolean(),
     error: z.string().optional(),
   }),
-  execute: async ({ context: input, threadId, resourceId, runtimeContext }) => {
+  execute: async ({ context: input, threadId }) => {
     if (!threadId) {
       return {
         success: false,
         error: 'threadId is required',
       }
     }
+
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
+
+    let finalContent = input.content
+
     if (input.append) {
-      const file = await vfs.readFile(input.file)
-      if (!file) {
+      const existingFileResult = await vfs.readFile(input.file)
+
+      if (!existingFileResult.success) {
         return {
           success: false,
-          error: 'File not found',
+          error: `Failed to read existing file for append: ${existingFileResult.error.message}`,
         }
       }
 
       const leadingNewline = input.leading_newline ? '\n' : ''
       const trailingNewline = input.trailing_newline ? '\n' : ''
-      const appendedContent =
-        file.content + leadingNewline + input.content + trailingNewline
+      finalContent =
+        existingFileResult.data.content +
+        leadingNewline +
+        input.content +
+        trailingNewline
+    }
 
-      await vfs.writeFile({
-        path: input.file,
-        content: appendedContent,
-        description: input.description,
-      })
+    const writeResult = await vfs.writeFile({
+      path: input.file,
+      content: finalContent,
+      description: input.description,
+      contentType: input.content_type,
+    })
 
+    if (!writeResult.success) {
       return {
-        success: true,
+        success: false,
+        error: `Failed to write file: ${writeResult.error.message}`,
       }
     }
 
-    await vfs.writeFile({
-      path: input.file,
-      content: input.content,
-      description: input.description,
-    })
     return {
       success: true,
     }
@@ -131,28 +122,25 @@ export const writeFileTool = createTool({
 
 export const editFileTool = createTool({
   id: 'edit-file',
-  description: `Replaces text within a file. Requires exact literal text matching with sufficient context (3+ lines before/after) to ensure unique identification. Use ${readFileTool.id} first to examine current content.
-
-Parameters:
-- file_path: Absolute path starting with '/'
-- old_string: Exact literal text including all whitespace/indentation
-- new_string: Exact replacement text
-- expected_replacements: Number of occurrences to replace (default: 1)
-
-The tool will fail if old_string doesn't match exactly or isn't unique (for single replacement).`,
+  description:
+    'Replace exact text in file. Read file first to see current content. Use sufficient context for unique matching.',
 
   inputSchema: z.object({
-    file_path: z.string(),
-    old_string: z.string(),
-    new_string: z.string(),
-    expected_replacements: z.number().optional().default(1),
+    file_path: z.string().describe('File path (must start with /)'),
+    old_string: z.string().describe('Exact text to replace'),
+    new_string: z.string().describe('Replacement text'),
+    expected_replacements: z
+      .number()
+      .optional()
+      .default(1)
+      .describe('Number of replacements (default: 1)'),
   }),
   outputSchema: z.object({
     success: z.boolean(),
     replacements: z.number(),
     error: z.string().optional(),
   }),
-  execute: async ({ context: input, threadId, resourceId, runtimeContext }) => {
+  execute: async ({ context: input, threadId }) => {
     if (!threadId) {
       return {
         success: false,
@@ -164,37 +152,114 @@ The tool will fail if old_string doesn't match exactly or isn't unique (for sing
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
     const expectedReplacements = input.expected_replacements ?? 1
 
-    try {
-      throw new Error('Not implemented')
-    } catch (error) {
-      logger.error('Edit file tool error:', { error })
+    // Read the file first
+    const fileResult = await vfs.readFile(input.file_path)
+
+    if (!fileResult.success) {
       return {
         success: false,
         replacements: 0,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: `Failed to read file: ${fileResult.error.message}`,
       }
+    }
+
+    const file = fileResult.data
+
+    // Count occurrences of old_string
+    const occurrences = (
+      file.content.match(new RegExp(escapeRegExp(input.old_string), 'g')) || []
+    ).length
+
+    if (occurrences === 0) {
+      return {
+        success: false,
+        replacements: 0,
+        error: 'Text to replace not found in file',
+      }
+    }
+
+    if (expectedReplacements === 1 && occurrences > 1) {
+      return {
+        success: false,
+        replacements: 0,
+        error: `Found ${occurrences} occurrences but expected exactly 1. Text is not unique enough.`,
+      }
+    }
+
+    if (expectedReplacements > occurrences) {
+      return {
+        success: false,
+        replacements: 0,
+        error: `Expected ${expectedReplacements} replacements but only found ${occurrences} occurrences`,
+      }
+    }
+
+    // Perform the replacement
+    let newContent = file.content
+    let actualReplacements = 0
+
+    if (expectedReplacements === occurrences) {
+      // Replace all occurrences
+      newContent = file.content.replaceAll(input.old_string, input.new_string)
+      actualReplacements = occurrences
+    } else {
+      // Replace only the expected number of occurrences
+      for (let i = 0; i < expectedReplacements; i++) {
+        const index = newContent.indexOf(input.old_string)
+        if (index !== -1) {
+          newContent =
+            newContent.substring(0, index) +
+            input.new_string +
+            newContent.substring(index + input.old_string.length)
+          actualReplacements++
+        }
+      }
+    }
+
+    // Write the updated file back
+    const writeResult = await vfs.writeFile({
+      path: input.file_path,
+      content: newContent,
+      contentType: file.contentType,
+      metadata: file.metadata,
+    })
+
+    if (!writeResult.success) {
+      return {
+        success: false,
+        replacements: 0,
+        error: `Failed to write updated file: ${writeResult.error.message}`,
+      }
+    }
+
+    return {
+      success: true,
+      replacements: actualReplacements,
     }
   },
 })
 
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export const deleteFileTool = createTool({
   id: 'delete-file',
-  description:
-    'Delete one or more files or directories. Use for removing files, cleaning up temporary files, or deleting directories.',
+  description: 'Delete files from virtual storage.',
   inputSchema: z.object({
     files: z
       .union([z.string(), z.array(z.string())])
-      .describe('Absolute path(s) of file(s) or directory(s) to delete'),
+      .describe('File path(s) to delete'),
     recursive: z
       .boolean()
       .optional()
-      .describe('Whether to delete directories recursively'),
+      .describe('Delete files with matching path prefix'),
   }),
   outputSchema: z.object({
     success: z.boolean(),
     error: z.string().optional(),
   }),
-  execute: async ({ context: input, threadId, resourceId, runtimeContext }) => {
+  execute: async ({ context: input, threadId }) => {
     if (!threadId) {
       return {
         success: false,
@@ -205,21 +270,21 @@ export const deleteFileTool = createTool({
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
     const filePaths = Array.isArray(input.files) ? input.files : [input.files]
 
-    try {
-      for (const filePath of filePaths) {
-        await vfs.deleteFile(filePath, {
-          recursive: input.recursive,
-        })
-      }
+    for (const filePath of filePaths) {
+      const deleteResult = await vfs.deleteFile(filePath, {
+        recursive: input.recursive,
+      })
 
-      return {
-        success: true,
+      if (!deleteResult.success) {
+        return {
+          success: false,
+          error: `Failed to delete file ${filePath}: ${deleteResult.error.message}`,
+        }
       }
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
+    }
+
+    return {
+      success: true,
     }
   },
 })

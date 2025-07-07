@@ -11,6 +11,7 @@
     "env:example": "dotenvx ext genexample",
     "format": "prettier --write src/",
     "typecheck": "tsc --noEmit",
+    "x": "dotenvx run -- bun",
     "test": "dotenvx run -- vitest run"
   },
   "keywords": [],

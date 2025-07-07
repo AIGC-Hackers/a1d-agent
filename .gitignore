@@ -6,3 +6,5 @@ temp
 *.db
 *.db-*
 .env.keys
+external/
+CLAUDE.local.md

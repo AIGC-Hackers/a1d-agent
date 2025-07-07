@@ -48,7 +48,7 @@ type GenerateImageOutput = {
 }
 
 export function generateImage(input: GenerateImageInput) {
-  fromFetch(`${baseUrl}/302/submit/recraft-v3`, {
+  return fromFetch(`${baseUrl}/302/submit/recraft-v3`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

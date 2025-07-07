@@ -20,4 +20,3 @@ export const huiyan = (model: LanguageModel) =>
     baseURL: `${baseUrl}/v1`,
     apiKey: env.value.HUIYAN_API_KEY,
   })(model)
-

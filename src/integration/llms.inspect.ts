@@ -58,9 +58,14 @@ async function runTests(): Promise<void> {
       modelName: 'grok-3-mini-fast-latest',
     },
     {
-      name: 'Huiyan',
+      name: 'Huiyan/GPT-4o-mini',
       model: huiyan(LanguageModel.GPT_4O_MINI),
       modelName: 'gpt-4o-mini',
+    },
+    {
+      name: 'Huiyan/claude-sonnet',
+      model: huiyan(LanguageModel.CLAUDE_SONNET_4),
+      modelName: 'claude-sonnet',
     },
     {
       name: '302.AI',
