@@ -8,13 +8,18 @@
       "Bash(grep:*)",
       "Bash(pnpx:*)",
       "Bash(pnpm format:*)",
-      "Bash(pnpm typecheck:*)"
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": [
       "Bash(npm:*)",
       "Bash(npmx:*)"
     ]
   },
+  "enabledMcpjsonServers": [
+    "context7",
+    "mastra"
+  ],
   "hooks": {
     "PreToolUse": [
       {
@@ -33,14 +38,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/user/scripts/format-code.sh"
+            "command": "pnpm format"
           }
         ]
       }
     ]
-  },
-  "enabledMcpjsonServers": [
-    "context7",
-    "mastra"
-  ]
+  }
 }
