@@ -20,7 +20,6 @@ const toolcallStreamTool = createTool({
       model: openrouter('x-ai/grok-3-mini'),
     })
 
-
     const id = ulid()
 
     const data = formatDataStreamPart('tool_call_streaming_start', {

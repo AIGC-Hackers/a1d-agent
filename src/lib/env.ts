@@ -21,7 +21,6 @@ export const runtimeEnvSchema = type({
   HUIYAN_API_KEY: 'string',
   HUIYAN_MJ_API_KEY: 'string',
 
-
   // https://wavespeed.ai/
   WAVESPEED_API_KEY: 'string',
 

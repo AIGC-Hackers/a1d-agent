@@ -1,19 +1,19 @@
-import { Agent } from '@mastra/core'
 import { openrouter } from '@/integration/openrouter'
+import { Agent } from '@mastra/core'
 
 import { todoReadTool } from '../tools/todo-read-tool'
 import { todoWriteTool } from '../tools/todo-write-tool'
 
 /**
  * Todo Agent - Manages task lists and project planning
- * 
+ *
  * This agent helps users create, manage, and track todo lists for their projects.
  * It provides structured task management capabilities including:
  * - Reading current todo lists
  * - Creating and updating todo items
  * - Tracking task progress and status
  * - Organizing tasks by priority
- * 
+ *
  * The agent is designed to be proactive in task management, helping users
  * break down complex projects into manageable tasks and track their progress.
  */
@@ -61,9 +61,9 @@ export const todoAgent = new Agent({
 - **low**: Tasks that can be done when time allows
 
 Always maintain a clear, organized approach to task management and help users stay focused and productive.`,
-  
+
   model: openrouter('openai/gpt-4o-mini'),
-  
+
   tools: {
     todoRead: todoReadTool,
     todoWrite: todoWriteTool,
