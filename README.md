@@ -20,7 +20,7 @@ pnpm dev
 - [ ] upgrade to ai-v5
 - [ ] Eval ThinkSound
 - [ ] 4o-mini-deep-research 在 302 中无法使用
-
+- [ ] [PartyKit](https://github.com/cloudflare/partykit) state share
 
 ## MCP
 - https://mcpservers.org/remote-mcp-servers

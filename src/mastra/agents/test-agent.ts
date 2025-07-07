@@ -1,9 +1,8 @@
 import { openrouter } from '@/integration/openrouter'
 import { xai } from '@/integration/xai'
-import { streamContext } from '@/lib/context'
 import { Agent, createTool } from '@mastra/core'
 import { Memory } from '@mastra/memory'
-import { formatAssistantStreamPart, formatDataStreamPart, streamText } from 'ai'
+import { formatDataStreamPart, streamText } from 'ai'
 import { ulid } from 'ulid'
 import { z } from 'zod'
 
@@ -21,7 +20,6 @@ const toolcallStreamTool = createTool({
       model: openrouter('x-ai/grok-3-mini'),
     })
 
-    const writer = streamContext.use()
 
     const id = ulid()
 
