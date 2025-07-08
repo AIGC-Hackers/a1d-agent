@@ -9,7 +9,8 @@
       "Bash(pnpx:*)",
       "Bash(pnpm format:*)",
       "Bash(pnpm typecheck:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [
       "Bash(npm:*)",
