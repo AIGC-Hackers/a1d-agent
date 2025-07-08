@@ -4,6 +4,7 @@
   "description": "",
   "main": "src/mastra/index.ts",
   "scripts": {
+    "preinstall": "lefthook install",
     "dev": "dotenvx run -- mastra dev",
     "build": "mastra build",
     "start": "dotenvx run  -- mastra start",
@@ -57,6 +58,7 @@
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^24.0.8",
     "drizzle-kit": "^0.31.4",
+    "lefthook": "^1.11.16",
     "mastra": "^0.10.8",
     "prettier": "^3.6.2",
     "typescript": "^5.8.3",

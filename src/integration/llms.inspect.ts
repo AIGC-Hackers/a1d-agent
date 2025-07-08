@@ -1,6 +1,9 @@
+import { env } from '@/lib/env'
 import { generateText } from 'ai'
+import OpenAI from 'openai'
 
 import { x302 } from './302/llm'
+import { baseUrl } from './huiyan/config'
 import { huiyan, LanguageModel } from './huiyan/llm'
 import { xai } from './xai'
 
@@ -48,6 +51,34 @@ async function testProvider(
   }
 }
 
+async function testStreamingChat(): Promise<void> {
+  console.log('\n🌊 Testing Streaming Chat with Huiyan...\n')
+
+  const api = new OpenAI({
+    baseURL: `${baseUrl}/v1`,
+    apiKey: env.value.HUIYAN_B_API_KEY,
+  })
+
+  try {
+    const response = await api.chat.completions.create({
+      model: 'claude-sonnet-4-20250514',
+      stream: true,
+      messages: [{ role: 'user', content: 'Hello, world!' }],
+    })
+
+    console.log('Streaming response:')
+    for await (const chunk of response) {
+      process.stdout.write(chunk.choices[0]?.delta.content || '')
+    }
+    console.log('\n✅ Streaming test completed successfully')
+  } catch (error) {
+    console.log(
+      '\n❌ Streaming test failed:',
+      error instanceof Error ? error.message : String(error),
+    )
+  }
+}
+
 async function runTests(): Promise<void> {
   console.log('🧪 Testing LLM Integrations...\n')
 
@@ -68,7 +99,7 @@ async function runTests(): Promise<void> {
       modelName: 'claude-sonnet',
     },
     {
-      name: '302.AI',
+      name: '302.AI/gpt-4.1-mini',
       model: x302('gpt-4.1-mini'),
       modelName: 'gpt-4.1-mini',
     },
@@ -104,4 +135,9 @@ async function runTests(): Promise<void> {
   )
 }
 
-runTests().catch(console.error)
+async function main(): Promise<void> {
+  await runTests()
+  await testStreamingChat()
+}
+
+main().catch(console.error)
