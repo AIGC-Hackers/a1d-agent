@@ -1,7 +1,9 @@
 import { env } from '@/lib/env'
 import { createOpenAI } from '@ai-sdk/openai'
+import OpenAI from 'openai'
 
 import { baseUrl } from './config'
+import { inspect } from 'node:util'
 
 export const enum LanguageModel {
   CLAUDE_SONNET_4 = 'claude-sonnet-4-20250514',
@@ -18,5 +20,5 @@ export const enum LanguageModel {
 export const huiyan = (model: LanguageModel) =>
   createOpenAI({
     baseURL: `${baseUrl}/v1`,
-    apiKey: env.value.HUIYAN_API_KEY,
+    apiKey: env.value.HUIYAN_A_API_KEY,
   })(model)

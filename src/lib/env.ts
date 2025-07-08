@@ -18,8 +18,12 @@ export const runtimeEnvSchema = type({
 
   X_302_API_KEY: 'string',
 
-  HUIYAN_API_KEY: 'string',
-  HUIYAN_MJ_API_KEY: 'string',
+  // claude + openai
+  HUIYAN_A_API_KEY: 'string',
+  // claude
+  HUIYAN_B_API_KEY: 'string',
+  // midjourney
+  HUIYAN_C_API_KEY: 'string',
 
   // https://wavespeed.ai/
   WAVESPEED_API_KEY: 'string',

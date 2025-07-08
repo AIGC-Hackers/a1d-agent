@@ -43,7 +43,9 @@ type GroundingSupportSegment = {
   endIndex: number
   text?: string
 }
-
+/**
+ * @deprecated google web fetch is unreliable, TODO add jina fetch tool
+ */
 export const googleWebFetchTool = createTool({
   id: 'google-web-fetch',
   description:
