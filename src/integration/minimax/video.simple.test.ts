@@ -1,6 +1,6 @@
-import { env } from '@/lib/env'
-import { existsSync, mkdirSync, writeFileSync, appendFileSync } from 'fs'
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { env } from '@/lib/env'
 import { firstValueFrom } from 'rxjs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -29,7 +29,9 @@ function logTestEvent(event: {
   data?: any
   error?: any
 }) {
-  const logEntry = JSON.stringify({ ...event, error: event.error?.message || event.error }) + '\n'
+  const logEntry =
+    JSON.stringify({ ...event, error: event.error?.message || event.error }) +
+    '\n'
   appendFileSync(LOG_FILE, logEntry)
 }
 
@@ -54,9 +56,10 @@ describe('Minimax Video Generation API - Simple Tests', () => {
 
   beforeAll(() => {
     initializeTestLog()
-    
+
     if (!env.value.MINIMAX_API_KEY || !env.value.MINIMAX_GROUP_ID) {
-      const error = 'MINIMAX_API_KEY and MINIMAX_GROUP_ID are required for video tests'
+      const error =
+        'MINIMAX_API_KEY and MINIMAX_GROUP_ID are required for video tests'
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName: 'setup',
@@ -127,7 +130,7 @@ describe('Minimax Video Generation API - Simple Tests', () => {
 
     it('should check task status once', async () => {
       const testName = 'check_status_once'
-      
+
       try {
         // First create a task
         const createResult = await firstValueFrom(
@@ -175,7 +178,13 @@ describe('Minimax Video Generation API - Simple Tests', () => {
 
         expect(statusResult).toBeDefined()
         expect(statusResult.task_id).toBe(createResult.task_id)
-        expect(['Queueing', 'Preparing', 'Processing', 'Success', 'Fail']).toContain(statusResult.status)
+        expect([
+          'Queueing',
+          'Preparing',
+          'Processing',
+          'Success',
+          'Fail',
+        ]).toContain(statusResult.status)
 
         logTestEvent({
           timestamp: new Date().toISOString(),
@@ -227,7 +236,7 @@ describe('Minimax Video Generation API - Simple Tests', () => {
 
         expect(result).toBeDefined()
         expect(result.file).toBeDefined()
-        
+
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
@@ -244,7 +253,7 @@ describe('Minimax Video Generation API - Simple Tests', () => {
         })
 
         expect(error.message).toContain('File retrieval failed')
-        
+
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
@@ -304,7 +313,10 @@ describe('Minimax Video Generation API - Simple Tests', () => {
             timestamp: new Date().toISOString(),
             testName,
             phase: 'success',
-            data: { note: 'API rejected empty prompt', error: result.base_resp.status_msg },
+            data: {
+              note: 'API rejected empty prompt',
+              error: result.base_resp.status_msg,
+            },
           })
         }
 

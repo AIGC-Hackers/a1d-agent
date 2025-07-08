@@ -1,12 +1,12 @@
-import { env } from '@/lib/env'
-import { existsSync, mkdirSync, writeFileSync, appendFileSync } from 'fs'
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { env } from '@/lib/env'
 import { firstValueFrom } from 'rxjs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import type { MinimaxContext } from './config'
-import { defaultMinimaxContext } from './config'
 import type { VideoTaskStatus } from './video'
+import { defaultMinimaxContext } from './config'
 import {
   createVideoGenerationTask,
   generateVideoStream,
@@ -31,7 +31,9 @@ function logTestEvent(event: {
   data?: any
   error?: any
 }) {
-  const logEntry = JSON.stringify({ ...event, error: event.error?.message || event.error }) + '\n'
+  const logEntry =
+    JSON.stringify({ ...event, error: event.error?.message || event.error }) +
+    '\n'
   appendFileSync(LOG_FILE, logEntry)
 }
 
@@ -51,7 +53,11 @@ function initializeTestLog() {
   writeFileSync(LOG_FILE, JSON.stringify(initEvent) + '\n')
 }
 
-async function saveVideoResult(taskId: string, fileId: string, downloadUrl: string) {
+async function saveVideoResult(
+  taskId: string,
+  fileId: string,
+  downloadUrl: string,
+) {
   const videoResultFile = join(TEMP_DIR, `video-result-${taskId}.json`)
   const result = {
     taskId,
@@ -60,7 +66,7 @@ async function saveVideoResult(taskId: string, fileId: string, downloadUrl: stri
     timestamp: new Date().toISOString(),
   }
   writeFileSync(videoResultFile, JSON.stringify(result, null, 2))
-  
+
   // Also try to download the video file
   try {
     const response = await fetch(downloadUrl)
@@ -90,9 +96,10 @@ describe('Minimax Video Generation API - MiniMax-Hailuo-02 Only', () => {
 
   beforeAll(() => {
     initializeTestLog()
-    
+
     if (!env.value.MINIMAX_API_KEY || !env.value.MINIMAX_GROUP_ID) {
-      const error = 'MINIMAX_API_KEY and MINIMAX_GROUP_ID are required for video tests'
+      const error =
+        'MINIMAX_API_KEY and MINIMAX_GROUP_ID are required for video tests'
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName: 'setup',
@@ -174,7 +181,8 @@ describe('Minimax Video Generation API - MiniMax-Hailuo-02 Only', () => {
       try {
         const input = {
           model: 'MiniMax-Hailuo-02' as const,
-          prompt: 'A person walking in a beautiful garden with flowers blooming.',
+          prompt:
+            'A person walking in a beautiful garden with flowers blooming.',
           duration: 6 as const,
           resolution: '1080P' as const,
         }
@@ -229,11 +237,13 @@ describe('Minimax Video Generation API - MiniMax-Hailuo-02 Only', () => {
 
       try {
         // Using a simple base64 encoded 1x1 pixel image for testing
-        const testImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
-        
+        const testImage =
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+
         const input = {
           model: 'MiniMax-Hailuo-02' as const,
-          prompt: 'The image slowly comes to life with gentle movement and magical sparkles.',
+          prompt:
+            'The image slowly comes to life with gentle movement and magical sparkles.',
           duration: 6 as const,
           resolution: '768P' as const,
           first_frame_image: testImage,
@@ -324,7 +334,10 @@ describe('Minimax Video Generation API - MiniMax-Hailuo-02 Only', () => {
           timestamp: new Date().toISOString(),
           testName,
           phase: 'api_call',
-          data: { step: 'check_initial_status', taskId: creationResult.task_id },
+          data: {
+            step: 'check_initial_status',
+            taskId: creationResult.task_id,
+          },
         })
 
         const initialStatus = await firstValueFrom(
@@ -343,7 +356,13 @@ describe('Minimax Video Generation API - MiniMax-Hailuo-02 Only', () => {
 
         expect(initialStatus).toBeDefined()
         expect(initialStatus.task_id).toBe(creationResult.task_id)
-        expect(['Queueing', 'Preparing', 'Processing', 'Success', 'Fail']).toContain(initialStatus.status)
+        expect([
+          'Queueing',
+          'Preparing',
+          'Processing',
+          'Success',
+          'Fail',
+        ]).toContain(initialStatus.status)
 
         // For testing purposes, we'll simulate success workflow if possible
         // In real usage, you would continue polling until Success
@@ -381,7 +400,7 @@ describe('Minimax Video Generation API - MiniMax-Hailuo-02 Only', () => {
 
       try {
         const longPrompt = 'A'.repeat(2001) // Exceeds 2000 char limit
-        
+
         const input = {
           model: 'MiniMax-Hailuo-02' as const,
           prompt: longPrompt,
@@ -420,7 +439,10 @@ describe('Minimax Video Generation API - MiniMax-Hailuo-02 Only', () => {
             timestamp: new Date().toISOString(),
             testName,
             phase: 'success',
-            data: { message: 'API accepted long prompt', taskId: result.task_id },
+            data: {
+              message: 'API accepted long prompt',
+              taskId: result.task_id,
+            },
           })
         }
 

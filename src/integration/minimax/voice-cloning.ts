@@ -69,7 +69,11 @@ export type VoiceCloneInput = {
   voice_id: string
   need_noise_reduction?: boolean
   text?: string
-  model?: 'speech-02-hd' | 'speech-02-turbo' | 'speech-01-hd' | 'speech-01-turbo'
+  model?:
+    | 'speech-02-hd'
+    | 'speech-02-turbo'
+    | 'speech-01-hd'
+    | 'speech-01-turbo'
   accuracy?: number
   need_volume_normalization?: boolean
 }
@@ -138,7 +142,9 @@ export function listVoices(
 ): Observable<ListVoicesOutput> {
   // Note: This API endpoint is not documented in the official MiniMax voice cloning docs
   // The actual endpoint may be different or may not exist
-  const url = new URL(`${context?.baseUrl}/v1/voices?GroupId=${context?.groupId}`)
+  const url = new URL(
+    `${context?.baseUrl}/v1/voices?GroupId=${context?.groupId}`,
+  )
 
   if (params?.page) {
     url.searchParams.append('page', params.page.toString())
