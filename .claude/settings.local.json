@@ -7,10 +7,9 @@
       "Bash(bun run:*)",
       "Bash(grep:*)",
       "Bash(pnpx:*)",
-      "Bash(pnpm format:*)",
-      "Bash(pnpm typecheck:*)",
-      "Bash(pnpm test:*)",
-      "Bash(chmod:*)"
+      "Bash(pnpm:*)",
+      "Bash(chmod:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [
       "Bash(npm:*)",
