@@ -14,3 +14,6 @@ if (env instanceof type.errors) {
 	console.log('='.repeat(100))
 	console.log('✅ env check passed')
 }
+import {
+	parse
+} from '@dotenvx/dotenvx'
