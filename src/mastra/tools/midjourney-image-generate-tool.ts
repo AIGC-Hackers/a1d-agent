@@ -15,7 +15,7 @@ export const midjourneyImageGenerateTool = createTool({
     prompt: z.string(),
   }),
   outputSchema: z.object({
-    status: z.string(),
+    success: z.boolean(),
     result: z.array(
       z.object({
         id: z.string(),
@@ -64,7 +64,7 @@ export const midjourneyImageGenerateTool = createTool({
         })
 
         return {
-          status: 'success',
+          success: true,
           result: uploadRecords.map((it) => {
             return {
               id: it.id,
@@ -79,7 +79,7 @@ export const midjourneyImageGenerateTool = createTool({
       }
 
       return {
-        status: 'error',
+        success: false,
         result: [],
         error: 'Unknown error',
       }
@@ -89,7 +89,7 @@ export const midjourneyImageGenerateTool = createTool({
       )
 
       return {
-        status: 'error',
+        success: false,
         result: [],
         error: error instanceof Error ? error.message : String(error),
       }

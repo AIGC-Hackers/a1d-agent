@@ -20,7 +20,7 @@ export const midjourneyImageGenerateMockTool = createTool({
     prompt: z.string(),
   }),
   outputSchema: z.object({
-    status: z.string(),
+    success: z.boolean(),
     result: z.array(
       z.object({
         id: z.string(),
@@ -64,7 +64,7 @@ export const midjourneyImageGenerateMockTool = createTool({
     }))
 
     return {
-      status: 'success',
+      success: true,
       result: mockResults,
     }
   },
