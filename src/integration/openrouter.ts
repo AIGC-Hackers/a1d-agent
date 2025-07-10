@@ -14,6 +14,7 @@ export type OpenRouterModel =
   | 'openai/gpt-4.1'
   | 'openai/gpt-4o-search-preview'
   | 'openai/gpt-4o-mini-search-preview'
+  | 'anthropic/claude-sonnet-4'
   | 'perplexity/sonar-deep-research'
   | 'perplexity/sonar-pro'
 
