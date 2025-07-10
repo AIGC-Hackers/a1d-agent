@@ -69,6 +69,13 @@ type VariableRepresentation = {
   serialize: (opts?: { indent?: number }) => string
 }
 
+/**
+ * Creates an XML-style tag with content
+ */
+export function tag(name: string, content: string): string {
+  return `<${name}>\n${content}\n</${name}>`
+}
+
 export const defineVars = <T extends Record<string, string>>(
   vars: T,
 ): { [K in keyof T]: Variable } & VariableRepresentation => {
