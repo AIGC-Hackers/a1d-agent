@@ -8,7 +8,7 @@ import { kontextImageEditTool } from '../tools/kontext-image-edit-tool'
 import { midjourneyImageGenerateTool } from '../tools/midjourney-image-generate-tool'
 import { midjourneyVideoGenerateTool } from '../tools/midjourney-video-generate-tool'
 import { minimaxTextToAudioTool } from '../tools/minimax-text-to-audio-tool'
-import { speedpaintVideoCreateTool } from '../tools/speedpaint-video-create-tool'
+import { speedpaintVideoGenerateTool } from '../tools/speedpaint-video-generate-tool'
 import * as systemTools from '../tools/system-tools'
 import { todoReadTool } from '../tools/todo-read-tool'
 import { todoWriteTool } from '../tools/todo-write-tool'
@@ -36,7 +36,7 @@ export const drawOutAgent = new Agent({
       // Production tools
       midjourneyImageGenerate: midjourneyImageGenerateTool,
       midjourneyVideoGenerate: midjourneyVideoGenerateTool,
-      speedpaintVideoCreate: speedpaintVideoCreateTool,
+      speedpaintVideoGenerate: speedpaintVideoGenerateTool,
       kontextImageEdit: kontextImageEditTool,
       minimaxTextToAudio: minimaxTextToAudioTool,
       drawOutVideoCutout: drawOutVideoCutoutTool,

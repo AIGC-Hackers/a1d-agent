@@ -3,8 +3,8 @@ import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
 
-export const speedpaintVideoCreateTool = createTool({
-  id: 'speedpaint-video-create',
+export const speedpaintVideoGenerateTool = createTool({
+  id: 'speedpaint-video-generate',
   description:
     'Creates a hand-drawn animation video clip from a static image. Prerequisite: You can ONLY call this tool for a shot AFTER you have successfully generated both the source image and the narration audio for that same shot.',
   inputSchema: z.object({

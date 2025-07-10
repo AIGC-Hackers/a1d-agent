@@ -9,7 +9,7 @@ import { kontextImageEditMockTool } from '../tools/mock/kontext-image-edit-mock-
 import { midjourneyImageGenerateMockTool } from '../tools/mock/midjourney-image-generate-mock-tool'
 // Mock tools
 import { minimaxTextToAudioMockTool } from '../tools/mock/minimax-text-to-audio-mock-tool'
-import { speedpaintVideoCreateMockTool } from '../tools/mock/speedpaint-video-create-mock-tool'
+import { speedpaintVideoGenerateMockTool } from '../tools/mock/speedpaint-video-generate-mock-tool'
 import * as systemTools from '../tools/system-tools'
 import { todoReadTool } from '../tools/todo-read-tool'
 import { todoWriteTool } from '../tools/todo-write-tool'
@@ -24,9 +24,14 @@ export const drawOutAgentMock = new Agent({
   memory: new Memory({
     storage: storage.value,
   }),
+  defaultGenerateOptions({ runtimeContext }) {
+    return {
+      maxSteps: 128,
+    }
+  },
   defaultStreamOptions({ runtimeContext }) {
     return {
-      maxSteps: 64,
+      maxSteps: 128,
     }
   },
   tools: {
@@ -43,6 +48,6 @@ export const drawOutAgentMock = new Agent({
     minimaxTextToAudio: minimaxTextToAudioMockTool,
     midjourneyImageGenerate: midjourneyImageGenerateMockTool,
     kontextImageEdit: kontextImageEditMockTool,
-    speedpaintVideoCreate: speedpaintVideoCreateMockTool,
+    speedpaintVideoGenerate: speedpaintVideoGenerateMockTool,
   },
 })

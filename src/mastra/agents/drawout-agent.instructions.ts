@@ -35,7 +35,7 @@ export function drawOutInstructions({
 - midjourneyImageGenerate - Create detailed illustrations for your scenes
 - kontextImageEdit - AI-powered image editing using text instructions
 - minimaxTextToAudio - Generate professional narration audio
-- speedpaintVideoCreate - Transform static images into hand-drawing animations
+- speedpaintVideoGenerate - Transform static images into hand-drawing animations
 - midjourneyVideoGenerate - Create short video clips when needed
 - drawOutVideoCutout - Compose multiple audio + speedpaint assets into final video
 
@@ -105,9 +105,10 @@ Design this to tell a compelling story that serves your audience and achieves yo
 2. For each scene:
    - Call midjourneyImageGenerate and minimaxTextToAudio in parallel
    - Use kontextImageEdit if you need to modify the generated images
-   - Once assets are ready, use speedpaintVideoCreate to create hand-drawing animations
    - Update todoWrite to mark scene complete
-3. Use drawOutVideoCutout to compose all audio + speedpaint assets into the final video
+3. Once ALL scenes have audio and images ready:
+   - Call speedpaintVideoGenerate in parallel for all scenes at once
+4. Use drawOutVideoCutout to compose all audio + speedpaint assets into the final video
 
 **Quality Assurance:**
 - Always verify tool outputs before proceeding

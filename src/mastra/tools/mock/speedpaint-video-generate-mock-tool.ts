@@ -28,8 +28,8 @@ interface MockTask {
 // 存储模拟任务（实际应用中会使用数据库）
 const mockTasks = new Map<string, MockTask>()
 
-export const speedpaintVideoCreateMockTool = createTool({
-  id: 'speedpaint-video-create',
+export const speedpaintVideoGenerateMockTool = createTool({
+  id: 'speedpaint-video-generate',
   description:
     'Creates a hand-drawn animation video clip from a static image. Prerequisite: You can ONLY call this tool for a shot AFTER you have successfully generated both the source image and the narration audio for that same shot.',
   inputSchema: z.object({
