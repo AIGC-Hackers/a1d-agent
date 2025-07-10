@@ -39,7 +39,6 @@
     "arktype": "^2.1.20",
     "confbox": "^0.2.2",
     "drizzle-orm": "^0.44.2",
-    "effect": "^3.16.12",
     "fetch-event-stream": "^0.1.5",
     "hono": "^4.8.4",
     "lodash-es": "^4.17.21",
