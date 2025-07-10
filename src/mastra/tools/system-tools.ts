@@ -12,7 +12,7 @@ export const readFileTool = createTool({
   id: 'read-file',
   description: 'Read file content from virtual storage.',
   inputSchema: z.object({
-    file: z.string().describe('File path (must start with /)'),
+    path: z.string().describe('File path (must start with /)'),
   }),
   outputSchema: z.object({
     content: z.string(),
@@ -30,7 +30,7 @@ export const readFileTool = createTool({
 
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
 
-    const fileResult = await vfs.readFile(input.file)
+    const fileResult = await vfs.readFile(input.path)
 
     if (!fileResult.success) {
       return {
@@ -51,7 +51,7 @@ export const writeFileTool = createTool({
   id: 'write-file',
   description: 'Create or update file content in virtual storage.',
   inputSchema: z.object({
-    file: z.string().describe('File path (must start with /)'),
+    path: z.string().describe('File path (must start with /)'),
     content: z.string().describe('File content'),
     content_type: z.string().optional().describe('MIME type'),
     description: z.string().optional().describe('File description'),
@@ -82,7 +82,7 @@ export const writeFileTool = createTool({
     let finalContent = input.content
 
     if (input.append) {
-      const existingFileResult = await vfs.readFile(input.file)
+      const existingFileResult = await vfs.readFile(input.path)
 
       if (!existingFileResult.success) {
         return {
@@ -101,7 +101,7 @@ export const writeFileTool = createTool({
     }
 
     const writeResult = await vfs.writeFile({
-      path: input.file,
+      path: input.path,
       content: finalContent,
       description: input.description,
       contentType: input.content_type,
@@ -126,7 +126,7 @@ export const editFileTool = createTool({
     'Replace exact text in file. Read file first to see current content. Use sufficient context for unique matching.',
 
   inputSchema: z.object({
-    file_path: z.string().describe('File path (must start with /)'),
+    path: z.string().describe('File path (must start with /)'),
     old_string: z.string().describe('Exact text to replace'),
     new_string: z.string().describe('Replacement text'),
     expected_replacements: z
@@ -153,7 +153,7 @@ export const editFileTool = createTool({
     const expectedReplacements = input.expected_replacements ?? 1
 
     // Read the file first
-    const fileResult = await vfs.readFile(input.file_path)
+    const fileResult = await vfs.readFile(input.path)
 
     if (!fileResult.success) {
       return {
@@ -218,7 +218,7 @@ export const editFileTool = createTool({
 
     // Write the updated file back
     const writeResult = await vfs.writeFile({
-      path: input.file_path,
+      path: input.path,
       content: newContent,
       contentType: file.contentType,
       metadata: file.metadata,

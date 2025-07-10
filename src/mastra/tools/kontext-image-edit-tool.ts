@@ -5,7 +5,9 @@ import { fileDescriptorSchema } from './system-tools'
 
 const KontextImageEditInputSchema = z.object({
   model: z.enum(['pro', 'max']).describe('The model to use'),
-  image: z.string().describe('File path, example: "/character/1.png"'),
+  image_path: z
+    .string()
+    .describe('Input image file path, example: "/character/1.png"'),
   prompt: z.string(),
   output: fileDescriptorSchema,
 })
