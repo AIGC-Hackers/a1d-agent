@@ -1,21 +1,16 @@
 import { createTool } from '@mastra/core/tools'
-import { z } from 'zod'
 
-import { fileDescriptorSchema } from './system-tools'
-
-const KontextImageEditInputSchema = z.object({
-  model: z.enum(['pro', 'max']).describe('The model to use'),
-  image_path: z
-    .string()
-    .describe('Input image file path, example: "/character/1.png"'),
-  prompt: z.string(),
-  output: fileDescriptorSchema,
-})
+import {
+  KONTEXT_TOOL_DESCRIPTION,
+  kontextImageEditInputSchema,
+  kontextImageEditOutputSchema,
+} from './schemas/kontext-schemas'
 
 export const kontextImageEditTool = createTool({
   id: 'kontext-image-edit',
-  description: 'Edit an image',
-  inputSchema: KontextImageEditInputSchema,
+  description: KONTEXT_TOOL_DESCRIPTION,
+  inputSchema: kontextImageEditInputSchema,
+  outputSchema: kontextImageEditOutputSchema,
   execute: async ({ context: input }) => {
     throw new Error('Not implemented')
   },

@@ -20,7 +20,8 @@ export const drawOutAgentMock = new Agent({
   description:
     'Mock version of Draw out the story - for development and testing',
   instructions: drawOutInstructions,
-  model: openrouter('anthropic/claude-sonnet-4'),
+  // model: openrouter('anthropic/claude-sonnet-4'),
+  model: openrouter('openai/gpt-4.1'),
   memory: new Memory({
     storage: storage.value,
   }),
