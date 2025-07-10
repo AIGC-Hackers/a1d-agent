@@ -12,62 +12,189 @@ const todoItemSchema = z.object({
   updatedAt: z.string().optional(),
 })
 
-/**
- * Tool for creating and managing a structured task list for the current session.
- * This helps track progress, organize complex tasks, and demonstrate thoroughness.
- *
- * ## When to Use This Tool
- * Use this tool proactively in these scenarios:
- *
- * 1. Complex multi-step tasks - When a task requires 3 or more distinct steps or actions
- * 2. Non-trivial and complex tasks - Tasks that require careful planning or multiple operations
- * 3. User explicitly requests todo list - When the user directly asks to use the todo list
- * 4. User provides multiple tasks - When users provide a list of things to be done
- * 5. After receiving new instructions - Immediately capture user requirements as todos
- * 6. When starting work on a task - Mark it as in_progress BEFORE beginning work
- * 7. After completing a task - Mark it as completed and add any new follow-up tasks
- *
- * ## When NOT to Use This Tool
- *
- * Skip using this tool when:
- * 1. There is only a single, straightforward task
- * 2. The task is trivial and tracking provides no organizational benefit
- * 3. The task can be completed in less than 3 trivial steps
- * 4. The task is purely conversational or informational
- *
- * ## Task States and Management
- *
- * 1. **Task States**: Use these states to track progress:
- *    - pending: Task not yet started
- *    - in_progress: Currently working on (limit to ONE task at a time)
- *    - completed: Task finished successfully
- *
- * 2. **Task Management**:
- *    - Update task status in real-time as you work
- *    - Mark tasks complete IMMEDIATELY after finishing
- *    - Only have ONE task in_progress at any time
- *    - Complete current tasks before starting new ones
- *    - Remove tasks that are no longer relevant
- *
- * 3. **Task Completion Requirements**:
- *    - ONLY mark a task as completed when you have FULLY accomplished it
- *    - If you encounter errors, blockers, or cannot finish, keep the task as in_progress
- *    - When blocked, create a new task describing what needs to be resolved
- *    - Never mark a task as completed if:
- *      - Tests are failing
- *      - Implementation is partial
- *      - You encountered unresolved errors
- *      - You couldn't find necessary files or dependencies
- *
- * 4. **Task Breakdown**:
- *    - Create specific, actionable items
- *    - Break complex tasks into smaller, manageable steps
- *    - Use clear, descriptive task names
- */
 export const todoWriteTool = createTool({
   id: 'todo-write',
-  description:
-    'Create and manage a structured task list for the current session to track progress and organize complex tasks.',
+  description: `Use this tool to create and manage a structured task list for your current workflow session. This helps you track progress, organize complex multi-step processes, and maintain workflow continuity - especially important for video creation, asset generation, and when handling user interruptions.
+
+## When to Use This Tool
+Use this tool proactively in these scenarios:
+
+1. **Complex multi-step workflows** - Video creation, asset generation pipelines, or any task requiring 3+ distinct phases
+2. **Sequential tool orchestration** - When generating multiple assets (audio, images, animations) that depend on each other
+3. **User interruptions or plan changes** - When users modify requirements mid-workflow, update the todo list to track changes
+4. **Workflow resumption** - When continuing from "resume" or "continue" commands, check existing todos for next steps
+5. **Asset generation tracking** - Track each scene's audio, image, and animation generation status
+6. **Progress visibility** - Give users clear insight into complex workflow progress
+7. **State management** - One task should be in_progress at a time, complete before starting new ones
+
+## When NOT to Use This Tool
+
+Skip using this tool when:
+1. Single, straightforward operations with immediate results
+2. Pure information queries or explanations
+3. Tasks completable in under 3 trivial steps
+4. No workflow continuity needed
+
+NOTE: Essential for video workflows and asset generation pipelines where tracking is critical.
+
+## Examples of When to Use the Todo List
+
+<example>
+User: Create a whiteboard video about AI in healthcare for doctors
+Assistant: I'll help create your AI in healthcare whiteboard video. Let me set up a todo list to track this production workflow.
+*Creates todo list with the following items:*
+1. Understand your vision and requirements for the healthcare AI video
+2. Define the project's visual style and tone for medical professionals
+3. Plan the narrative structure and key messages
+4. Create opening scene that captures doctors' attention
+5. Develop the main content scenes explaining AI benefits
+6. Design a compelling closing with clear next steps
+7. Produce the complete video presentation
+*Begins understanding requirements*
+
+<reasoning>
+The assistant used the todo list because:
+1. Video creation requires multiple phases of creative and technical work
+2. Each scene needs coordinated asset creation (narration, visuals, animations)
+3. The workflow has dependencies where creative decisions inform technical execution
+4. Todo list provides transparency into the production process
+</reasoning>
+</example>
+
+<example>
+User: Wait, change the duration to 120 seconds and add a case study section
+Assistant: Understood. I'll adjust to 120 seconds and incorporate a case study section.
+*Updates todo list:*
+- Revise project scope to accommodate longer duration
+- Add new segment: "Real-world case study demonstration"
+- Create additional scene showcasing practical application
+*Adjusts project parameters and narrative flow*
+*Continues production from current point with updated plan*
+
+<reasoning>
+The assistant used the todo list because:
+1. Mid-workflow changes require systematic adjustment
+2. New content requirements create additional production tasks
+3. Todo list maintains continuity when plans evolve
+4. Helps track what's complete versus what needs updating
+</reasoning>
+</example>
+
+<example>
+User: I want to create a 5-minute educational video explaining the process of photosynthesis
+Assistant: I'll help you create this educational video about photosynthesis. Let me plan the production workflow.
+*Creates todo list:*
+1. Understand your specific requirements (target audience, style preferences)
+2. Design opening - introduce photosynthesis concept with engaging visuals
+3. Create first section - show how plants absorb sunlight
+4. Create second section - explain carbon dioxide and water transformation
+5. Create third section - demonstrate oxygen and glucose production
+6. Design closing - summarize photosynthesis importance to ecosystems
+7. Generate complete 5-minute educational animation
+
+<reasoning>
+The assistant used the todo list because:
+1. A 5-minute educational video requires careful content structure planning
+2. Each knowledge point needs appropriate visual representation
+3. The production process has multiple coordinated phases
+4. Task list helps ensure educational content completeness and coherence
+</reasoning>
+</example>
+
+<example>
+User: resume
+Assistant: Let me check where we are in the video production process.
+*Reviews current progress:*
+- ✓ Opening scene completed
+- ✓ Problem explanation finished
+- → Currently working on solution demonstration
+- Case study section awaiting production
+- Final video assembly pending
+
+I'll continue with the solution demonstration scene where we left off.
+*Resumes creating the solution visualization*
+
+<reasoning>
+The assistant used the todo list because:
+1. Resuming work requires understanding current progress
+2. Todo list provides clear production status
+3. Prevents duplicating completed work
+4. Maintains creative continuity across sessions
+</reasoning>
+</example>
+
+## Examples of When NOT to Use the Todo List
+
+<example>
+User: What video formats does the speedpaint tool support?
+Assistant: The speedpaint tool generates MP4 videos with H.264 encoding, which is widely compatible across all platforms and browsers. It automatically matches the aspect ratio specified in your project settings.
+
+<reasoning>
+The assistant did not use the todo list because this is an informational request with no actual task to perform. The user is asking for technical specifications, not requesting any workflow execution.
+</reasoning>
+</example>
+
+<example>
+User: What color scheme should I use for this video?
+Assistant: For your video theme, I recommend using a clean, bright color scheme. Use deep blue as the primary color to create professionalism, with green and orange as accent colors to highlight key content, and white background to keep it simple. This combination is both professional and energetic.
+
+<reasoning>
+The assistant did not use the todo list because this is a visual design consultation question that can be answered directly. No multi-step workflow or task tracking is needed for this simple advisory request.
+</reasoning>
+</example>
+
+<example>
+User: Change the voice style from professional to friendly
+Assistant: I'll update the voice style setting to friendly tone.
+*Updates the voice configuration parameter*
+
+<reasoning>
+The assistant did not use the todo list because this is a single configuration change. While it affects future asset generation, it doesn't require tracking multiple steps or managing a complex workflow.
+</reasoning>
+</example>
+
+<example>
+User: What's the maximum duration for a whiteboard video?
+Assistant: The maximum duration for whiteboard videos is 180 seconds (3 minutes). This limit ensures optimal viewer engagement and manageable file sizes for the generated animations.
+
+<reasoning>
+The assistant did not use the todo list because this is a simple information query about system constraints. No workflow or task execution is required.
+</reasoning>
+</example>
+
+## Task States and Management
+
+1. **Task States**: Use these states to track progress:
+   - pending: Task not yet started
+   - in_progress: Currently working on (limit to ONE task at a time)
+   - completed: Task finished successfully
+   - cancelled: Task no longer needed
+
+2. **Task Management**:
+   - Update task status in real-time as you work
+   - Mark tasks complete IMMEDIATELY after finishing (don't batch completions)
+   - Only have ONE task in_progress at any time
+   - Complete current tasks before starting new ones
+   - Cancel tasks that become irrelevant
+
+3. **Task Completion Requirements**:
+   - ONLY mark a task as completed when fully successful
+   - If asset generation fails, keep task as in_progress and retry
+   - When blocked by errors, create new tasks for resolution
+   - Never mark asset generation tasks complete if:
+     - Audio generation failed or is corrupted
+     - Image generation failed or doesn't match requirements
+     - Speedpaint animation failed to process
+     - Any tool returned an error
+
+4. **Task Breakdown**:
+   - Create specific, actionable items (e.g., "Generate Scene 1 audio narration")
+   - Break complex tasks into smaller, manageable steps
+   - Use clear, descriptive task names
+   - Group related assets by scene for better organization
+
+When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
+`,
   inputSchema: z.object({
     todos: z
       .array(todoItemSchema)
