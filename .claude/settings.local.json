@@ -1,25 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(*)",
+      "WebFetch(domain:*)",
       "Bash(mv:*)",
       "Bash(dotenvx run:*)",
       "Bash(bun run:*)",
-      "Bash(grep:*)",
       "Bash(pnpx:*)",
       "Bash(pnpm:*)",
       "Bash(chmod:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(cp:*)"
     ],
-    "deny": [
-      "Bash(npm:*)",
-      "Bash(npmx:*)"
-    ]
+    "deny": ["Bash(npm:*)", "Bash(npmx:*)"]
   },
-  "enabledMcpjsonServers": [
-    "context7",
-    "mastra"
-  ],
+  "enabledMcpjsonServers": ["context7", "mastra"],
   "hooks": {
     "PreToolUse": [
       {
@@ -28,17 +24,6 @@
           {
             "type": "command",
             "command": "jq -r '\"\\(.tool_input.command) - \\(.tool_input.description // \"No description\")\"' >> ~/.claude/bash-command-log.txt"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "pnpm format"
           }
         ]
       }

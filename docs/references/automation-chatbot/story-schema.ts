@@ -16,7 +16,7 @@ export const sceneSchema = z.object({
   // scene_type: z
   //   .enum([
   //     'intro',
-  //     'problem',
+  //     'problem',ç
   //     'solution',
   //     'explanation',
   //     'demonstration',
