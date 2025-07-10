@@ -1,4 +1,5 @@
 import { stringifyJSON5 } from 'confbox'
+import { func } from 'effect/FastCheck'
 
 /**
  * Concatenates multiple strings, filtering out null/undefined values
@@ -74,6 +75,20 @@ type VariableRepresentation = {
  */
 export function tag(name: string, content: string): string {
   return `<${name}>\n${content}\n</${name}>`
+}
+
+
+// expect:
+// input:  'a', 'b', 'c'
+// output: { a: (content: string) => string, b: (content: string) => string, c: (content: string) => string }
+export function createTags<T extends string>(...tagNames: T[]): Record<T, (content: string) => string> {
+  const result = {} as Record<T, (content: string) => string>
+
+  for (const tagName of tagNames) {
+    result[tagName] = (content: string) => tag(tagName, content)
+  }
+
+  return result
 }
 
 export const defineVars = <T extends Record<string, string>>(
