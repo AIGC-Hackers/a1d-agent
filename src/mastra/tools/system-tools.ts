@@ -1,3 +1,4 @@
+import { invariant } from '@/lib/invariant'
 import { MemoryStorage } from '@/server/vfs/memory-storage'
 import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
 import { createTool } from '@mastra/core/tools'
@@ -8,42 +9,42 @@ export const fileDescriptorSchema = z.object({
   description: z.string().optional().describe('File description'),
 })
 
+type ReadFileResult = Promise<{ content: string } | { error: string }>
+type WriteFileResult = Promise<{ written: true } | { error: string }>
+type EditFileResult = Promise<{ replacements: number } | { error: string }>
+type ListFilesResult = Promise<
+  | {
+      files: Array<{
+        path: string
+        size: number
+        lastModified: string
+        contentType?: string
+        description?: string
+        metadata?: Record<string, unknown>
+      }>
+    }
+  | { error: string }
+>
+type DeleteFileResult = Promise<{ deleted: number } | { error: string }>
+
 export const readFileTool = createTool({
   id: 'read-file',
   description: 'Read file content from virtual storage.',
   inputSchema: z.object({
     path: z.string().describe('File path (must start with /)'),
   }),
-  outputSchema: z.object({
-    content: z.string(),
-    success: z.boolean(),
-    error: z.string().optional(),
-  }),
-  execute: async ({ context: input, threadId }) => {
-    if (!threadId) {
-      return {
-        content: '',
-        success: false,
-        error: 'threadId is required',
-      }
-    }
+  execute: async ({ context: input, threadId }): ReadFileResult => {
+    invariant(threadId, 'threadId is required')
 
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
 
     const fileResult = await vfs.readFile(input.path)
 
     if (!fileResult.success) {
-      return {
-        content: '',
-        success: false,
-        error: fileResult.error.message,
-      }
+      return { error: fileResult.error.message }
     }
 
-    return {
-      content: fileResult.data.content,
-      success: true,
-    }
+    return { content: fileResult.data.content }
   },
 })
 
@@ -65,17 +66,8 @@ export const writeFileTool = createTool({
       .optional()
       .describe('Add newline after content'),
   }),
-  outputSchema: z.object({
-    success: z.boolean(),
-    error: z.string().optional(),
-  }),
-  execute: async ({ context: input, threadId }) => {
-    if (!threadId) {
-      return {
-        success: false,
-        error: 'threadId is required',
-      }
-    }
+  execute: async ({ context: input, threadId }): WriteFileResult => {
+    invariant(threadId, 'threadId is required')
 
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
 
@@ -86,7 +78,6 @@ export const writeFileTool = createTool({
 
       if (!existingFileResult.success) {
         return {
-          success: false,
           error: `Failed to read existing file for append: ${existingFileResult.error.message}`,
         }
       }
@@ -108,15 +99,10 @@ export const writeFileTool = createTool({
     })
 
     if (!writeResult.success) {
-      return {
-        success: false,
-        error: `Failed to write file: ${writeResult.error.message}`,
-      }
+      return { error: `Failed to write file: ${writeResult.error.message}` }
     }
 
-    return {
-      success: true,
-    }
+    return { written: true }
   },
 })
 
@@ -135,75 +121,47 @@ export const editFileTool = createTool({
       .default(1)
       .describe('Number of replacements (default: 1)'),
   }),
-  outputSchema: z.object({
-    success: z.boolean(),
-    replacements: z.number(),
-    error: z.string().optional(),
-  }),
-  execute: async ({ context: input, threadId }) => {
-    if (!threadId) {
-      return {
-        success: false,
-        replacements: 0,
-        error: 'threadId is required',
-      }
-    }
+  execute: async ({ context: input, threadId }): EditFileResult => {
+    invariant(threadId, 'threadId is required')
 
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
     const expectedReplacements = input.expected_replacements ?? 1
 
-    // Read the file first
     const fileResult = await vfs.readFile(input.path)
 
     if (!fileResult.success) {
-      return {
-        success: false,
-        replacements: 0,
-        error: `Failed to read file: ${fileResult.error.message}`,
-      }
+      return { error: `Failed to read file: ${fileResult.error.message}` }
     }
 
     const file = fileResult.data
 
-    // Count occurrences of old_string
     const occurrences = (
       file.content.match(new RegExp(escapeRegExp(input.old_string), 'g')) || []
     ).length
 
     if (occurrences === 0) {
-      return {
-        success: false,
-        replacements: 0,
-        error: 'Text to replace not found in file',
-      }
+      return { error: 'Text to replace not found in file' }
     }
 
     if (expectedReplacements === 1 && occurrences > 1) {
       return {
-        success: false,
-        replacements: 0,
         error: `Found ${occurrences} occurrences but expected exactly 1. Text is not unique enough.`,
       }
     }
 
     if (expectedReplacements > occurrences) {
       return {
-        success: false,
-        replacements: 0,
         error: `Expected ${expectedReplacements} replacements but only found ${occurrences} occurrences`,
       }
     }
 
-    // Perform the replacement
     let newContent = file.content
     let actualReplacements = 0
 
     if (expectedReplacements === occurrences) {
-      // Replace all occurrences
       newContent = file.content.replaceAll(input.old_string, input.new_string)
       actualReplacements = occurrences
     } else {
-      // Replace only the expected number of occurrences
       for (let i = 0; i < expectedReplacements; i++) {
         const index = newContent.indexOf(input.old_string)
         if (index !== -1) {
@@ -216,7 +174,6 @@ export const editFileTool = createTool({
       }
     }
 
-    // Write the updated file back
     const writeResult = await vfs.writeFile({
       path: input.path,
       content: newContent,
@@ -226,22 +183,45 @@ export const editFileTool = createTool({
 
     if (!writeResult.success) {
       return {
-        success: false,
-        replacements: 0,
         error: `Failed to write updated file: ${writeResult.error.message}`,
       }
     }
 
-    return {
-      success: true,
-      replacements: actualReplacements,
-    }
+    return { replacements: actualReplacements }
   },
 })
 
 function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
+
+export const listFilesTool = createTool({
+  id: 'list-files',
+  description: 'List all files in virtual storage.',
+  inputSchema: z.object({}),
+  execute: async ({ threadId }): ListFilesResult => {
+    invariant(threadId, 'threadId is required')
+
+    const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
+
+    const listResult = await vfs.listFiles()
+
+    if (!listResult.success) {
+      return { error: listResult.error.message }
+    }
+
+    return {
+      files: listResult.data.map((file) => ({
+        path: file.path,
+        size: file.size,
+        lastModified: file.lastModified.toISOString(),
+        contentType: file.contentType,
+        description: file.description,
+        metadata: file.metadata,
+      })),
+    }
+  },
+})
 
 export const deleteFileTool = createTool({
   id: 'delete-file',
@@ -255,17 +235,8 @@ export const deleteFileTool = createTool({
       .optional()
       .describe('Delete files with matching path prefix'),
   }),
-  outputSchema: z.object({
-    success: z.boolean(),
-    error: z.string().optional(),
-  }),
-  execute: async ({ context: input, threadId }) => {
-    if (!threadId) {
-      return {
-        success: false,
-        error: 'threadId is required',
-      }
-    }
+  execute: async ({ context: input, threadId }): DeleteFileResult => {
+    invariant(threadId, 'threadId is required')
 
     const vfs = new VirtualFileSystem(new MemoryStorage(threadId))
     const filePaths = Array.isArray(input.files) ? input.files : [input.files]
@@ -277,14 +248,11 @@ export const deleteFileTool = createTool({
 
       if (!deleteResult.success) {
         return {
-          success: false,
           error: `Failed to delete file ${filePath}: ${deleteResult.error.message}`,
         }
       }
     }
 
-    return {
-      success: true,
-    }
+    return { deleted: filePaths.length }
   },
 })
