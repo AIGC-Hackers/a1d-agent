@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-
+/// <reference types="@types/bun" />
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -33,8 +33,10 @@ const main = () => {
   const envFiles = ['.env', '.env.production']
 
   // 只检查被暂存的环境文件
-  const stagedEnvFiles = stagedFiles.filter(file =>
-    envFiles.some(envFile => file === envFile || file.endsWith(`/${envFile}`))
+  const stagedEnvFiles = stagedFiles.filter((file) =>
+    envFiles.some(
+      (envFile) => file === envFile || file.endsWith(`/${envFile}`),
+    ),
   )
 
   // 如果没有暂存任何环境文件，直接通过

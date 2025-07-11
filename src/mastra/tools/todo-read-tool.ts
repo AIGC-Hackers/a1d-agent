@@ -30,15 +30,24 @@ const todoItemSchema = z.object({
  */
 export const todoReadTool = createTool({
   id: 'todo-read',
-  description:
-    'Read the current to-do list for the session to track progress and plan next steps.',
-  inputSchema: z.object({
-    // No input parameters required - the tool reads the current session's todo list
-  }),
+  description: `Use this tool to read the current to-do list for the session. This tool should be used proactively and frequently to ensure that you are aware of
+the status of the current task list. You should make use of this tool as often as possible, especially in the following situations:
+- At the beginning of conversations to see what's pending
+- Before starting new tasks to prioritize work
+- When the user asks about previous tasks or plans
+- Whenever you're uncertain about what to do next
+- After completing tasks to update your understanding of remaining work
+- After every few messages to ensure you're on track
+
+Usage:
+- This tool takes in no parameters. So leave the input blank or empty. DO NOT include a dummy object, placeholder string or a key like "input" or "empty". LEAVE IT BLANK.
+- Returns a list of todo items with their status, priority, and content
+- Use this information to track progress and plan next steps
+- If no todos exist yet, an empty list will be returned`,
+  inputSchema: z.object({}),
   outputSchema: z.object({
     todos: z.array(todoItemSchema),
-    success: z.boolean(),
-    error: z.string().optional(),
+    message: z.string().optional(),
   }),
   execute: async ({ threadId }) => {
     if (!threadId) {
@@ -67,8 +76,7 @@ export const todoReadTool = createTool({
       // For other errors, propagate meaningful error message to LLM
       return {
         todos: [],
-        success: false,
-        error: `Failed to read todo file: ${fileResult.error.message}`,
+        message: `Failed to read todo file: ${fileResult.error.message}`,
       }
     }
 
@@ -87,8 +95,7 @@ export const todoReadTool = createTool({
         error instanceof Error ? error.message : 'Unknown parsing error'
       return {
         todos: [],
-        success: false,
-        error: `Invalid todo file format: ${errorMessage}`,
+        message: `Invalid todo file format: ${errorMessage}`,
       }
     }
   },

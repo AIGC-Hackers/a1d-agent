@@ -99,7 +99,7 @@ Example complete prompt:
 
 export const midjourneyAgent = new Agent({
   // model: openrouter('google/gemini-2.5-pro'),
-  model: openrouter('x-ai/grok-3-mini'),
+  model: openrouter('openai/gpt-4.1'),
   name: 'Midjourney',
   description: 'A Midjourney agent that can generate images using Midjourney.',
   instructions,
