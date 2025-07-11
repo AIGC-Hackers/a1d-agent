@@ -1,5 +1,7 @@
 import { stringifyJSON5 } from 'confbox'
 
+import { defineLazyProperty } from './lazy'
+
 /**
  * Concatenates multiple strings, filtering out null/undefined values
  */
@@ -66,7 +68,7 @@ class Variable {
 }
 
 type VariableRepresentation = {
-  serialize: (opts?: { indent?: number }) => string
+  readonly $block: string
 }
 
 /**
@@ -96,22 +98,16 @@ export const defineVars = <T extends Record<string, string>>(
 ): { [K in keyof T]: Variable } & VariableRepresentation => {
   const result = {} as { [K in keyof T]: Variable & VariableRepresentation }
   for (const [key, value] of Object.entries(vars)) {
-    if (key === 'serialize') {
-      throw new Error('serialize is a reserved key')
+    if (key === '$block') {
+      throw new Error('$block is a reserved key')
     }
     // @ts-expect-error
     result[key as keyof T] = new Variable(key, value)
   }
 
-  // Serialization
-  function serialize(opts?: { indent?: number }) {
-    return block({
-      content: stringifyJSON5(vars, { indent: opts?.indent ?? 2 }),
-      type: 'json',
-    })
-  }
+  defineLazyProperty(result, '$block', () =>
+    stringifyJSON5(vars, { indent: 2 }),
+  )
 
-  return Object.assign(result, {
-    serialize,
-  })
+  return result as any
 }

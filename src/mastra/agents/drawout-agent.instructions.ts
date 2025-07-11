@@ -153,6 +153,6 @@ When users say "resume", "continue", "try again", or provide mid-workflow feedba
 - If regeneration is needed, create new versions (e.g., audio-v3.mp3) rather than replacing successful assets
 
 ## State
-${ctx.serialize()}
+${ctx.$block}
 `
 }
