@@ -1,29 +1,29 @@
-import type { distill, Type } from 'arktype'
+import type { Type } from 'arktype'
 import { RuntimeContext } from '@mastra/core/runtime-context'
 
-export function createState<T extends object>(schema: Type<T, any>) {
-  function get(ctx: RuntimeContext): distill.Out<T> {
+export function createState<
+  S extends Type<any, any>,
+  In = S['inferIn'],
+  Out = S['inferOut'],
+>(schema: S) {
+  function get(ctx: RuntimeContext): Out {
     const stateKey = 'state'
-    const stored = ctx.get(stateKey) as T | undefined
+    const stored = ctx.get(stateKey) as any
 
     if (!stored) {
       throw new Error('State not found')
     }
-
-    return schema.assert(stored) as distill.Out<T>
+    return schema.assert(stored)
   }
 
-  function set(ctx: RuntimeContext, value: distill.In<T>) {
+  function set(ctx: RuntimeContext, value: In) {
     const stateKey = 'state'
     ctx.set(stateKey, value)
   }
 
-  function assign(ctx: RuntimeContext, update: Partial<T>): distill.Out<T> {
+  function assign(ctx: RuntimeContext, update: Partial<In>): Out {
     const stateKey = 'state'
-    const current = get(ctx)
-    if (!current) {
-      throw new Error('State not found')
-    }
+    const current = get(ctx) as any
 
     const merged = { ...current, ...update }
     const validated = schema.assert(merged)
