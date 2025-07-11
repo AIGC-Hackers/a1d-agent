@@ -31,6 +31,9 @@ export function drawOutInstructions({
 - todoWrite - Create and update task lists for complex workflows
 - todoRead - Check current progress and identify next steps
 
+**Research & Information:**
+- googleSearch - Instructs Gemini model to perform deep web search with complex queries
+
 **Asset Generation:**
 - midjourneyImageGenerate - Create detailed illustrations for your scenes
 - kontextImageEdit - AI-powered image editing using text instructions

@@ -36,11 +36,13 @@ type GoogleSearchToolResult = {
 export const googleSearchTool = createTool({
   id: 'google-search',
   description:
-    'Performs a web search using Google Search (via the Gemini API) and returns the results. This tool is useful for finding information on the internet based on a query.',
+    'Instructs Gemini model to perform deep web search and return comprehensive results. Supports complex queries and multi-question searches.',
   inputSchema: z.object({
     query: z
       .string()
-      .describe('The search query to find information on the web.'),
+      .describe(
+        'Search query content, can be complex instructions or multiple related questions.',
+      ),
   }),
   execute: async ({ context: input }): Promise<GoogleSearchToolResult> => {
     const genai = createGoogleGenAIClient()
@@ -128,7 +130,7 @@ export const googleSearchTool = createTool({
 
       return {
         llmContent: `Web search results for "${input.query}":\n\n${modifiedResponseText}`,
-        returnDisplay: `Search results for "${input.query}" returned.`,
+        returnDisplay: 'Done.',
         sources,
       }
     }

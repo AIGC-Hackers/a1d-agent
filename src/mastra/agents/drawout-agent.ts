@@ -4,6 +4,7 @@ import { Memory } from '@mastra/memory'
 
 import { storage } from '../factory'
 import { drawOutVideoCutoutTool } from '../tools/draw-out-video-cutout-tool'
+import { googleSearchTool } from '../tools/google-search-tool'
 import { kontextImageEditTool } from '../tools/kontext-image-edit-tool'
 import { midjourneyImageGenerateTool } from '../tools/midjourney-image-generate-tool'
 import { midjourneyVideoGenerateTool } from '../tools/midjourney-video-generate-tool'
@@ -34,6 +35,7 @@ export const drawOutAgent = new Agent({
       todoRead: todoReadTool,
 
       // Production tools
+      googleSearch: googleSearchTool,
       midjourneyImageGenerate: midjourneyImageGenerateTool,
       midjourneyVideoGenerate: midjourneyVideoGenerateTool,
       speedpaintVideoGenerate: speedpaintVideoGenerateTool,

@@ -5,6 +5,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { storage } from '../factory'
+import { googleSearchTool } from '../tools/google-search-tool'
 import { kontextImageEditMockTool } from '../tools/mock/kontext-image-edit-mock-tool'
 import { midjourneyImageGenerateMockTool } from '../tools/mock/midjourney-image-generate-mock-tool'
 // Mock tools
@@ -44,6 +45,9 @@ export const drawOutAgentMock = new Agent({
     // Todo tools
     todoWrite: todoWriteTool,
     todoRead: todoReadTool,
+
+    // Real tool (can be used in mock agent)
+    googleSearch: googleSearchTool,
 
     // Mock tools
     minimaxTextToAudio: minimaxTextToAudioMockTool,
