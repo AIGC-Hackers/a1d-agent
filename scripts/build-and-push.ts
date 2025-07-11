@@ -1,8 +1,9 @@
 #!/usr/bin/env bun
+/// <reference types="@types/bun" />
+import { $ } from 'bun'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { type } from 'arktype'
-import { $ } from 'bun'
 
 import type { ProjectConfigOutput } from './project.schema'
 import { loadProjectConfig } from './project.loader'

@@ -17,7 +17,7 @@ const toolcallStreamTool = createTool({
 
     const response = streamText({
       prompt: 'hello',
-      model: openrouter('x-ai/grok-3-mini'),
+      model: openrouter('openai/gpt-4.1'),
     })
 
     const id = ulid()

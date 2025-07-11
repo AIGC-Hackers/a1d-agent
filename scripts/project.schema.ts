@@ -1,3 +1,4 @@
+/// <reference types="@types/bun" />
 import { type } from 'arktype'
 
 export const ProjectConfigSchema = type({
