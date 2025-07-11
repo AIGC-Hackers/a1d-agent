@@ -1,10 +1,10 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { describe, expect, it } from 'vitest'
 import { firstValueFrom } from 'rxjs'
+import { describe, expect, it } from 'vitest'
 
 import { defaultMinimaxContext } from './config'
-import { uploadFile, cloneVoice, listVoices } from './voice-cloning'
+import { cloneVoice, listVoices, uploadFile } from './voice-cloning'
 
 function logTestEvent(event: {
   timestamp: string
@@ -15,61 +15,68 @@ function logTestEvent(event: {
 }) {
   const logEntry = JSON.stringify(event)
   console.log(`[VOICE-CLONE-TEST] ${logEntry}`)
-  
+
   // Save to temp folder
   const fs = require('fs')
   const tempDir = './temp'
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true })
   }
-  fs.appendFileSync(join(tempDir, 'minimax-voice-clone-test.jsonl'), logEntry + '\n')
+  fs.appendFileSync(
+    join(tempDir, 'minimax-voice-clone-test.jsonl'),
+    logEntry + '\n',
+  )
 }
 
 describe('MiniMax Voice Cloning', () => {
   it('should upload audio file', async () => {
     const timestamp = new Date().toISOString()
     const testName = 'upload_audio_file'
-    
+
     logTestEvent({
       timestamp,
       testName,
       phase: 'start',
-      data: { audioFile: 'assets/sample.mp3' }
+      data: { audioFile: 'assets/sample.mp3' },
     })
 
     try {
       // Read the sample audio file
       const audioBuffer = readFileSync(join(process.cwd(), 'assets/sample.mp3'))
-      const audioFile = new File([audioBuffer], 'sample.mp3', { type: 'audio/mpeg' })
+      const audioFile = new File([audioBuffer], 'sample.mp3', {
+        type: 'audio/mpeg',
+      })
 
       const input = {
         file: audioFile,
-        purpose: 'voice_clone' as const
+        purpose: 'voice_clone' as const,
       }
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { 
+        data: {
           filename: input.file.name,
           fileSize: input.file.size,
-          purpose: input.purpose
-        }
+          purpose: input.purpose,
+        },
       })
 
-      const result = await firstValueFrom(uploadFile(input, defaultMinimaxContext))
+      const result = await firstValueFrom(
+        uploadFile(input, defaultMinimaxContext),
+      )
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_response',
-        data: { 
+        data: {
           fileId: result.file.file_id,
           bytes: result.file.bytes,
           filename: result.file.filename,
-          statusCode: result.base_resp.status_code
-        }
+          statusCode: result.base_resp.status_code,
+        },
       })
 
       expect(result.base_resp.status_code).toBe(0)
@@ -80,14 +87,14 @@ describe('MiniMax Voice Cloning', () => {
         timestamp: new Date().toISOString(),
         testName,
         phase: 'success',
-        data: { fileId: result.file.file_id }
+        data: { fileId: result.file.file_id },
       })
     } catch (error: any) {
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'error',
-        error: error.message
+        error: error.message,
       })
       throw error
     }
@@ -96,42 +103,46 @@ describe('MiniMax Voice Cloning', () => {
   it('should clone voice from uploaded file', async () => {
     const timestamp = new Date().toISOString()
     const testName = 'clone_voice_from_file'
-    
+
     logTestEvent({
       timestamp,
       testName,
       phase: 'start',
-      data: { step: 'upload_then_clone' }
+      data: { step: 'upload_then_clone' },
     })
 
     try {
       // Step 1: Upload file
       const audioBuffer = readFileSync(join(process.cwd(), 'assets/sample.mp3'))
-      const audioFile = new File([audioBuffer], 'sample.mp3', { type: 'audio/mpeg' })
+      const audioFile = new File([audioBuffer], 'sample.mp3', {
+        type: 'audio/mpeg',
+      })
 
       const uploadInput = {
         file: audioFile,
-        purpose: 'voice_clone' as const
+        purpose: 'voice_clone' as const,
       }
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { step: 'upload_file' }
+        data: { step: 'upload_file' },
       })
 
-      const uploadResult = await firstValueFrom(uploadFile(uploadInput, defaultMinimaxContext))
+      const uploadResult = await firstValueFrom(
+        uploadFile(uploadInput, defaultMinimaxContext),
+      )
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_response',
-        data: { 
+        data: {
           step: 'upload_file',
           fileId: uploadResult.file.file_id,
-          statusCode: uploadResult.base_resp.status_code
-        }
+          statusCode: uploadResult.base_resp.status_code,
+        },
       })
 
       // Step 2: Clone voice
@@ -140,31 +151,33 @@ describe('MiniMax Voice Cloning', () => {
         voice_id: `test_voice_${Date.now()}`, // Unique voice ID
         need_noise_reduction: false,
         text: 'Hello, this is a test of the cloned voice.',
-        model: 'speech-02-turbo' as const
+        model: 'speech-02-turbo' as const,
       }
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { 
+        data: {
           step: 'clone_voice',
           voiceId: cloneInput.voice_id,
-          fileId: cloneInput.file_id
-        }
+          fileId: cloneInput.file_id,
+        },
       })
 
-      const cloneResult = await firstValueFrom(cloneVoice(cloneInput, defaultMinimaxContext))
+      const cloneResult = await firstValueFrom(
+        cloneVoice(cloneInput, defaultMinimaxContext),
+      )
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_response',
-        data: { 
+        data: {
           step: 'clone_voice',
           inputSensitive: cloneResult.input_sensitive,
-          statusCode: cloneResult.base_resp.status_code
-        }
+          statusCode: cloneResult.base_resp.status_code,
+        },
       })
 
       expect(cloneResult.base_resp.status_code).toBe(0)
@@ -174,17 +187,17 @@ describe('MiniMax Voice Cloning', () => {
         timestamp: new Date().toISOString(),
         testName,
         phase: 'success',
-        data: { 
+        data: {
           voiceId: cloneInput.voice_id,
-          cloneSuccess: true
-        }
+          cloneSuccess: true,
+        },
       })
     } catch (error: any) {
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'error',
-        error: error.message
+        error: error.message,
       })
       throw error
     }
@@ -193,66 +206,73 @@ describe('MiniMax Voice Cloning', () => {
   it('should validate voice_id format', async () => {
     const timestamp = new Date().toISOString()
     const testName = 'validate_voice_id_format'
-    
+
     logTestEvent({
       timestamp,
       testName,
       phase: 'start',
-      data: { test: 'invalid_voice_id' }
+      data: { test: 'invalid_voice_id' },
     })
 
     try {
       // Upload file first
       const audioBuffer = readFileSync(join(process.cwd(), 'assets/sample.mp3'))
-      const audioFile = new File([audioBuffer], 'sample.mp3', { type: 'audio/mpeg' })
+      const audioFile = new File([audioBuffer], 'sample.mp3', {
+        type: 'audio/mpeg',
+      })
 
-      const uploadResult = await firstValueFrom(uploadFile({
-        file: audioFile,
-        purpose: 'voice_clone' as const
-      }, defaultMinimaxContext))
+      const uploadResult = await firstValueFrom(
+        uploadFile(
+          {
+            file: audioFile,
+            purpose: 'voice_clone' as const,
+          },
+          defaultMinimaxContext,
+        ),
+      )
 
       // Try invalid voice_id (too short)
       const invalidInput = {
         file_id: uploadResult.file.file_id,
         voice_id: 'short', // Should be at least 8 characters with letters and numbers
-        need_noise_reduction: false
+        need_noise_reduction: false,
       }
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { 
+        data: {
           voiceId: invalidInput.voice_id,
-          expectedError: 'voice_id too short'
-        }
+          expectedError: 'voice_id too short',
+        },
       })
 
       try {
         await firstValueFrom(cloneVoice(invalidInput, defaultMinimaxContext))
-        
+
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
           phase: 'success',
-          data: { note: 'API accepted short voice_id' }
+          data: { note: 'API accepted short voice_id' },
         })
       } catch (error: any) {
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
           phase: 'api_response',
-          data: { 
+          data: {
             error: error.message,
-            note: 'API rejected invalid voice_id as expected'
-          }
+            note: 'API rejected invalid voice_id as expected',
+          },
         })
 
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
           phase: 'success',
-          data: { validationWorking: true }
+          data: { validationWorking: true },
         })
       }
     } catch (error: any) {
@@ -260,7 +280,7 @@ describe('MiniMax Voice Cloning', () => {
         timestamp: new Date().toISOString(),
         testName,
         phase: 'error',
-        error: error.message
+        error: error.message,
       })
       throw error
     }
@@ -269,12 +289,12 @@ describe('MiniMax Voice Cloning', () => {
   it('should list voices (may not be available)', async () => {
     const timestamp = new Date().toISOString()
     const testName = 'list_voices'
-    
+
     logTestEvent({
       timestamp,
       testName,
       phase: 'start',
-      data: { api: 'list_voices', note: 'API endpoint may not exist' }
+      data: { api: 'list_voices', note: 'API endpoint may not exist' },
     })
 
     try {
@@ -282,27 +302,32 @@ describe('MiniMax Voice Cloning', () => {
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { 
+        data: {
           params: {
             page_size: 10,
-            include_presets: true
-          }
-        }
+            include_presets: true,
+          },
+        },
       })
 
-      const result = await firstValueFrom(listVoices({
-        page_size: 10,
-        include_presets: true
-      }, defaultMinimaxContext))
+      const result = await firstValueFrom(
+        listVoices(
+          {
+            page_size: 10,
+            include_presets: true,
+          },
+          defaultMinimaxContext,
+        ),
+      )
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_response',
-        data: { 
+        data: {
           totalVoices: result.total,
-          voicesReturned: result.voices.length
-        }
+          voicesReturned: result.voices.length,
+        },
       })
 
       expect(result.total).toBeGreaterThanOrEqual(0)
@@ -312,32 +337,32 @@ describe('MiniMax Voice Cloning', () => {
         timestamp: new Date().toISOString(),
         testName,
         phase: 'success',
-        data: { 
+        data: {
           total: result.total,
-          voicesCount: result.voices.length
-        }
+          voicesCount: result.voices.length,
+        },
       })
     } catch (error: any) {
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'error',
-        error: error.message
+        error: error.message,
       })
-      
+
       // Skip this test if the API endpoint doesn't exist
       if (error.message.includes('404')) {
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
           phase: 'success',
-          data: { 
-            note: 'API endpoint not available (404) - this is expected as it may not be documented'
-          }
+          data: {
+            note: 'API endpoint not available (404) - this is expected as it may not be documented',
+          },
         })
         return // Skip the test instead of failing
       }
-      
+
       throw error
     }
   })

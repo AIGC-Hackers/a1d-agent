@@ -1,27 +1,16 @@
 import { createTool } from '@mastra/core/tools'
-import { z } from 'zod'
 
-import { fileDescriptorSchema } from './system-tools'
+import {
+  MINIMAX_TOOL_DESCRIPTION,
+  minimaxTextToAudioInputSchema,
+  minimaxTextToAudioOutputSchema,
+} from './schemas/minimax-schemas'
 
 export const minimaxTextToAudioTool = createTool({
   id: 'minimax-text-to-audio',
-  description:
-    'Creates a narration audio file for a shot. Call this tool when your `plan.md` requires you to generate the voiceover for a specific shot.',
-  inputSchema: z.object({
-    text: z
-      .string()
-      .describe(
-        'The narration script for the shot, taken directly from `storyboard.md`.',
-      ),
-    voice: z.string().describe('The voice style to use for the narration.'),
-    output: fileDescriptorSchema.describe(
-      'The exact VFS path for the audio file: `scenes/scene-XX/shot-YY/narration.mp3`.',
-    ),
-  }),
-  outputSchema: z.object({
-    file_path: z.string(),
-    duration_seconds: z.number(),
-  }),
+  description: MINIMAX_TOOL_DESCRIPTION,
+  inputSchema: minimaxTextToAudioInputSchema,
+  outputSchema: minimaxTextToAudioOutputSchema,
   execute: async ({ context: input }) => {
     throw new Error('Not implemented')
   },

@@ -1,9 +1,9 @@
+import { inspect } from 'node:util'
 import { env } from '@/lib/env'
 import { createOpenAI } from '@ai-sdk/openai'
 import OpenAI from 'openai'
 
 import { baseUrl } from './config'
-import { inspect } from 'node:util'
 
 export const enum LanguageModel {
   CLAUDE_SONNET_4 = 'claude-sonnet-4-20250514',

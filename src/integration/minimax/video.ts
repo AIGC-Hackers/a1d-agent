@@ -95,7 +95,10 @@ export function pollVideoTask(
       ),
     ),
     takeWhile(
-      (task) => task.status === 'Processing' || task.status === 'Preparing' || task.status === 'Queueing',
+      (task) =>
+        task.status === 'Processing' ||
+        task.status === 'Preparing' ||
+        task.status === 'Queueing',
       true, // Emit final state
     ),
   )
@@ -153,7 +156,9 @@ export function generateVideoStream(
   return createVideoGenerationTask(input, context).pipe(
     switchMap((result) => {
       if (result.base_resp.status_code !== 0) {
-        throw new Error(`Video generation failed: ${result.base_resp.status_msg}`)
+        throw new Error(
+          `Video generation failed: ${result.base_resp.status_msg}`,
+        )
       }
 
       // Poll for completion

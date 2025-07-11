@@ -2,7 +2,11 @@ import { firstValueFrom, merge, Observable } from 'rxjs'
 
 import { defaultMinimaxContext } from './config'
 import { generateImageStream } from './image'
-import { decodeAudioChunk, createText2AudioTask, textToAudioStream } from './t2a'
+import {
+  createText2AudioTask,
+  decodeAudioChunk,
+  textToAudioStream,
+} from './t2a'
 import { generateVideoStream } from './video'
 import { listVoices } from './voice-cloning'
 

@@ -1,3 +1,4 @@
+/// <reference types="@types/bun" />
 import { ProjectConfigSchema } from './project.schema'
 
 export async function loadProjectConfig() {

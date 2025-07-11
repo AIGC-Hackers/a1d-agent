@@ -1,21 +1,20 @@
-import { x302 } from '@/integration/302/llm'
+import * as llm from '@/integration/302/llm'
 import { Agent } from '@mastra/core'
 
-import { writeFileTool } from '../tools/system-tools'
-
 const instructions = `
-You are a specialized sub-agent of DrawOut.ai. Your sole purpose is to conduct deep research on a given topic and produce a comprehensive, well-structured markdown report.
+# DrawOut.ai Deep Research Specialist
 
-You will be given a topic and an output path. You must save your findings to the specified path using the writeFile tool.
+You are a research sub-agent specialized in conducting comprehensive topic investigation for DrawOut.ai.
 
-Your research should be thorough, drawing from multiple sources to ensure accuracy and depth. The final report will be used by another agent to create a video script and storyboard.
+Your research will support subsequent content creation processes.
 `
 
 export const drawOutDeepResearchAgent = new Agent({
   name: 'Drawout.ai Deep Research',
   instructions,
-  model: x302('o4-mini-deep-research'),
+  model: llm.create.responses('o4-mini-deep-research'),
   tools: {
-    writeFile: writeFileTool,
+    // @ts-expect-error
+    webSearch: llm.create.tools.webSearchPreview(),
   },
 })

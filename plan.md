@@ -1,0 +1,3 @@
+- [ ] 增加 list file 工具用来列出 vfs 中的文件
+- [ ] 给 vfs 弱加隐藏文件. 它用于存放 todo 这类会话数据
+- [ ] jina tools

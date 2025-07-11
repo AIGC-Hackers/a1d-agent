@@ -5,6 +5,7 @@ import { deepResearchEvaluationAgent } from './agents/deepresearch-evaluation-ag
 import { deepResearchLearningExtractionAgent } from './agents/deepresearch-learning-extraction-agent'
 import { deepResearchReportAgent } from './agents/deepresearch-report-agent'
 import { drawOutAgent } from './agents/drawout-agent'
+import { drawOutAgentMock } from './agents/drawout-agent-mock'
 import { drawOutVideoCutoutAgent } from './agents/drawout-composer-agent'
 import { drawOutDeepResearchAgent } from './agents/drawout-deepresearch-agent'
 import { mckinseyConsultantAgent } from './agents/mckinsey-consultant-agent'
@@ -38,6 +39,7 @@ export const mastra = new Mastra({
     stagehandWeb: stagehandWebAgent,
 
     drawOut: drawOutAgent,
+    drawOutMock: drawOutAgentMock,
     drawOutDeepResearch: drawOutDeepResearchAgent,
     drawOutVideoCutout: drawOutVideoCutoutAgent,
   },

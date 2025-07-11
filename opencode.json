@@ -1,3 +1,26 @@
 {
-	"$schema": "https://opencode.ai/config.json"
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "huiyan": {
+      "npm": "@ai-sdk/openai",
+      "name": "HuiYan",
+      "options": {
+        "baseURL": "https://api.huiyan-ai.cn/v1"
+      },
+      "models": {
+        "claude-opus-4-20250514": {
+          "name": "opus"
+        },
+        "claude-opus-4-20250514-thinking": {
+          "name": "opus-thinking"
+        },
+        "claude-sonnet-4-20250514": {
+          "name": "sonnet"
+        },
+        "claude-sonnet-4-20250514-thinking": {
+          "name": "sonnet-thinking"
+        }
+      }
+    }
+  }
 }

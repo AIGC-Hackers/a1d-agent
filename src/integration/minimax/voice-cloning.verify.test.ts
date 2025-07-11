@@ -1,11 +1,11 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { describe, expect, it } from 'vitest'
 import { firstValueFrom } from 'rxjs'
+import { describe, expect, it } from 'vitest'
 
 import { defaultMinimaxContext } from './config'
-import { uploadFile, cloneVoice } from './voice-cloning'
 import { createText2AudioTask } from './t2a'
+import { cloneVoice, uploadFile } from './voice-cloning'
 
 function logTestEvent(event: {
   timestamp: string
@@ -16,86 +16,101 @@ function logTestEvent(event: {
 }) {
   const logEntry = JSON.stringify(event)
   console.log(`[VOICE-CLONE-VERIFY] ${logEntry}`)
-  
+
   // Save to temp folder
   const fs = require('fs')
   const tempDir = './temp'
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true })
   }
-  fs.appendFileSync(join(tempDir, 'minimax-voice-clone-verify-test.jsonl'), logEntry + '\n')
+  fs.appendFileSync(
+    join(tempDir, 'minimax-voice-clone-verify-test.jsonl'),
+    logEntry + '\n',
+  )
 }
 
 describe('MiniMax Voice Cloning - Verification', () => {
   it('should clone voice and verify it can be used for TTS', async () => {
     const timestamp = new Date().toISOString()
     const testName = 'clone_and_verify'
-    
+
     logTestEvent({
       timestamp,
       testName,
       phase: 'start',
-      data: { workflow: 'upload -> clone -> verify_with_tts' }
+      data: { workflow: 'upload -> clone -> verify_with_tts' },
     })
 
     try {
       // Step 1: Upload file
       const audioBuffer = readFileSync(join(process.cwd(), 'assets/sample.mp3'))
-      const audioFile = new File([audioBuffer], 'sample.mp3', { type: 'audio/mpeg' })
+      const audioFile = new File([audioBuffer], 'sample.mp3', {
+        type: 'audio/mpeg',
+      })
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { step: 'upload_file' }
+        data: { step: 'upload_file' },
       })
 
-      const uploadResult = await firstValueFrom(uploadFile({
-        file: audioFile,
-        purpose: 'voice_clone'
-      }, defaultMinimaxContext))
+      const uploadResult = await firstValueFrom(
+        uploadFile(
+          {
+            file: audioFile,
+            purpose: 'voice_clone',
+          },
+          defaultMinimaxContext,
+        ),
+      )
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_response',
-        data: { 
+        data: {
           step: 'upload_file',
           fileId: uploadResult.file.file_id,
-          statusCode: uploadResult.base_resp.status_code
-        }
+          statusCode: uploadResult.base_resp.status_code,
+        },
       })
 
       // Step 2: Clone voice
       const voiceId = `verify_test_${Date.now()}`
-      
+
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { 
+        data: {
           step: 'clone_voice',
           voiceId,
-          fileId: uploadResult.file.file_id
-        }
+          fileId: uploadResult.file.file_id,
+        },
       })
 
-      const cloneResult = await firstValueFrom(cloneVoice({
-        file_id: uploadResult.file.file_id,
-        voice_id: voiceId,
-        need_noise_reduction: false
-      }, defaultMinimaxContext))
+      const cloneResult = await firstValueFrom(
+        cloneVoice(
+          {
+            file_id: uploadResult.file.file_id,
+            voice_id: voiceId,
+            need_noise_reduction: false,
+          },
+          defaultMinimaxContext,
+        ),
+      )
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_response',
-        data: { 
+        data: {
           step: 'clone_voice',
           voiceId,
           statusCode: cloneResult.base_resp.status_code,
-          inputSensitive: cloneResult.input_sensitive
-        }
+          inputSensitive: cloneResult.input_sensitive,
+        },
       })
 
       expect(cloneResult.base_resp.status_code).toBe(0)
@@ -105,60 +120,65 @@ describe('MiniMax Voice Cloning - Verification', () => {
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { 
+        data: {
           step: 'verify_with_tts',
           voiceId,
-          note: 'Testing if cloned voice can be used for TTS'
-        }
+          note: 'Testing if cloned voice can be used for TTS',
+        },
       })
 
       try {
-        const ttsResult = await firstValueFrom(createText2AudioTask({
-          model: 'speech-02-turbo',
-          text: 'Hello, this is a test using the cloned voice.',
-          voice_setting: {
-            voice_id: voiceId, // Use the cloned voice
-          },
-          audio_setting: {
-            output_format: 'mp3',
-          },
-        }, defaultMinimaxContext))
+        const ttsResult = await firstValueFrom(
+          createText2AudioTask(
+            {
+              model: 'speech-02-turbo',
+              text: 'Hello, this is a test using the cloned voice.',
+              voice_setting: {
+                voice_id: voiceId, // Use the cloned voice
+              },
+              audio_setting: {
+                output_format: 'mp3',
+              },
+            },
+            defaultMinimaxContext,
+          ),
+        )
 
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
           phase: 'api_response',
-          data: { 
+          data: {
             step: 'verify_with_tts',
             success: true,
             voiceId,
             ttsStatusCode: ttsResult.base_resp?.status_code,
-            hasAudio: !!ttsResult.data?.audio || !!ttsResult.data?.audio_url
-          }
+            hasAudio: !!ttsResult.data?.audio || !!ttsResult.data?.audio_url,
+          },
         })
 
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
           phase: 'success',
-          data: { 
+          data: {
             voiceId,
             verified: true,
-            note: 'Voice was successfully cloned and can be used for TTS'
-          }
+            note: 'Voice was successfully cloned and can be used for TTS',
+          },
         })
       } catch (ttsError: any) {
         logTestEvent({
           timestamp: new Date().toISOString(),
           testName,
           phase: 'api_response',
-          data: { 
+          data: {
             step: 'verify_with_tts',
             success: false,
             voiceId,
             error: ttsError.message,
-            note: 'Voice cloning may have failed - cloned voice not usable for TTS'
-          }
+            note: 'Voice cloning may have failed - cloned voice not usable for TTS',
+          },
         })
 
         logTestEvent({
@@ -166,20 +186,23 @@ describe('MiniMax Voice Cloning - Verification', () => {
           testName,
           phase: 'error',
           error: `Voice verification failed: ${ttsError.message}`,
-          data: { 
+          data: {
             voiceId,
-            possibleCause: 'Voice was not actually cloned despite API returning success'
-          }
+            possibleCause:
+              'Voice was not actually cloned despite API returning success',
+          },
         })
 
-        throw new Error(`Voice cloning verification failed: Voice '${voiceId}' cannot be used for TTS`)
+        throw new Error(
+          `Voice cloning verification failed: Voice '${voiceId}' cannot be used for TTS`,
+        )
       }
     } catch (error: any) {
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'error',
-        error: error.message
+        error: error.message,
       })
       throw error
     }
@@ -188,18 +211,18 @@ describe('MiniMax Voice Cloning - Verification', () => {
   it('should test with existing voice ID from previous runs', async () => {
     const timestamp = new Date().toISOString()
     const testName = 'test_existing_voice'
-    
+
     // Use a voice ID from our previous test runs
     const existingVoiceId = 'simple_test_1751900004023' // From the log
-    
+
     logTestEvent({
       timestamp,
       testName,
       phase: 'start',
-      data: { 
+      data: {
         voiceId: existingVoiceId,
-        note: 'Testing if previously cloned voice is still available'
-      }
+        note: 'Testing if previously cloned voice is still available',
+      },
     })
 
     try {
@@ -207,64 +230,69 @@ describe('MiniMax Voice Cloning - Verification', () => {
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_call',
-        data: { 
+        data: {
           step: 'test_existing_voice',
-          voiceId: existingVoiceId
-        }
+          voiceId: existingVoiceId,
+        },
       })
 
-      const ttsResult = await firstValueFrom(createText2AudioTask({
-        model: 'speech-02-turbo',
-        text: 'Testing if the previously cloned voice is available.',
-        voice_setting: {
-          voice_id: existingVoiceId,
-        },
-        audio_setting: {
-          output_format: 'mp3',
-        },
-      }, defaultMinimaxContext))
+      const ttsResult = await firstValueFrom(
+        createText2AudioTask(
+          {
+            model: 'speech-02-turbo',
+            text: 'Testing if the previously cloned voice is available.',
+            voice_setting: {
+              voice_id: existingVoiceId,
+            },
+            audio_setting: {
+              output_format: 'mp3',
+            },
+          },
+          defaultMinimaxContext,
+        ),
+      )
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_response',
-        data: { 
+        data: {
           voiceId: existingVoiceId,
           success: true,
           ttsStatusCode: ttsResult.base_resp?.status_code,
-          hasAudio: !!ttsResult.data?.audio || !!ttsResult.data?.audio_url
-        }
+          hasAudio: !!ttsResult.data?.audio || !!ttsResult.data?.audio_url,
+        },
       })
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'success',
-        data: { 
+        data: {
           voiceId: existingVoiceId,
-          note: 'Previously cloned voice is still available and working'
-        }
+          note: 'Previously cloned voice is still available and working',
+        },
       })
     } catch (error: any) {
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'api_response',
-        data: { 
+        data: {
           voiceId: existingVoiceId,
           success: false,
-          error: error.message
-        }
+          error: error.message,
+        },
       })
 
       logTestEvent({
         timestamp: new Date().toISOString(),
         testName,
         phase: 'success',
-        data: { 
+        data: {
           voiceId: existingVoiceId,
-          note: 'Previously cloned voice is not available - this confirms voice cloning may not be working properly'
-        }
+          note: 'Previously cloned voice is not available - this confirms voice cloning may not be working properly',
+        },
       })
     }
   })
