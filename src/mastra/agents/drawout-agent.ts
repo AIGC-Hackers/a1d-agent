@@ -19,7 +19,7 @@ export const drawOutAgent = new Agent({
   name: 'Drawout.ai',
   description: 'Draw out the story',
   instructions: drawOutInstructions,
-  model: openrouter('openai/gpt-4o-mini'),
+  model: openrouter('anthropic/claude-sonnet-4'),
   memory: new Memory({
     storage: storage.value,
   }),
