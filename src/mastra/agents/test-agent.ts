@@ -6,6 +6,8 @@ import { formatDataStreamPart, streamText } from 'ai'
 import { ulid } from 'ulid'
 import { z } from 'zod'
 
+import { mockImageGenerateTool } from '@/mastra/tools/mock-image-generate-tool'
+
 const toolcallStreamTool = createTool({
   id: 'toolcall-stream',
   description: 'write stream in toolcall',
@@ -47,8 +49,11 @@ export const testAgent = new Agent({
   name: 'Test agent',
   description: 'Develop and test agent functionality',
   instructions:
-    'you are a test agent,Complete agent functionality testing according to user instructions.',
-  model: xai('grok-3-mini-fast-latest'),
-  tools: { stream: toolcallStreamTool },
+    'you are a test agent, Complete agent functionality testing according to user instructions. You can generate images using the mock-image-generate tool for testing real-time event streams.',
+  model: openrouter('openai/gpt-4.1'),
+  tools: {
+    stream: toolcallStreamTool,
+    mockImageGenerate: mockImageGenerateTool,
+  },
   memory: new Memory(),
 })

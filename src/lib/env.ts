@@ -39,13 +39,16 @@ export const runtimeEnvSchema = type({
   CLOUDFLARE_R2_BUCKET_NAME: 'string = "dev"',
 
   // ----------------------------------
+  // Convex
+  // ----------------------------------
+  CONVEX_URL: 'string',
+
+  // ----------------------------------
   // AUTH
   // ----------------------------------
   // GOOGLE_CLOUD_LOCALTION: 'string',
   // GOOGLE_CLOUD_PROJECT_ID: 'string',
 })
-
-// export const env = runtimeEnvSchema.assert(process.env)
 
 export const env = lazy(() => runtimeEnvSchema.assert(process.env))
 

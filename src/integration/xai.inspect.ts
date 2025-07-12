@@ -42,4 +42,6 @@ async function test2() {
   }
 }
 
-test2().catch(console.log)
+if (import.meta.main) {
+  test2().catch(console.log)
+}
