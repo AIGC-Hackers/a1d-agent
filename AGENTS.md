@@ -9,7 +9,7 @@ This file provides guidance to AI agents working in this repository.
 ## Architecture Overview
 
 - see @docs/roadmap.md for current status and next steps.
-- Task based development workflow with numbered tasks in `/tasks` directory.
+- Task based development workflow with numbered tasks in `/docs/tasks` directory.
 
 ## Development Commands
 
