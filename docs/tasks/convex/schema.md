@@ -6,7 +6,7 @@
 // convex/schema.ts (VFS 部分)
 export default defineSchema({
   // VFS 文件存储 - 元数据 + 文件引用
-  files: defineTable({
+  file: defineTable({
     path: v.string(),
     fileId: v.optional(v.string()), // Convex File Storage ID 或 R2 文件 ID
     storageType: v.union(
@@ -32,7 +32,7 @@ export default defineSchema({
 
 ```typescript
 // 资产生成任务表
-assetGenerationTasks: defineTable({
+tasks: defineTable({
   id: v.string(), // ULID - 任务唯一标识
   threadId: v.string(),
   resourceId: v.string(),
@@ -59,7 +59,7 @@ assetGenerationTasks: defineTable({
   error: v.optional(v.string()),
 
   // 文件信息
-  files: v.optional(v.array(v.object({
+  file: v.optional(v.array(v.object({
     fileId: v.string(), // Convex R2 文件 ID
     fileName: v.string(),
     fileSize: v.number(),
@@ -77,30 +77,7 @@ assetGenerationTasks: defineTable({
 .index("by_tool", ["toolId"])
 .index("by_thread_status", ["threadId", "status"]),
 
-// 资产生成进度事件表（详细的中间事件）
-assetGenerationEvents: defineTable({
-  id: v.string(), // ULID
-  taskId: v.string(), // 关联到 assetGenerationTasks
-  threadId: v.string(),
-
-  eventType: v.union(
-    v.literal("api_called"),     // API 调用
-    v.literal("progress_update"), // 进度更新
-    v.literal("file_generated"), // 文件生成完成
-    v.literal("file_uploaded"),  // 文件上传完成
-    v.literal("task_completed"), // 任务完成
-    v.literal("error_occurred")  // 错误发生
-  ),
-
-  progress: v.optional(v.number()),
-  data: v.optional(v.any()), // 事件相关数据
-  error: v.optional(v.string()),
-  timestamp: v.number(),
-})
-.index("by_task", ["taskId"])
-.index("by_thread", ["threadId"])
-.index("by_timestamp", ["timestamp"])
-.index("by_task_timestamp", ["taskId", "timestamp"]),
+// 注意：事件现在直接嵌入在 task 表的 events 字段中，无需单独的事件表
 ```
 
 ## Mastra Storage Schema

@@ -35,7 +35,10 @@ async function testConvexVFS() {
     console.log('   Content:', readResult.data.content)
     console.log('   Type:', readResult.data.contentType)
   } else {
-    console.error('❌ Failed to read file:', readResult.error)
+    console.error(
+      '❌ Failed to read file:',
+      readResult.success === false ? readResult.error : 'Unknown error',
+    )
     return
   }
 

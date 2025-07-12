@@ -52,7 +52,6 @@ async function testConvexRealtime() {
 
     await convexClient.mutation(api.tasks.addTaskEvent, {
       taskId,
-      threadId: 'test-thread',
       eventType: progress < 100 ? 'progress_update' : 'task_completed',
       progress,
       data: { description: `Progress: ${progress}%` },
