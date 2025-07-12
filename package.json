@@ -12,7 +12,7 @@
     "start": "dotenvx run  -- mastra start",
     "env:check": "dotenvx run -- bun scripts/env-check.ts",
     "env:example": "dotenvx ext genexample",
-    "format": "prettier --write src/",
+    "format": "prettier --write --ignore-path .gitignore --ignore-path .prettierignore src/",
     "typecheck": "tsc --noEmit",
     "x": "dotenvx run -- bun",
     "test": "dotenvx run -- vitest run"

@@ -3,7 +3,7 @@ pre-commit:
   commands:
     prettier:
       glob: '*.{ts,tsx,json,css,md,yaml,yml}'
-      run: bun --bun prettier --check --cache --write --ignore-path .gitignore {staged_files} && git add {staged_files}
+      run: bun --bun prettier --check --cache --write --ignore-path .gitignore --ignore-path .prettierignore {staged_files} && git add {staged_files}
     check-env-encryption:
       run: bun scripts/check-env-encryption.ts {staged_files}
       fail_text: '环境变量未加密，请使用 `dotenvx encrypt` 加密后再提交'
