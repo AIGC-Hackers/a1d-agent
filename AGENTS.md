@@ -6,16 +6,18 @@ This file provides guidance to AI agents working in this repository.
 
 **A1D Agent** is a TypeScript-based AI agent framework built on Mastra that specializes in creating AI-powered video content generation, particularly "draw-out" style whiteboard explanation videos. The project uses a **plan-driven, VFS-centric architecture** where all agent behavior is guided by structured plans and artifacts are stored in an isolated Virtual File System.
 
+## Architecture Overview
+
+- see @docs/roadmap.md for current status and next steps.
+- Task based development workflow with numbered tasks in `/tasks` directory.
+
 ## Development Commands
+
 - `dotenvx run -- <command>`: Run a command with the correct environment variables.
 - `pnpm x path/to/script.ts`: Run ts script with the correct environment variables.
-- `pnpm dev`: Start development server with Mastra CLI.
-- `pnpm build`: Build the project.
-- `pnpm start`: Start production server.
 - `pnpm test <test-name | path/to/test.ts>`: Run all tests with Vitest.
 - `pnpm typecheck`: Run TypeScript type checking.
 - `pnpm format`: Format code with Prettier.
-- `pnpm env:check`: Validate environment variables.
 
 ## Code Style & Conventions
 
