@@ -9,7 +9,21 @@ This file provides guidance to AI agents working in this repository.
 ## Architecture Overview
 
 - see @docs/roadmap.md for current status and next steps.
-- Task based development workflow with numbered tasks in `/docs/tasks` directory.
+- Task based development workflow with numbered tasks in `/tasks` directory.
+
+## Task Workspace
+
+- **Tasks Directory**: The `/tasks` directory serves as a workspace for complex tasks
+- **Task Notes**: Feel free to create detailed notes and documentation for long-running tasks
+- **ast-grep Rules**: When working with code search tasks, create YAML rule files in the task directory:
+  - Generate `.yaml` files with ast-grep rules for complex searches
+  - Use `ast-grep --rule tasks/<task-number>/rule.yaml` to execute
+  - This approach is preferred over inline patterns for complex matching logic
+- **Workspace Organization**: Each task can have its own subdirectory with:
+  - Task notes and analysis
+  - ast-grep rule files
+  - Intermediate results and findings
+  - Any other artifacts related to the task
 
 ## Development Commands
 
@@ -28,6 +42,15 @@ This file provides guidance to AI agents working in this repository.
 - **VFS**: Use the factory `createVirtualFileSystem(projectId)` from ` '@/mastra/factory'` to interact with the Virtual File System.
 - **Error Handling**: Follow existing patterns for error handling.
 - **Cursor Rules**: Adhere to the strict rules in `.cursor/rules`. Only perform tasks explicitly requested by the user. Do not add, fix, or optimize code without permission.
+
+## Code Search & Analysis
+
+- **ast-grep**: Use ast-grep for precise code searching and pattern matching when necessary. It's particularly useful for:
+  - Finding specific code patterns across the codebase
+  - Locating all usages of a particular function or import
+  - Analyzing code structure and dependencies
+  - Verifying refactoring completeness
+- **Documentation**: See @docs/ast-grep.md for detailed usage instructions and examples
 
 ## Core Architecture
 
