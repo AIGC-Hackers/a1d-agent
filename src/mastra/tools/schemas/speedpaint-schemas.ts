@@ -8,10 +8,5 @@ export const speedpaintVideoGenerateInputSchema = z.object({
   output: fileDescriptorSchema.describe('VFS path for video clip'),
 })
 
-export const speedpaintVideoGenerateOutputSchema = z.object({
-  file_path: z.string().describe('VFS path of generated video'),
-  task_id: z.string().optional(),
-})
-
 export const SPEEDPAINT_TOOL_DESCRIPTION =
   'Generate speedpaint animation from image'
