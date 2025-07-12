@@ -1,5 +1,14 @@
 import { env } from '@/lib/env'
 import { events } from 'fetch-event-stream'
+import {
+  catchError,
+  from,
+  map,
+  Observable,
+  of,
+  switchMap,
+  takeWhile,
+} from 'rxjs'
 
 export type AppType = 'iu' | 'sp' | 'vu'
 
@@ -165,3 +174,83 @@ export type TaskResult = {
 }
 
 export type SourceType = 'framer' | 'api' | 'web' | 'canva'
+
+// 成功结果类型
+export type SpeedpainterSuccessResult = {
+  taskId: string
+  videoUrl: string
+  sketchImageUrl: string
+  progress: number
+}
+
+// 统一的任务结果类型（包含中间状态）
+export type SpeedpainterJobResult = TaskStatus & {
+  progress: number
+}
+
+/**
+ * 生成 SpeedPainter 视频的流式接口
+ * 返回一个 Observable，可以观察任务的进度和状态
+ */
+export function generateSpeedpainterVideoStream(
+  params: Omit<GenerateRequest, 'baseUrl'> & {
+    baseUrl?: string
+    onSubmit?: (data: { taskId: string }) => void
+  },
+): Observable<SpeedpainterJobResult> {
+  const baseUrl = params.baseUrl || 'https://speedpainter.302.ai'
+
+  return from(
+    createSpeedPainterTask({
+      ...params,
+      baseUrl,
+    }),
+  ).pipe(
+    switchMap(({ taskId }) => {
+      // 通知任务已提交
+      params.onSubmit?.({ taskId })
+
+      // 创建状态流
+      return from(
+        getTaskStatusStream({
+          taskId,
+          app: 'sp',
+          source: params.source,
+          baseUrl,
+        }),
+      ).pipe(
+        switchMap((stream) => stream),
+        map((status): SpeedpainterJobResult => {
+          // 计算进度
+          let progress = 0
+          if (status.status === 'INIT' || status.status === 'WAITING') {
+            progress = 10
+          } else if (status.status === 'PROCESSING') {
+            progress = 50
+          } else if (status.status === 'FINISHED') {
+            progress = 100
+          } else if (status.status === 'ERROR') {
+            progress = 0
+          }
+
+          return {
+            ...status,
+            progress,
+          }
+        }),
+        takeWhile(
+          (result) => result.status !== 'FINISHED' && result.status !== 'ERROR',
+          true, // 包含最后一个值
+        ),
+      )
+    }),
+    catchError((error) =>
+      of({
+        taskId: '',
+        status: 'ERROR' as const,
+        error: error instanceof Error ? error.message : String(error),
+        progress: 0,
+      }),
+    ),
+  )
+}
