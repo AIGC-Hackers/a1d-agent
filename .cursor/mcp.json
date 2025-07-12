@@ -6,9 +6,11 @@
     },
     "mastra": {
       "command": "bunx",
-      "args": [
-        "@mastra/mcp-docs-server"
-      ]
+      "args": ["@mastra/mcp-docs-server"]
+    },
+    "convex": {
+      "command": "bunx",
+      "args": ["convex@latest", "mcp", "start"]
     }
   }
 }
