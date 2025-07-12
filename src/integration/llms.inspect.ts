@@ -140,4 +140,6 @@ async function main(): Promise<void> {
   await testStreamingChat()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

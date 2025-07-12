@@ -632,4 +632,6 @@ async function runTests(configs: TestConfig[] = TEST_CONFIGS): Promise<void> {
   })
 }
 
-runTests().catch(console.error)
+if (import.meta.main) {
+  runTests().catch(console.error)
+}

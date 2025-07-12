@@ -2,6 +2,7 @@ import type { Mastra } from '@mastra/core'
 import type { RuntimeContext } from '@mastra/core/runtime-context'
 import type { Context, Next } from 'hono'
 import { lazy } from '@/lib/lazy'
+import { ConvexStorage } from '@/server/vfs/convex-storage'
 import { MemoryStorage } from '@/server/vfs/memory-storage'
 import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
 import { PinoLogger } from '@mastra/loggers'
@@ -31,11 +32,21 @@ function createStorage() {
 export const storage = lazy(() => createStorage())
 
 export function createVirtualFileSystem(projectId: string) {
+  // 使用 Convex 存储
+  if (env.value.CONVEX_URL) {
+    return new VirtualFileSystem(
+      new ConvexStorage(env.value.CONVEX_URL, projectId),
+    )
+  }
+
+  // 开发环境使用内存存储
   if (process.env.NODE_ENV === 'development') {
     return new VirtualFileSystem(new MemoryStorage(projectId))
   }
 
-  throw new Error('VirtualFileSystem is not supported in production')
+  throw new Error(
+    'VirtualFileSystem requires CONVEX_URL or development environment',
+  )
 }
 
 const streamRequestBodySchema = type({
