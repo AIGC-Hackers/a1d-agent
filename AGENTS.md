@@ -9,15 +9,15 @@ This file provides guidance to AI agents working in this repository.
 ## Architecture Overview
 
 - see @docs/roadmap.md for current status and next steps.
-- Task based development workflow with numbered tasks in `/tasks` directory.
+- Task based development workflow with numbered tasks in `/src/tasks` directory.
 
 ## Task Workspace
 
-- **Tasks Directory**: The `/tasks` directory serves as a workspace for complex tasks
+- **Tasks Directory**: The `/src/tasks` directory serves as a workspace for complex tasks
 - **Task Notes**: Feel free to create detailed notes and documentation for long-running tasks
 - **ast-grep Rules**: When working with code search tasks, create YAML rule files in the task directory:
   - Generate `.yaml` files with ast-grep rules for complex searches
-  - Use `ast-grep --rule tasks/<task-number>/rule.yaml` to execute
+  - Use `ast-grep --rule src/tasks/<task-number>/rule.yaml` to execute
   - This approach is preferred over inline patterns for complex matching logic
 - **Workspace Organization**: Each task can have its own subdirectory with:
   - Task notes and analysis

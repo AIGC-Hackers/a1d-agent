@@ -8,5 +8,4 @@ temp
 .env.keys
 external/
 CLAUDE.local.md
-.claude/settings.local.json
 .env.local
