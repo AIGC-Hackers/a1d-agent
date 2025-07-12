@@ -3,7 +3,7 @@ import { v } from 'convex/values'
 
 export default defineSchema({
   // VFS 文件存储 - 目前只支持小文件直接存储
-  files: defineTable({
+  file: defineTable({
     path: v.string(),
     content: v.string(), // 文件内容
     contentType: v.optional(v.string()),
@@ -20,8 +20,8 @@ export default defineSchema({
       filterFields: ['threadId'],
     }),
 
-  // 资产生成任务表
-  assetGenerationTasks: defineTable({
+  // 任务表
+  task: defineTable({
     threadId: v.string(),
     resourceId: v.string(),
     runId: v.optional(v.string()),
@@ -49,36 +49,28 @@ export default defineSchema({
     output: v.optional(v.any()), // 最终输出结果
     error: v.optional(v.string()),
 
-    // 时间戳
-    createdAt: v.number(),
-    updatedAt: v.number(),
+    // 事件序列
+    events: v.optional(
+      v.array(
+        v.object({
+          eventType: v.union(
+            v.literal('task_started'),
+            v.literal('progress_update'),
+            v.literal('image_preview'),
+            v.literal('task_completed'),
+            v.literal('error_occurred'),
+          ),
+          progress: v.optional(v.number()),
+          data: v.optional(v.any()),
+          error: v.optional(v.string()),
+          timestamp: v.number(),
+        }),
+      ),
+    ),
   })
     .index('by_thread', ['threadId'])
     .index('by_resource', ['resourceId'])
     .index('by_status', ['status'])
     .index('by_tool', ['toolId'])
     .index('by_thread_status', ['threadId', 'status']),
-
-  // 资产生成事件表
-  assetGenerationEvents: defineTable({
-    taskId: v.string(), // 关联到 assetGenerationTasks._id
-    threadId: v.string(),
-
-    eventType: v.union(
-      v.literal('task_started'),
-      v.literal('progress_update'),
-      v.literal('image_preview'),
-      v.literal('task_completed'),
-      v.literal('error_occurred'),
-    ),
-
-    progress: v.optional(v.number()),
-    data: v.optional(v.any()), // 事件相关数据
-    error: v.optional(v.string()),
-    timestamp: v.number(),
-  })
-    .index('by_task', ['taskId'])
-    .index('by_thread', ['threadId'])
-    .index('by_timestamp', ['timestamp'])
-    .index('by_task_timestamp', ['taskId', 'timestamp']),
 })

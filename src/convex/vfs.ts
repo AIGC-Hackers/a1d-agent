@@ -10,7 +10,7 @@ export const readFile = query({
   },
   handler: async (ctx, args) => {
     const file = await ctx.db
-      .query('files')
+      .query('file')
       .withIndex('by_path_and_thread', (q) =>
         q.eq('threadId', args.threadId).eq('path', args.path),
       )
@@ -40,7 +40,7 @@ export const writeFile = mutation({
 
     // 检查是否已存在
     const existing = await ctx.db
-      .query('files')
+      .query('file')
       .withIndex('by_path_and_thread', (q) =>
         q.eq('threadId', threadId).eq('path', path),
       )
@@ -59,7 +59,7 @@ export const writeFile = mutation({
       await ctx.db.patch(existing._id, fileData)
       return existing._id
     } else {
-      return await ctx.db.insert('files', fileData)
+      return await ctx.db.insert('file', fileData)
     }
   },
 })
@@ -72,7 +72,7 @@ export const deleteFile = mutation({
   },
   handler: async (ctx, args) => {
     const file = await ctx.db
-      .query('files')
+      .query('file')
       .withIndex('by_path_and_thread', (q) =>
         q.eq('threadId', args.threadId).eq('path', args.path),
       )
@@ -95,7 +95,7 @@ export const listFiles = query({
   },
   handler: async (ctx, args) => {
     let query = ctx.db
-      .query('files')
+      .query('file')
       .withIndex('by_thread', (q) => q.eq('threadId', args.threadId))
 
     const files = await query.collect()

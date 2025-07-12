@@ -1,16 +1,9 @@
+import type { Id } from '@/convex/_generated/dataModel'
 import { api } from '@/convex/_generated/api'
 import { env } from '@/lib/env'
 import { createTool } from '@mastra/core'
 import { ConvexClient } from 'convex/browser'
-import {
-  interval,
-  map,
-  Observable,
-  switchMap,
-  takeWhile,
-  tap,
-  timer,
-} from 'rxjs'
+import { map, Observable, takeWhile, tap, timer } from 'rxjs'
 import { ulid } from 'ulid'
 import { z } from 'zod'
 
@@ -57,8 +50,7 @@ const progressStages: ProgressStage[] = [
 ]
 
 function createMockImageGenerationStream(
-  taskId: string,
-  threadId: string,
+  taskId: Id<'task'>,
   convexClient: ConvexClient,
 ): Observable<ProgressStage> {
   let currentStageIndex = 0
@@ -85,7 +77,6 @@ function createMockImageGenerationStream(
       // 添加事件
       await convexClient.mutation(api.tasks.addTaskEvent, {
         taskId,
-        threadId,
         eventType: stage.eventType,
         progress: stage.progress,
         data: {
@@ -138,7 +129,6 @@ export const mockImageGenerateTool = createTool({
       // 创建并启动模拟流
       const generationStream = createMockImageGenerationStream(
         taskId,
-        threadId,
         convexClient,
       )
 

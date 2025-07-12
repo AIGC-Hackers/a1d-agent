@@ -20,22 +20,18 @@ export const createTask = mutation({
   handler: async (ctx, args) => {
     const now = Date.now()
 
-    const taskId = await ctx.db.insert('assetGenerationTasks', {
+    const taskId = await ctx.db.insert('task', {
       ...args,
       status: 'started',
       progress: 0,
-      createdAt: now,
-      updatedAt: now,
-    })
-
-    // 创建初始事件
-    await ctx.db.insert('assetGenerationEvents', {
-      taskId,
-      threadId: args.threadId,
-      eventType: 'task_started',
-      progress: 0,
-      data: { input: args.input },
-      timestamp: now,
+      events: [
+        {
+          eventType: 'task_started',
+          progress: 0,
+          data: { input: args.input },
+          timestamp: now,
+        },
+      ],
     })
 
     return taskId
@@ -45,7 +41,7 @@ export const createTask = mutation({
 // 更新任务进度
 export const updateTaskProgress = mutation({
   args: {
-    taskId: v.string(),
+    taskId: v.id('task'),
     progress: v.number(),
     status: v.optional(
       v.union(
@@ -59,20 +55,18 @@ export const updateTaskProgress = mutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { taskId, progress, status, output, error } = args
-    const now = Date.now()
+    const { progress, status, output, error } = args
 
     // 更新任务
     const updateData: any = {
       progress,
-      updatedAt: now,
     }
 
     if (status) updateData.status = status
     if (output) updateData.output = output
     if (error) updateData.error = error
 
-    await ctx.db.patch(taskId, updateData)
+    await ctx.db.patch(args.taskId, updateData)
 
     return { success: true }
   },
@@ -81,8 +75,7 @@ export const updateTaskProgress = mutation({
 // 添加任务事件
 export const addTaskEvent = mutation({
   args: {
-    taskId: v.string(),
-    threadId: v.string(),
+    taskId: v.id('task'),
     eventType: v.union(
       v.literal('task_started'),
       v.literal('progress_update'),
@@ -95,9 +88,21 @@ export const addTaskEvent = mutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert('assetGenerationEvents', {
-      ...args,
+    const { taskId, eventType, progress, data, error } = args
+    const task = await ctx.db.get(taskId)
+    if (!task) throw new Error('Task not found')
+
+    const newEvent = {
+      eventType,
+      progress,
+      data,
+      error,
       timestamp: Date.now(),
+    }
+
+    const currentEvents = (task as any).events || []
+    await ctx.db.patch(taskId, {
+      events: [...currentEvents, newEvent],
     })
 
     return { success: true }
@@ -107,20 +112,17 @@ export const addTaskEvent = mutation({
 // 获取任务及其事件（供前端实时订阅）
 export const getTaskWithEvents = query({
   args: {
-    taskId: v.string(),
+    taskId: v.id('task'),
   },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId)
     if (!task) return null
 
-    const events = await ctx.db
-      .query('assetGenerationEvents')
-      .withIndex('by_task_timestamp', (q) => q.eq('taskId', args.taskId))
-      .collect()
-
     return {
       task,
-      events: events.sort((a, b) => a.timestamp - b.timestamp),
+      events: ((task as any).events || []).sort(
+        (a: any, b: any) => a.timestamp - b.timestamp,
+      ),
     }
   },
 })
@@ -132,11 +134,11 @@ export const getThreadTasks = query({
   },
   handler: async (ctx, args) => {
     const tasks = await ctx.db
-      .query('assetGenerationTasks')
+      .query('task')
       .withIndex('by_thread', (q) => q.eq('threadId', args.threadId))
       .collect()
 
-    return tasks.sort((a, b) => b.createdAt - a.createdAt)
+    return tasks.sort((a, b) => b._creationTime - a._creationTime)
   },
 })
 
@@ -147,7 +149,7 @@ export const getActiveTasks = query({
   },
   handler: async (ctx, args) => {
     const tasks = await ctx.db
-      .query('assetGenerationTasks')
+      .query('task')
       .withIndex('by_thread_status', (q) =>
         q.eq('threadId', args.threadId).eq('status', 'generating'),
       )
