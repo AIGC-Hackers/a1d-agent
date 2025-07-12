@@ -13,8 +13,8 @@ This file provides guidance to AI agents working in this repository.
 
 ## Development Commands
 
-- `dotenvx run -- <command>`: Run a command with the correct environment variables.
-- `pnpm x path/to/script.ts`: Run ts script with the correct environment variables.
+- `dotenvx run -- <command>`: Run a command env.
+- `pnpm x path/to/script.ts`: Run ts script env.
 - `pnpm test <test-name | path/to/test.ts>`: Run all tests with Vitest.
 - `pnpm typecheck`: Run TypeScript type checking.
 - `pnpm format`: Format code with Prettier.
@@ -71,8 +71,8 @@ The project integrates with numerous AI services:
 ## Testing
 
 - **Framework**: Vitest
-- **Configuration**: `vitest.config.ts`
 - **Command**: `pnpm test <path/to/test.ts>`
+- **Integration Tests**: Write `.inspect.ts` files for inspection testing, Run them with `pnpm x <path/to/file.inspect.ts>`.
 
 ## Environment Management
 
