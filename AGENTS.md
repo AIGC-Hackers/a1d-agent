@@ -83,9 +83,11 @@ The project integrates with numerous AI services:
 ## Key Files to Understand
 
 - `src/mastra/index.ts` - Main Mastra instance and agent registration
-- `src/lib/env.ts` - Environment variable management, you should use `env.value.<ENV_VAR_NAME>` always.
+- `src/lib/env.ts` - Env vars declaration, you should use `env.value.<ENV_VAR_NAME>` always.
 - `src/mastra/factory.ts` - Core factories for storage, logger, VFS
 - `src/server/vfs/` - Virtual File System implementation
 - `src/integration/` - External service integrations
 - `src/mastra/agents/` - Individual agent implementations
 - `src/mastra/workflows/` - Multi-step workflow definitions
+
+Query documents through mastra mcp
