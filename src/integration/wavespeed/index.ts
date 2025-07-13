@@ -1,3 +1,3 @@
 export * from './config'
 export * from './upload'
-export * from './flux-kontext-pro'
+export * from './wave-speed-flux-kontext'

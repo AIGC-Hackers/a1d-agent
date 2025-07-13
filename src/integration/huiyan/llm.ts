@@ -3,7 +3,7 @@ import { createOpenAI } from '@ai-sdk/openai'
 
 import { baseUrl } from './config'
 
-export namespace Huiyan {
+export namespace HuiyanLm {
   export const enum Model {
     CLAUDE_SONNET_4 = 'claude-sonnet-4-20250514',
     CLAUDE_SONNET_4_THINKING = 'claude-sonnet-4-20250514-thinking',

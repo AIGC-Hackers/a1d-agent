@@ -1,8 +1,7 @@
-import { env } from '@/lib/env'
-
+import type { WavespeedContext } from './config'
 import { WAVESPEED_BASE_URL } from './config'
 
-export namespace Kontext {
+export namespace WaveSpeedFluxKontext {
   export type KontextInput = {
     /**
      * 用于生成图像的提示词
@@ -44,14 +43,29 @@ export namespace Kontext {
     data: KontextOutput
   }
 
-  export async function create(input: KontextInput): Promise<KontextResponse> {
+  export class Client {
+    constructor(private readonly ctx: WavespeedContext) {}
+
+    create(input: KontextInput) {
+      return create(input, this.ctx)
+    }
+
+    getResult(requestId: string) {
+      return getResult(requestId, this.ctx)
+    }
+  }
+
+  async function create(
+    input: KontextInput,
+    ctx: WavespeedContext,
+  ): Promise<KontextResponse> {
     const res = await fetch(
       `${WAVESPEED_BASE_URL}/wavespeed-ai/flux-kontext-pro`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${env.value.WAVESPEED_API_KEY}`,
+          Authorization: `Bearer ${ctx.apiKey}`,
         },
         body: JSON.stringify(input),
       },
@@ -59,13 +73,16 @@ export namespace Kontext {
     return res.json()
   }
 
-  export async function getResult(requestId: string): Promise<KontextResponse> {
+  async function getResult(
+    requestId: string,
+    ctx: WavespeedContext,
+  ): Promise<KontextResponse> {
     const res = await fetch(
       `${WAVESPEED_BASE_URL}/predictions/${requestId}/result`,
       {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${env.value.WAVESPEED_API_KEY}`,
+          Authorization: `Bearer ${ctx.apiKey}`,
         },
       },
     )
