@@ -1,144 +1,133 @@
 import type { Observable } from 'rxjs'
 import { env } from '@/lib/env'
-import { map } from 'rxjs'
+import {
+  distinctUntilChanged,
+  finalize,
+  map,
+  switchMap,
+  takeWhile,
+  tap,
+  timeout,
+  timer,
+} from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 
-import { submitAndPoll, switchMapResponseToJson } from '../utils'
+import type { HuiyanContext } from './config'
+import { Midjourney as Midjourney302 } from '../302/midjourney'
+import { switchMapResponseToJson } from '../utils'
 
-type BotType = 'MID_JOURNEY' | 'NIJI_JOURNEY'
+const baseUrl = 'https://api.huiyan-ai.cn'
 
-type SubmitImagineInput = {
-  prompt: string
-  botType?: BotType
-  notifyHook?: string
-  webhookUrl?: string
-}
+export namespace Midjourney {
+  export type BotType = 'MID_JOURNEY' | 'NIJI_JOURNEY'
 
-type MidjourneyImageJobOutput = {
-  code: number
-  description: string
-  result: string
-  properties: {
-    discordChannelId: string
-    discordInstanceId: string
+  export type SubmitImagineInput = {
+    base64Array?: string[]
+    botType?: BotType
+    notifyHook?: string
+    prompt: string
+    state?: string
   }
-}
 
-export type MidjourneyImageJob = {
-  action: string
-  buttons: Array<{
-    customId: string
-    emoji: string
-    label: string
-    style: number
-    type: number
-  }>
-  description: string
-  failReason: string
-  finishTime: number
-  id: string
-  imageUrl: string
-  progress: string
-  prompt: string
-  promptEn: string
-  properties: Record<string, unknown>
-  startTime: number
-  state: string
-  status: string
-  submitTime: number
-}
+  export type SubmitImagineOutput = {
+    code: number
+    description: string
+    properties: {
+      discordChannelId: string
+      discordInstanceId: string
+    }
+    result: string
+  }
 
-export function submitImagine(props: SubmitImagineInput) {
-  return fromFetch('https://api.huiyan-ai.cn/mj/submit/imagine', {
-    method: 'POST',
-    headers: {
-      'mj-api-secret': env.value.HUIYAN_C_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    redirect: 'follow',
-    body: JSON.stringify({
-      prompt: props.prompt,
-      botType: props.botType ?? 'MID_JOURNEY',
-      notifyHook: props.notifyHook ?? props.webhookUrl,
-    }),
-  }).pipe(switchMapResponseToJson<MidjourneyImageJobOutput>())
-}
-type MidjourneyImageJobProgress = {
-  id: string
-  progress: number
-  imageUrl?: string
-}
+  export class Client {
+    constructor(private readonly ctx: HuiyanContext) {}
 
-type MidjourneyImageJobCompleted = {
-  id: string
-  imageUrl: string
-}
+    submitImagine(input: SubmitImagineInput) {
+      return submitImagine(input, this.ctx)
+    }
 
-export function getJobProgress(props: {
-  jobId: string
-}): Observable<MidjourneyImageJobProgress> {
-  return fromFetch(`https://api.huiyan-ai.cn/mj/task/${props.jobId}/fetch`, {
-    method: 'GET',
-    headers: {
-      'mj-api-secret': env.value.HUIYAN_C_API_KEY,
-    },
-  }).pipe(
-    switchMapResponseToJson<MidjourneyImageJob>(),
-    map((it) => {
-      const pstr = String(it.progress) ?? ''
-      let progress = 0
+    pollStream(
+      jobId: string,
+      opts?: {
+        pollInterval?: number
+        timeout?: number
+      },
+    ): Observable<Midjourney302.MidjourneyImageJob> {
+      let isCompleted = false
+      return timer(0, opts?.pollInterval ?? 1000 * 10).pipe(
+        switchMap(() => this.getJob(jobId)),
+        distinctUntilChanged((a, b) => a.progress === b.progress),
+        map((job) => job),
+        takeWhile((job) => {
+          const pstr = String(job.progress) ?? ''
+          let progress = 0
+          if (pstr !== '') {
+            progress = Number(pstr.replace('%', ''))
+          }
+          return progress !== 100
+        }),
+        timeout(opts?.timeout ?? 1000 * 60 * 10),
+        tap((job) => {
+          const pstr = String(job.progress) ?? ''
+          let progress = 0
+          if (pstr !== '') {
+            progress = Number(pstr.replace('%', ''))
+          }
+          if (progress === 100) {
+            isCompleted = true
+          }
+        }),
+        finalize(() => {
+          if (isCompleted) return
+          this.cancelJob(jobId)
+        }),
+      )
+    }
 
-      if (pstr !== '') {
-        progress = Number(pstr.replace('%', ''))
-      }
+    getJob(id: string) {
+      return getJob(id, this.ctx)
+    }
 
-      return {
-        id: it.id,
-        progress,
-        imageUrl: it.imageUrl,
-      }
-    }),
-  )
-}
+    cancelJob(id: string) {
+      return cancelJob({ jobId: id }, this.ctx)
+    }
+  }
 
-export function cancelMidjourneyImageJob(props: { jobId: string }) {
-  return fromFetch(`https://api.huiyan-ai.cn/mj/task/${props.jobId}/cancel`, {
-    method: 'POST',
-    headers: {
-      'mj-api-secret': env.value.HUIYAN_C_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({}),
-    redirect: 'follow',
-  }).pipe(switchMapResponseToJson<{ code: number; description: string }>())
-}
-
-export function generateImageStream(props: {
-  prompt: string
-  onSubmit?: (data: { jobId: string }) => void
-  webhookUrl?: string
-  pollInterval?: number
-  timeout?: number
-}) {
-  return submitAndPoll<MidjourneyImageJobOutput, MidjourneyImageJobProgress>({
-    submit: () =>
-      submitImagine({
-        prompt: props.prompt,
-        webhookUrl: props.webhookUrl,
-      }),
-    extractJobId: (result) => {
-      console.log('='.repeat(100))
-      console.log(result)
-      console.log('='.repeat(100))
-
-      if (result.code !== 1) throw new Error(result.description)
-      return result.result
-    },
-    poll: (jobId) => getJobProgress({ jobId }),
-    isCompleted: (job) => job.progress === 100,
-    cancel: (jobId) => cancelMidjourneyImageJob({ jobId }),
-    onSubmit: props.onSubmit,
-    pollInterval: props.pollInterval ?? 1000 * 60 * 10,
-    timeout: props.timeout ?? 1000 * 60 * 10,
+  export const client = new Client({
+    apiKey: env.value.HUIYAN_C_API_KEY,
   })
+
+  function submitImagine(input: SubmitImagineInput, ctx: HuiyanContext) {
+    return fromFetch(`${baseUrl}/mj/submit/imagine`, {
+      method: 'POST',
+      headers: {
+        'mj-api-secret': ctx.apiKey,
+        'Content-Type': 'application/json',
+      },
+      redirect: 'follow',
+      body: JSON.stringify(input),
+    }).pipe(switchMapResponseToJson<SubmitImagineOutput>())
+  }
+
+  function getJob(id: string, ctx: HuiyanContext) {
+    return fromFetch(`${baseUrl}/mj/task/${id}/fetch`, {
+      method: 'GET',
+      headers: {
+        'mj-api-secret': ctx.apiKey,
+        'Content-Type': 'application/json',
+      },
+    }).pipe(switchMapResponseToJson<Midjourney302.MidjourneyImageJob>())
+  }
+
+  function cancelJob(input: { jobId: string }, ctx: HuiyanContext) {
+    return fromFetch(`${baseUrl}/mj/task/${input.jobId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'mj-api-secret': ctx.apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+      redirect: 'follow',
+    }).pipe(switchMapResponseToJson<{ code: number; description: string }>())
+  }
 }

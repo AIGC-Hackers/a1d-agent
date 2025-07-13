@@ -1,6 +1,5 @@
 import type { Observable } from 'rxjs'
 import { env } from '@/lib/env'
-import { isEqual } from 'lodash-es'
 import {
   distinctUntilChanged,
   finalize,
@@ -97,7 +96,7 @@ export namespace Midjourney {
     }
 
     cancelJob(id: string) {
-      return cancelMidjourneyImageJob({ jobId: id }, this.ctx)
+      return cancelJob({ jobId: id }, this.ctx)
     }
   }
 
@@ -127,10 +126,7 @@ export namespace Midjourney {
     }).pipe(switchMapResponseToJson<MidjourneyImageJob>())
   }
 
-  function cancelMidjourneyImageJob(
-    input: { jobId: string },
-    ctx: X302Context,
-  ) {
+  function cancelJob(input: { jobId: string }, ctx: X302Context) {
     return fromFetch(`${baseUrl}/mj/task/${input.jobId}/cancel`, {
       method: 'POST',
       headers: {
@@ -140,5 +136,38 @@ export namespace Midjourney {
       body: JSON.stringify({}),
       redirect: 'follow',
     }).pipe(switchMapResponseToJson<{ code: number; description: string }>())
+  }
+
+  /**
+   * @deprecated
+   */
+  export function generateImageStream(
+    props: {
+      prompt: string
+      botType?: BotType
+      onSubmit?: (data: { jobId: string }) => void
+      pollInterval?: number
+      timeout?: number
+    },
+    ctx: X302Context,
+  ) {
+    const client = new Client(ctx)
+    return client
+      .submitImagine({
+        prompt: props.prompt,
+        botType: props.botType ?? 'MID_JOURNEY',
+      })
+      .pipe(
+        switchMap((result) => {
+          if (result.code !== 1 && result.code !== 200)
+            throw new Error(result.description)
+          const jobId = result.result
+          if (props.onSubmit) props.onSubmit({ jobId })
+          return client.pollStream(jobId, {
+            pollInterval: props.pollInterval,
+            timeout: props.timeout,
+          })
+        }),
+      )
   }
 }
