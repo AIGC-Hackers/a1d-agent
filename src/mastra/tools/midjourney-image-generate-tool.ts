@@ -6,13 +6,35 @@ import { ContextX, logger } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
 import { createTool } from '@mastra/core/tools'
 import { firstValueFrom, lastValueFrom, tap } from 'rxjs'
+import { z } from 'zod'
 
-import {
-  MIDJOURNEY_TOOL_DESCRIPTION,
-  midjourneyImageGenerateInputSchema,
-} from './schemas/midjourney-schemas'
+import { fileDescriptorSchema } from './system-tools'
 
-type MidjourneyImageGenerateOutput =
+export const midjourneyImageGenerateInputSchema = z.object({
+  prompt: z.string(),
+  output: fileDescriptorSchema.describe(
+    'VFS path prefix for images (generates 4 images with -1 to -4 suffix)',
+  ),
+})
+
+export const midjourneyImageGenerateOutputSchema = z.object({
+  success: z.boolean(),
+  result: z.array(
+    z.object({
+      id: z.string(),
+      resource_id: z.string().optional(),
+      job_id: z.string(),
+      file_name: z.string().optional(),
+      file_size: z.number(),
+      key: z.string(),
+    }),
+  ),
+  error: z.string().optional(),
+})
+
+export const MIDJOURNEY_TOOL_DESCRIPTION = 'Generate images using Midjourney'
+
+export type MidjourneyImageGenerateOutput =
   | {
       prompt: string
       files: string[]

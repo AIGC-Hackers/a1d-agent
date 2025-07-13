@@ -5,8 +5,7 @@ import { ulid } from 'ulid'
 import {
   KONTEXT_TOOL_DESCRIPTION,
   kontextImageEditInputSchema,
-  kontextImageEditOutputSchema,
-} from '../schemas/kontext-schemas'
+} from '../kontext-image-edit-tool'
 
 // Mock edited image files
 const mockEditedImages = [
@@ -23,7 +22,6 @@ export const kontextImageEditMockTool = createTool({
   id: 'kontext-image-edit',
   description: `${KONTEXT_TOOL_DESCRIPTION} (Mock version)`,
   inputSchema: kontextImageEditInputSchema,
-  outputSchema: kontextImageEditOutputSchema,
   execute: async (context) => {
     const { context: input } = context
 

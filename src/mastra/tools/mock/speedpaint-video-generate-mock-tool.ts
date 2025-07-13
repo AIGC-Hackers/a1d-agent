@@ -5,7 +5,7 @@ import { ulid } from 'ulid'
 import {
   SPEEDPAINT_TOOL_DESCRIPTION,
   speedpaintVideoGenerateInputSchema,
-} from '../schemas/speedpaint-schemas'
+} from '../speedpaint-video-generate-tool'
 
 // 模拟视频文件路径
 const mockVideoFiles = [
