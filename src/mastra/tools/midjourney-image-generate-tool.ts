@@ -1,6 +1,5 @@
 import { api } from '@/convex/_generated/api'
 import { Midjourney } from '@/integration/302/midjourney'
-import { createCloudflareR2Url } from '@/integration/s3'
 import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
 import { ContextX, logger } from '@/mastra/factory'

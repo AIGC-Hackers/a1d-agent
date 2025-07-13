@@ -1,5 +1,5 @@
 import { api } from '@/convex/_generated/api'
-import { createCloudflareR2Url } from '@/integration/s3'
+import { S3 } from '@/integration/s3'
 import { Speedpainter } from '@/integration/speedpainter'
 import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
@@ -134,7 +134,7 @@ export const speedpaintVideoGenerateTool = createTool({
         },
       })
 
-      const publicUrl = createCloudflareR2Url({
+      const publicUrl = S3.createPublicUrl({
         bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
         key: saveResult.key,
       })
@@ -213,7 +213,7 @@ async function getInputData(props: {
     width,
     height,
   } = MediaFileStorage.Schema.ImageObject.assert(imageFile.metadata)
-  const imageUrl = createCloudflareR2Url({
+  const imageUrl = S3.createPublicUrl({
     bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
     key: imageKey,
   })

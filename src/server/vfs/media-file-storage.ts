@@ -1,7 +1,7 @@
 import { join } from 'path'
 import type { PutObjectCommandOutput } from '@aws-sdk/client-s3'
 import { api } from '@/convex/_generated/api'
-import { s3 } from '@/integration/s3'
+import { S3 } from '@/integration/s3'
 import { splitImageToQuadrants } from '@/lib/image'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { type } from 'arktype'
@@ -59,7 +59,7 @@ export namespace MediaFileStorage {
     const inferredContentType =
       props.contentType || FileSource.inferContentType(props.path)
 
-    const upload: PutObjectCommandOutput = await s3.value.send(
+    const upload: PutObjectCommandOutput = await S3.client().send(
       new PutObjectCommand({
         Bucket: props.bucket,
         Key: key,
