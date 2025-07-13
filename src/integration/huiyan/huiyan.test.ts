@@ -4,7 +4,7 @@ import { generateText } from 'ai'
 import { describe, expect, it } from 'vitest'
 
 import { huiyan, LanguageModel } from './llm'
-import { generateImageStream, submitImagine } from './midjourney'
+import { Midjourney } from './midjourney'
 
 describe('Huiyan LLM Integration', () => {
   describe('API Integration', () => {
@@ -46,23 +46,25 @@ describe('Huiyan LLM Integration', () => {
           logEntry('START', { prompt: 'a simple red apple' })
 
           const result = await new Promise((resolve, reject) => {
-            submitImagine({
-              prompt: 'a simple red apple',
-            }).subscribe({
-              next: (response) => {
-                logEntry('SUBMIT_RESPONSE', response)
-                resolve(response)
-              },
-              error: (error) => {
-                logEntry('SUBMIT_ERROR', {
-                  message: error.message,
-                  stack: error.stack,
-                  name: error.name,
-                  cause: error.cause,
-                })
-                reject(error)
-              },
-            })
+            Midjourney.client
+              .submitImagine({
+                prompt: 'a simple red apple',
+              })
+              .subscribe({
+                next: (response: any) => {
+                  logEntry('SUBMIT_RESPONSE', response)
+                  resolve(response)
+                },
+                error: (error: any) => {
+                  logEntry('SUBMIT_ERROR', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    cause: error.cause,
+                  })
+                  reject(error)
+                },
+              })
           })
 
           logEntry('SUCCESS', { result })
@@ -102,40 +104,65 @@ describe('Huiyan LLM Integration', () => {
         }
 
         try {
-          const stream = generateImageStream({
-            prompt: 'a simple red apple',
-            onSubmit: (data) => {
-              logEntry('SUBMIT', data)
-            },
-            pollInterval: 5000,
-            timeout: 30000,
+          let jobId: string | undefined
+
+          // First submit the job
+          await new Promise((resolve, reject) => {
+            Midjourney.client
+              .submitImagine({
+                prompt: 'a simple red apple',
+              })
+              .subscribe({
+                next: (result: any) => {
+                  if (result.code !== 1) {
+                    reject(new Error(result.description))
+                  } else {
+                    jobId = result.result
+                    logEntry('SUBMIT', { jobId })
+                    resolve(result)
+                  }
+                },
+                error: reject,
+              })
           })
 
-          // 订阅流并记录所有事件
+          if (!jobId) throw new Error('No job ID received')
+
+          // Then poll for progress
           await new Promise<void>((resolve, reject) => {
-            stream.subscribe({
-              next: (job) => {
-                logEntry('PROGRESS', {
-                  id: job.id,
-                  progress: job.progress,
-                  imageUrl: job.imageUrl,
-                })
-              },
-              complete: () => {
-                logEntry('COMPLETE', { message: 'Stream completed' })
-                resolve()
-              },
-              error: (error) => {
-                logEntry('ERROR', {
-                  message: error.message,
-                  stack: error.stack,
-                  name: error.name,
-                  cause: error.cause,
-                  fullError: error,
-                })
-                reject(error)
-              },
-            })
+            Midjourney.client
+              .pollStream(jobId!, {
+                pollInterval: 5000,
+                timeout: 30000,
+              })
+              .subscribe({
+                next: (job: any) => {
+                  const pstr = String(job.progress) ?? ''
+                  let progress = 0
+                  if (pstr !== '') {
+                    progress = Number(pstr.replace('%', ''))
+                  }
+                  logEntry('PROGRESS', {
+                    id: job.id,
+                    progress: progress,
+                    imageUrl: job.imageUrl,
+                  })
+                },
+                complete: () => {
+                  logEntry('COMPLETE', { message: 'Stream completed' })
+                  resolve()
+                },
+                error: (error: any) => {
+                  logEntry('ERROR', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    cause: error.cause,
+                    fullError: error,
+                  })
+                  reject(error)
+                },
+              })
           })
         } catch (error) {
           logEntry('CATCH_ERROR', {

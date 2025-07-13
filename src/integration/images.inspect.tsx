@@ -2,9 +2,9 @@ import { env } from '@/lib/env'
 import { firstValueFrom, merge, Observable, Subscription } from 'rxjs'
 
 import type { X302Context } from './302/config'
-import { generateImageStream as generate302MidjourneyStream } from './302/midjourney'
+import { Midjourney } from './302/midjourney'
 import { generateImage as generateRecraft } from './302/recraft'
-import { generateImageStream as generateHuiyanMidjourneyStream } from './huiyan/midjourney'
+import { Midjourney as HuiyanMidjourney } from './huiyan/midjourney'
 import { submitWavespeedFluxKontextPro } from './wavespeed/flux-kontext-pro'
 
 type TestStatus = 'running' | 'success' | 'error' | 'skipped'
@@ -55,7 +55,7 @@ function create302MidjourneyTest(prompt?: string): () => Observable<TestEvent> {
         apiKey: env.value.X_302_API_KEY,
       }
 
-      subscription = generate302MidjourneyStream(
+      subscription = Midjourney.generateImageStream(
         {
           prompt: prompt || 'a simple red circle on white background',
           botType: 'MID_JOURNEY',
@@ -73,8 +73,8 @@ function create302MidjourneyTest(prompt?: string): () => Observable<TestEvent> {
         },
         ctx,
       ).subscribe({
-        next: (job) => {
-          const progress = parseInt(job.progress || '0')
+        next: (job: any) => {
+          const progress = Number(job.progress || 0)
           observer.next({
             type: 'progress',
             name: '302.AI Midjourney',
@@ -82,7 +82,7 @@ function create302MidjourneyTest(prompt?: string): () => Observable<TestEvent> {
             message: `Progress: ${progress}%`,
           })
 
-          if (job.progress === '100' && job.imageUrl) {
+          if (job.progress === 100 && job.imageUrl) {
             const latency = Date.now() - startTime
             observer.next({
               type: 'complete',
@@ -195,30 +195,89 @@ function createHuiyanMidjourneyTest(
 
       observer.next({ type: 'start', name: 'Huiyan Midjourney' })
 
-      subscription = generateHuiyanMidjourneyStream({
-        prompt: prompt || 'a simple red circle on white background',
-        onSubmit: (data) => {
-          jobId = data.jobId
-          observer.next({
-            type: 'log',
-            name: 'Huiyan Midjourney',
-            message: `Job submitted: ${data.jobId}`,
-            level: 'info',
-          })
-        },
-        pollInterval: 2000,
-        timeout: 300000,
-      }).subscribe({
-        next: (job) => {
-          observer.next({
-            type: 'progress',
-            name: 'Huiyan Midjourney',
-            progress: job.progress,
-            message: `Progress: ${job.progress}%`,
-          })
+      const client = HuiyanMidjourney.client
 
-          if (job.progress === 100 && job.imageUrl) {
+      client
+        .submitImagine({
+          prompt: prompt || 'a simple red circle on white background',
+          botType: 'MID_JOURNEY',
+        })
+        .subscribe({
+          next: (result) => {
+            if (result.code !== 1) {
+              throw new Error(result.description)
+            }
+            jobId = result.result
+            observer.next({
+              type: 'log',
+              name: 'Huiyan Midjourney',
+              message: `Job submitted: ${jobId}`,
+              level: 'info',
+            })
+
+            // Start polling
+            subscription = client
+              .pollStream(jobId, {
+                pollInterval: 2000,
+                timeout: 300000,
+              })
+              .subscribe({
+                next: (job) => {
+                  const pstr = String(job.progress) ?? ''
+                  let progress = 0
+                  if (pstr !== '') {
+                    progress = Number(pstr.replace('%', ''))
+                  }
+                  observer.next({
+                    type: 'progress',
+                    name: 'Huiyan Midjourney',
+                    progress: progress,
+                    message: `Progress: ${progress}%`,
+                  })
+
+                  if (progress === 100 && job.imageUrl) {
+                    const latency = Date.now() - startTime
+                    observer.next({
+                      type: 'complete',
+                      name: 'Huiyan Midjourney',
+                      result: {
+                        name: 'Huiyan Midjourney',
+                        provider: 'Huiyan',
+                        model: 'Midjourney',
+                        status: 'success',
+                        latency,
+                        jobId: job.id,
+                        imageUrl: job.imageUrl,
+                      },
+                    })
+                    observer.complete()
+                  }
+                },
+                error: (error) => {
+                  const latency = Date.now() - startTime
+                  const errorMessage =
+                    error instanceof Error ? error.message : String(error)
+                  observer.next({
+                    type: 'complete',
+                    name: 'Huiyan Midjourney',
+                    result: {
+                      name: 'Huiyan Midjourney',
+                      provider: 'Huiyan',
+                      model: 'Midjourney',
+                      status: 'error',
+                      latency,
+                      jobId,
+                      error: errorMessage,
+                    },
+                  })
+                  observer.complete()
+                },
+              })
+          },
+          error: (error) => {
             const latency = Date.now() - startTime
+            const errorMessage =
+              error instanceof Error ? error.message : String(error)
             observer.next({
               type: 'complete',
               name: 'Huiyan Midjourney',
@@ -226,35 +285,15 @@ function createHuiyanMidjourneyTest(
                 name: 'Huiyan Midjourney',
                 provider: 'Huiyan',
                 model: 'Midjourney',
-                status: 'success',
+                status: 'error',
                 latency,
-                jobId: job.id,
-                imageUrl: job.imageUrl,
+                jobId,
+                error: errorMessage,
               },
             })
             observer.complete()
-          }
-        },
-        error: (error) => {
-          const latency = Date.now() - startTime
-          const errorMessage =
-            error instanceof Error ? error.message : String(error)
-          observer.next({
-            type: 'complete',
-            name: 'Huiyan Midjourney',
-            result: {
-              name: 'Huiyan Midjourney',
-              provider: 'Huiyan',
-              model: 'Midjourney',
-              status: 'error',
-              latency,
-              jobId,
-              error: errorMessage,
-            },
-          })
-          observer.complete()
-        },
-      })
+          },
+        })
 
       return () => {
         subscription?.unsubscribe()
