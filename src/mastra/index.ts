@@ -13,7 +13,7 @@ import { stagehandWebAgent } from './agents/stagehand-web-agent'
 import { testAgent } from './agents/test-agent'
 import { todoAgent } from './agents/todo-agent'
 import { weatherAgent } from './agents/weather-agent'
-import { logger, storage, streamMiddleware } from './factory'
+import { ContextX, logger, storage } from './factory'
 import { deepResearchGenerateReportWorkflow } from './workflows/deepresearch-generate-report-workflow'
 import { deepResearchWorkflow } from './workflows/deepresearch-workflow'
 import { weatherWorkflow } from './workflows/weather-workflow'
@@ -46,8 +46,6 @@ export const mastra = new Mastra({
   storage: storage.value,
   logger: logger,
   server: {
-    middleware: [
-      // streamMiddleware()
-    ],
+    middleware: [ContextX.middleware()],
   },
 })
