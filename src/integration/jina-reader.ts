@@ -1,5 +1,6 @@
 import { type } from 'arktype'
 
+// TODO rewrite as arktype
 type JinaHeaders = {
   'X-Timeout'?: number
   'X-Token-Budget'?: number
@@ -29,6 +30,8 @@ export async function fetchJinaApiContent(args: {
   if (headers['X-Respond-With'] === 'readerlm-v2') {
     requestHeaders.Accept = 'text/event-stream'
   }
+
+  throw new Error('Not implemented')
 
   return fetch(endpoint, {
     method: 'GET',
