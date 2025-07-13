@@ -1,6 +1,7 @@
 import { v } from 'convex/values'
 
 import { mutation, query } from './_generated/server'
+import { assetType, eventType, taskStatus } from './schema'
 
 // 创建新任务
 export const createTask = mutation({
@@ -9,11 +10,7 @@ export const createTask = mutation({
     resourceId: v.string(),
     runId: v.optional(v.string()),
     toolId: v.string(),
-    assetType: v.union(
-      v.literal('image'),
-      v.literal('video'),
-      v.literal('audio'),
-    ),
+    assetType,
     provider: v.string(),
     input: v.any(),
   },
@@ -43,14 +40,7 @@ export const updateTaskProgress = mutation({
   args: {
     taskId: v.id('task'),
     progress: v.number(),
-    status: v.optional(
-      v.union(
-        v.literal('started'),
-        v.literal('generating'),
-        v.literal('completed'),
-        v.literal('failed'),
-      ),
-    ),
+    status: v.optional(taskStatus),
     output: v.optional(v.any()),
     error: v.optional(v.string()),
   },
@@ -76,13 +66,7 @@ export const updateTaskProgress = mutation({
 export const addTaskEvent = mutation({
   args: {
     taskId: v.id('task'),
-    eventType: v.union(
-      v.literal('task_started'),
-      v.literal('progress_update'),
-      v.literal('image_preview'),
-      v.literal('task_completed'),
-      v.literal('error_occurred'),
-    ),
+    eventType,
     progress: v.optional(v.number()),
     data: v.optional(v.any()),
     error: v.optional(v.string()),
