@@ -5,7 +5,7 @@ import type { X302Context } from './302/config'
 import { Midjourney } from './302/midjourney'
 import { generateImage as generateRecraft } from './302/recraft'
 import { Midjourney as HuiyanMidjourney } from './huiyan/midjourney'
-import { submitWavespeedFluxKontextPro } from './wavespeed/flux-kontext-pro'
+import { Kontext } from './wavespeed/flux-kontext-pro'
 
 type TestStatus = 'running' | 'success' | 'error' | 'skipped'
 
@@ -314,7 +314,7 @@ function createWavespeedFluxTest(prompt?: string): () => Observable<TestEvent> {
         level: 'info',
       })
 
-      submitWavespeedFluxKontextPro({
+      Kontext.create({
         prompt: prompt || 'a simple red circle on white background',
         image:
           'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
