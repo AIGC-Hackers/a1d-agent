@@ -4,7 +4,7 @@ import OpenAI from 'openai'
 
 import { x302 } from './302/llm'
 import { baseUrl } from './huiyan/config'
-import { Huiyan } from './huiyan/llm'
+import { HuiyanLm } from './huiyan/llm'
 import { Xai } from './xai'
 
 type TestResult = {
@@ -90,12 +90,12 @@ async function runTests(): Promise<void> {
     },
     {
       name: 'Huiyan/GPT-4o-mini',
-      model: Huiyan.model(Huiyan.Model.GPT_4O_MINI),
+      model: HuiyanLm.model(HuiyanLm.Model.GPT_4O_MINI),
       modelName: 'gpt-4o-mini',
     },
     {
       name: 'Huiyan/claude-sonnet',
-      model: Huiyan.model(Huiyan.Model.CLAUDE_SONNET_4),
+      model: HuiyanLm.model(HuiyanLm.Model.CLAUDE_SONNET_4),
       modelName: 'claude-sonnet',
     },
     {
