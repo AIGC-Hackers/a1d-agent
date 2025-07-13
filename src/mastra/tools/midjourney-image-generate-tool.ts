@@ -1,90 +1,157 @@
-import { generateImageStream } from '@/integration/huiyan/midjourney'
+import { api } from '@/convex/_generated/api'
+import { Midjourney } from '@/integration/302/midjourney'
+import { createCloudflareR2Url } from '@/integration/s3'
+import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
-import { sendEvent } from '@/server/event/publish'
-import { uploadQuadrantImage } from '@/server/midjourney-jobs'
+import { ContextX, logger } from '@/mastra/factory'
+import { MediaFileStorage } from '@/server/vfs/media-file-storage'
 import { createTool } from '@mastra/core/tools'
-import { firstValueFrom } from 'rxjs'
-import { z } from 'zod'
+import { firstValueFrom, lastValueFrom, tap } from 'rxjs'
 
-import { logger } from '../factory'
 import {
   MIDJOURNEY_TOOL_DESCRIPTION,
   midjourneyImageGenerateInputSchema,
-  midjourneyImageGenerateOutputSchema,
 } from './schemas/midjourney-schemas'
 
+type MidjourneyImageGenerateOutput =
+  | {
+      prompt: string
+      files: string[]
+      width: number
+      height: number
+    }
+  | { error: string }
+
+const TOOL_ID = 'midjourney-image-generate'
+
 export const midjourneyImageGenerateTool = createTool({
-  id: 'midjourney-image-generate',
+  id: TOOL_ID,
   description: MIDJOURNEY_TOOL_DESCRIPTION,
   inputSchema: midjourneyImageGenerateInputSchema,
-  outputSchema: midjourneyImageGenerateOutputSchema,
-  execute: async (context) => {
+  execute: async (context): Promise<MidjourneyImageGenerateOutput> => {
     const { context: input, resourceId, threadId, runId } = context
+    const { prompt, output } = input
 
-    if (resourceId) {
-      void sendEvent('a1d-agent-toolcall', {
-        contentType: 'application/json',
-        body: {
-          resourceId,
-          threadId,
-          runId,
-          model: 'midjourney',
-          provider: 'huiyan',
-          input,
-        },
-      })
-    }
+    invariant(threadId, 'threadId is required')
+
+    const { convex } = ContextX.get(context.runtimeContext)
 
     try {
-      const result = await firstValueFrom(
-        generateImageStream({
-          prompt: input.prompt,
-          // webhookUrl: 'https://example.com/webhook',
+      // 提交生成任务
+      logger.info('Submitting Midjourney image generation task', { prompt })
+
+      const submitResult = await firstValueFrom(
+        Midjourney.client.submitImagine({ prompt }),
+      )
+
+      const midjourneyTaskId = submitResult.result
+
+      // 创建 Convex 任务记录
+      const convexTaskId = await convex.mutation(api.tasks.createTask, {
+        resourceId: resourceId || 'none',
+        runId: runId || 'none',
+        threadId,
+        assetType: 'image',
+        toolId: TOOL_ID,
+        internalTaskId: midjourneyTaskId,
+        provider: '302',
+        input: {
+          prompt,
+          output_path: output.path,
+        },
+      })
+
+      // 使用流式接口获取进度
+      const status$ = Midjourney.client.pollStream(midjourneyTaskId).pipe(
+        tap(async (status) => {
+          logger.info('Midjourney progress update', {
+            progress: status.progress,
+            status: status.status,
+            hasImage: !!status.imageUrl,
+          })
+
+          // 更新 Convex 任务进度
+          await convex.mutation(api.tasks.addTaskEvent, {
+            taskId: convexTaskId,
+            eventType: 'progress_update',
+            progress: status.progress,
+            data: status,
+          })
         }),
       )
 
-      if (result.progress === 100) {
-        const imageUrl = result.imageUrl!
-        invariant(imageUrl, 'imageUrl is required')
-        const uploadRecords = await uploadQuadrantImage({
-          resourceId,
-          jobId: result.id,
-          imageUrl,
-          bucket: 'midjourney-images',
+      logger.info('Waiting for Midjourney generation to complete...')
+
+      // 获取最终结果
+      const finalResult = await lastValueFrom(status$)
+
+      if (
+        !finalResult ||
+        finalResult.progress !== 100 ||
+        !finalResult.imageUrl
+      ) {
+        const errorMessage =
+          finalResult?.failReason ||
+          'Midjourney task ended without final result'
+        await convex.mutation(api.tasks.updateTaskProgress, {
+          taskId: convexTaskId,
+          progress: finalResult.progress,
+          status: 'failed',
+          error: errorMessage,
         })
-
-        // 基于 output 路径生成 VFS 兼容的路径
-        const basePath = input.output.path.replace(/\.[^/.]+$/, '') // 移除扩展名
-
-        return {
-          success: true,
-          result: uploadRecords.map((it, index) => {
-            return {
-              id: it.id,
-              resource_id: it.resource_id ?? undefined,
-              job_id: it.job_id,
-              file_name: it.file_name ?? undefined,
-              file_size: it.file_size,
-              key: `${basePath}-${index + 1}.jpg`, // 使用 VFS 路径格式
-            }
-          }),
-        }
+        return { error: errorMessage }
       }
 
+      logger.info('Midjourney generation completed, saving quadrant images', {
+        imageUrl: finalResult.imageUrl,
+      })
+
+      // 保存四象限图片
+      const savedQuadrants = await MediaFileStorage.saveQuadrantImage({
+        convex,
+        resourceId,
+        threadId,
+        path: output.path,
+        imageUrl: finalResult.imageUrl,
+        bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
+      })
+
+      const filePaths = savedQuadrants.map((record) => record.path)
+
+      // 最终更新任务为完成
+      await convex.mutation(api.tasks.updateTaskProgress, {
+        taskId: convexTaskId,
+        progress: 100,
+        status: 'completed',
+        output: {
+          file_paths: filePaths,
+          task_id: convexTaskId,
+          original_image_url: finalResult.imageUrl,
+          r2_keys: savedQuadrants.map((r) => r.key),
+          vfs_entity_ids: savedQuadrants.map((r) => r.entityId),
+          midjourney_task_id: midjourneyTaskId,
+        },
+      })
+
+      logger.info('Midjourney image generation completed', {
+        convexTaskId,
+        midjourneyTaskId,
+        savedFiles: filePaths.length,
+      })
+
+      // 返回结果
       return {
-        success: false,
-        result: [],
-        error: 'Unknown error',
+        prompt,
+        files: filePaths,
+        width: savedQuadrants.width,
+        height: savedQuadrants.height,
       }
     } catch (error) {
-      logger.error(
-        `Failed to generate or upload image for resourceId=${resourceId}, prompt="${input.prompt}": ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
-      )
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
 
       return {
-        success: false,
-        result: [],
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       }
     }
   },
