@@ -97,7 +97,6 @@ export namespace MediaFileStorage {
     path: string
     imageUrl: string
     bucket: string
-    metadata: Schema.ImageInfo
   }) {
     const data = await FileSource.get({
       type: 'url',
@@ -126,7 +125,8 @@ export namespace MediaFileStorage {
           bucket: props.bucket,
           contentType: 'image/png',
           metadata: {
-            ...props.metadata,
+            width: quadrants.width,
+            height: quadrants.height,
           },
         })
       }, 4),
@@ -135,6 +135,10 @@ export namespace MediaFileStorage {
 
     const uploadRecords = await firstValueFrom(upload$)
 
-    return uploadRecords
+    return {
+      ...uploadRecords,
+      width: quadrants.width,
+      height: quadrants.height,
+    }
   }
 }
