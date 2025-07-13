@@ -107,24 +107,24 @@
 
 在工具调用过程中利用 Convex 作为持久化事件总线，发布和消费中间事件
 
-### 资产生成工作流分析
-
-参见 @tasks/convex/schema.md 中的"资产生成工作流代码"章节
-
-### 统一数据模型设计目标
-
-- 所有资产生成任务使用相同的事件模型
-- 支持不同类型的资产（图片、视频、音频）
-- 统一的进度追踪和状态管理
-- 一套代码处理所有资产生成工具
-
-### 核心需求明确
+### 核心需求
 
 - ✅ **事件消费者**：前端 UI，用于实时显示生成过程
 - ✅ **关键场景**：LLM 调用 MJ 生图等长任务，需要 UI 逐步显示进度，避免几十秒无响应
 - ✅ **产品价值**：完整的 agent 对话和生成过程回放，作为产品 showcase 的核心功能
-- ✅ **架构简化**：移除 PartySocket，Convex 作为更理想的 BaaS 解决方案
+- ✅ **架构决策**：不引入 convex-r2，直接使用现有 S3 集成
 - ✅ **事件持久化**：事件作为 Convex 表中的行，永久存储
+
+### 实施方案
+
+**详细的工具执行实现方案请参见 @tasks/convex/tool-execution-plan.md**
+
+该文档包含：
+- 完整的数据流设计
+- Convex mutations 定义
+- 工具改造的标准模板
+- 实施步骤和测试要点
+- 适用工具列表
 
 ### 统一资产生成事件模型
 
@@ -132,35 +132,36 @@
 
 ### 实施步骤
 
-#### 2.1 统一资产生成框架设计
+#### 2.1 创建 Convex 基础设施
 
-- [ ] 分析现有资产生成工具的共同模式
-- [ ] 设计通用的资产生成基类/接口
-- [ ] 定义标准的事件发布点和数据格式
+- [ ] 实现 tasks 表的 mutations（create、updateProgress、addEvent、complete）
+- [ ] 实现 tasks 表的查询（getTasksByThread、getTaskById）
+- [ ] 测试 Convex 实时订阅功能
 
-#### 2.2 实现 Convex 事件存储
+#### 2.2 改造长任务工具
 
-- [ ] 实现资产生成任务的 CRUD 操作
-- [ ] 实现进度事件的批量写入
-- [ ] 替换现有的 Cloudflare Queue 事件发布
+- [ ] 按照 tool-execution-plan.md 改造 `midjourney-image-generate-tool.ts`
+- [ ] 实现 `speedpaint-video-generate-tool.ts` 的完整功能
+- [ ] 实现 `minimax-text-to-audio-tool.ts` 的完整功能
+- [ ] 改造其他长时间执行的工具
 
-#### 2.3 重构现有工具
+#### 2.3 集成 S3 和 VFS
 
-- [ ] 重构 `midjourney-image-generate-tool.ts` 使用新的事件模型
-- [ ] 实现 `speedpaint-video-generate-tool.ts` 和 `minimax-text-to-audio-tool.ts`
-- [ ] 统一文件上传到 Convex R2 的逻辑
+- [ ] 确保工具生成的资源正确上传到 S3
+- [ ] 确保 VFS 文件记录正确创建（content 为空，metadata 包含 S3 信息）
+- [ ] 测试 LLM 通过 VFS 路径引用资源的能力
 
-#### 2.4 前端实时订阅
+#### 2.4 前端集成
 
 - [ ] 实现 Convex 实时查询订阅任务进度
-- [ ] 替换现有的事件消费逻辑
 - [ ] 实现任务进度的 UI 组件
+- [ ] 测试多任务并发显示
 
-#### 2.5 集成测试与优化
+#### 2.5 测试与优化
 
 - [ ] 端到端资产生成流程测试
-- [ ] 多任务并发测试
-- [ ] 性能优化和错误处理
+- [ ] 错误恢复和重试机制测试
+- [ ] 性能优化（合理的更新频率）
 
 ## 阶段三：Mastra Storage 接口适配
 
