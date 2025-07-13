@@ -1,3 +1,4 @@
+import { FileSource } from '@/lib/file-source'
 import { firstValueFrom } from 'rxjs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -9,7 +10,7 @@ describe('Minimax Text-to-Audio API', () => {
   describe('text2Audio - Basic API', () => {
     it('should generate audio with voice_id', async () => {
       const result = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'speech-02-turbo',
           text: 'Hello, this is a test of Minimax text to audio API.',
           voice_setting: {
@@ -34,7 +35,7 @@ describe('Minimax Text-to-Audio API', () => {
 
     it('should generate audio with timber_weights mixing', async () => {
       const result = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'speech-02-turbo',
           text: 'Testing voice mixing with multiple voices.',
           timber_weights: [
@@ -55,7 +56,7 @@ describe('Minimax Text-to-Audio API', () => {
 
     it('should generate audio with pronunciation dictionary', async () => {
       const result = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'speech-02-turbo',
           text: '你好，我是小明。',
           voice_setting: {
@@ -76,7 +77,7 @@ describe('Minimax Text-to-Audio API', () => {
 
     it('should handle subtitle generation request', async () => {
       const result = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'speech-02-hd',
           text: 'This is a longer text for subtitle generation testing.',
           voice_setting: {
@@ -110,7 +111,7 @@ describe('Minimax Text-to-Audio API', () => {
       let chunkCount = 0
       let totalBytes = 0
 
-      for await (const chunk of MinimaxTextToAudio.client.createStream({
+      for await (const chunk of MinimaxTextToAudio.client.stream({
         model: 'speech-02-turbo',
         text: 'This is a streaming test with real-time audio generation.',
         voice_setting: {
@@ -144,7 +145,7 @@ describe('Minimax Text-to-Audio API', () => {
     it('should provide extra info in streaming response', async () => {
       let hasExtraInfo = false
 
-      for await (const chunk of MinimaxTextToAudio.client.createStream({
+      for await (const chunk of MinimaxTextToAudio.client.stream({
         model: 'speech-01-hd',
         text: 'Testing extra info in streaming response.',
         voice_setting: {
@@ -166,7 +167,7 @@ describe('Minimax Text-to-Audio API', () => {
   describe('decodeAudioChunk - Utility Function', () => {
     it('should decode hex audio chunks to binary', () => {
       const hexString = '48656c6c6f' // "Hello" in hex
-      const decoded = MinimaxTextToAudio.decodeAudioChunk(hexString)
+      const decoded = FileSource.decodeHexString(hexString)
 
       expect(decoded).toBeInstanceOf(Uint8Array)
       expect(decoded.length).toBe(5)
@@ -174,14 +175,14 @@ describe('Minimax Text-to-Audio API', () => {
     })
 
     it('should handle empty hex strings', () => {
-      const decoded = MinimaxTextToAudio.decodeAudioChunk('')
+      const decoded = FileSource.decodeHexString('')
       expect(decoded).toBeInstanceOf(Uint8Array)
       expect(decoded.length).toBe(0)
     })
 
     it('should handle long hex strings', () => {
       const longHex = '0'.repeat(1000) // 500 bytes of zeros
-      const decoded = MinimaxTextToAudio.decodeAudioChunk(longHex)
+      const decoded = FileSource.decodeHexString(longHex)
 
       expect(decoded).toBeInstanceOf(Uint8Array)
       expect(decoded.length).toBe(500)
@@ -192,7 +193,7 @@ describe('Minimax Text-to-Audio API', () => {
   describe('Error Handling', () => {
     it('should handle invalid model names', async () => {
       const result = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'invalid-model' as any,
           text: 'Test text',
           voice_setting: {
@@ -209,7 +210,7 @@ describe('Minimax Text-to-Audio API', () => {
 
     it('should handle missing required parameters', async () => {
       const result = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'speech-02-turbo',
           text: 'Test without voice settings',
           // Missing both voice_setting and timber_weights
@@ -226,7 +227,7 @@ describe('Minimax Text-to-Audio API', () => {
       const longText = 'A'.repeat(6000) // Exceeds 5000 char limit
 
       const result = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'speech-02-turbo',
           text: longText,
           voice_setting: {
@@ -252,7 +253,7 @@ describe('Minimax Text-to-Audio API', () => {
       const startTime = Date.now()
 
       const result = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'speech-01-turbo', // Turbo model for faster generation
           text: 'Quick test.',
           voice_setting: {
@@ -271,7 +272,7 @@ describe('Minimax Text-to-Audio API', () => {
     it('should handle concurrent requests', async () => {
       const requests = Array.from({ length: 3 }, (_, i) =>
         firstValueFrom(
-          MinimaxTextToAudio.client.createTask({
+          MinimaxTextToAudio.client.create({
             model: 'speech-02-turbo',
             text: `Concurrent request number ${i + 1}`,
             voice_setting: {

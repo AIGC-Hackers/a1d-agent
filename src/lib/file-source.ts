@@ -2,9 +2,22 @@ import { invariant } from '@/lib/invariant'
 import { SetNonNullable } from 'type-fest'
 
 export namespace FileSource {
-  export type UrlInput = { type: 'url'; url: string }
-  export type Base64Input = { type: 'base64'; data: string }
-  export type Input = UrlInput | Base64Input
+  export type UrlInput = {
+    type: 'url'
+    url: string
+  }
+  export type Base64Input = {
+    type: 'base64'
+    contentType?: string
+    data: string
+  }
+  export type HexInput = {
+    type: 'hex'
+    contentType?: string
+    data: string
+  }
+
+  export type Input = UrlInput | Base64Input | HexInput
 
   export type ResponseData = SetNonNullable<Response, 'body'>
 
@@ -34,7 +47,21 @@ export namespace FileSource {
           status: 200,
           statusText: 'OK',
           headers: {
-            'Content-Type': 'application/octet-stream',
+            'Content-Type': input.contentType ?? 'application/octet-stream',
+            'Content-Length': bytes.length.toString(),
+          },
+        })
+
+        return response as ResponseData
+      }
+      case 'hex': {
+        const bytes = decodeHexString(input.data)
+        const blob = new Blob([bytes])
+        const response = new Response(blob, {
+          status: 200,
+          statusText: 'OK',
+          headers: {
+            'Content-Type': input.contentType ?? 'application/octet-stream',
             'Content-Length': bytes.length.toString(),
           },
         })
@@ -42,6 +69,14 @@ export namespace FileSource {
         return response as ResponseData
       }
     }
+  }
+
+  export function decodeHexString(hexString: string): Uint8Array {
+    const bytes = new Uint8Array(hexString.length / 2)
+    for (let i = 0; i < hexString.length; i += 2) {
+      bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16)
+    }
+    return bytes
   }
 
   export function inferContentType(filePath: string): string {
