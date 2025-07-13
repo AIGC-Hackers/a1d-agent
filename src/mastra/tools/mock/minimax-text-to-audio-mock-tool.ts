@@ -4,8 +4,7 @@ import { createTool } from '@mastra/core/tools'
 import {
   MINIMAX_TOOL_DESCRIPTION,
   minimaxTextToAudioInputSchema,
-  minimaxTextToAudioOutputSchema,
-} from '../schemas/minimax-schemas'
+} from '../minimax-text-to-audio-tool'
 
 // 模拟音频文件路径
 const mockAudioFiles = [
@@ -24,7 +23,6 @@ export const minimaxTextToAudioMockTool = createTool({
   id: 'minimax-text-to-audio',
   description: `${MINIMAX_TOOL_DESCRIPTION} (Mock version)`,
   inputSchema: minimaxTextToAudioInputSchema,
-  outputSchema: minimaxTextToAudioOutputSchema,
   execute: async ({ context: input }) => {
     // 模拟 3 秒延迟
     await delay(3000)

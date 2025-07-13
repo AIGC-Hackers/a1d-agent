@@ -6,8 +6,7 @@ import { z } from 'zod'
 import {
   MIDJOURNEY_TOOL_DESCRIPTION,
   midjourneyImageGenerateInputSchema,
-  midjourneyImageGenerateOutputSchema,
-} from '../schemas/midjourney-schemas'
+} from '../midjourney-image-generate-tool'
 
 // 模拟图片文件路径
 const mockImageFiles = [
@@ -23,7 +22,6 @@ export const midjourneyImageGenerateMockTool = createTool({
   id: 'midjourney-image-generate',
   description: `${MIDJOURNEY_TOOL_DESCRIPTION} (Mock version)`,
   inputSchema: midjourneyImageGenerateInputSchema,
-  outputSchema: midjourneyImageGenerateOutputSchema,
   execute: async (context) => {
     const { context: input } = context
 
