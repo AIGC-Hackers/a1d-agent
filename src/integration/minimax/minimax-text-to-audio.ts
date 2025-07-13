@@ -106,16 +106,16 @@ export namespace MinimaxTextToAudio {
   export class Client {
     constructor(private readonly ctx: MinimaxContext) {}
 
-    createTask(input: Text2AudioInput) {
-      return createTask(input, this.ctx)
+    create(input: Text2AudioInput) {
+      return create(input, this.ctx)
     }
 
-    pollTaskStatus(taskId: string) {
-      return pollTaskStatus({ taskId }, this.ctx)
+    poll(taskId: string) {
+      return poll({ taskId }, this.ctx)
     }
 
-    createStream(input: Text2AudioInput) {
-      return createTextToAudioStream(input, this.ctx)
+    stream(input: Text2AudioInput) {
+      return stream(input, this.ctx)
     }
   }
 
@@ -139,7 +139,7 @@ export namespace MinimaxTextToAudio {
 
   // Pattern: API client function with minimal validation
   // AI guidance: Separate authentication config from request data, trust TypeScript types
-  function createTask(
+  function create(
     input: Text2AudioInput,
     context: MinimaxContext,
   ): Observable<Text2AudioOutput> {
@@ -170,7 +170,7 @@ export namespace MinimaxTextToAudio {
     base_resp?: BaseResp
   }
 
-  function pollTaskStatus(
+  function poll(
     params: {
       taskId: string
       pollInterval?: number // milliseconds between polls
@@ -207,7 +207,7 @@ export namespace MinimaxTextToAudio {
     extra_info?: ExtraInfo
   }
 
-  async function* createTextToAudioStream(
+  async function* stream(
     input: Text2AudioInput,
     context: MinimaxContext,
   ): AsyncIterableIterator<AudioStreamChunk> {
@@ -254,14 +254,5 @@ export namespace MinimaxTextToAudio {
         }
       }
     }
-  }
-
-  // Convenience function to decode hex audio chunks to binary
-  export function decodeAudioChunk(hexString: string): Uint8Array {
-    const bytes = new Uint8Array(hexString.length / 2)
-    for (let i = 0; i < hexString.length; i += 2) {
-      bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16)
-    }
-    return bytes
   }
 }

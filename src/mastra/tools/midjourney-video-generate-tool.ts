@@ -3,6 +3,14 @@ import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
 
+export type MidjourneyVideoGenerateOutput =
+  | {
+      // TODO
+    }
+  | {
+      error: string
+    }
+
 export const midjourneyVideoGenerateTool = createTool({
   id: 'midjourney-video-generate',
   description: 'Generate a video',
@@ -18,7 +26,13 @@ export const midjourneyVideoGenerateTool = createTool({
       .describe('Duration of the video in seconds'),
     output: fileDescriptorSchema,
   }),
-  execute: async ({ context: input }) => {
+  execute: async ({
+    context: input,
+    resourceId,
+    threadId,
+    runtimeContext,
+    runId,
+  }): Promise<MidjourneyVideoGenerateOutput> => {
     throw new Error('Not implemented')
   },
 })

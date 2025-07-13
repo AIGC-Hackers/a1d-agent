@@ -1,15 +1,18 @@
 import { api } from '@/convex/_generated/api'
 import { MinimaxTextToAudio } from '@/integration/minimax/minimax-text-to-audio'
-import { ContextX } from '@/mastra/factory'
+import { env } from '@/lib/env'
+import { invariant } from '@/lib/invariant'
+import { ContextX, logger } from '@/mastra/factory'
+import { MediaFileStorage } from '@/server/vfs/media-file-storage'
 import { createTool } from '@mastra/core/tools'
-import { firstValueFrom } from 'rxjs'
+import { firstValueFrom, lastValueFrom, tap } from 'rxjs'
 import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
 
 export const minimaxTextToAudioInputSchema = z.object({
   text: z.string().describe('Narration script from storyboard'),
-  voice: z.string().describe('Voice style'),
+  // voice: z.string().describe('Voice style'),
   output: fileDescriptorSchema.describe('VFS path for audio file'),
 })
 
@@ -29,28 +32,6 @@ export type MinimaxTextToAudioOutput =
     }
   | { error: string }
 
-// Voice mapping configuration
-const VOICE_MAPPING: Record<string, string> = {
-  亲切女声: 'female-sweet',
-  磁性男声: 'male-magnetic',
-  活泼女声: 'female-lively',
-  沉稳男声: 'male-calm',
-  温柔女声: 'female-gentle',
-  青年男声: 'male-youth',
-  // Add more mappings as needed
-}
-
-// Convert voice style to voice_id
-function getVoiceId(voiceStyle: string): string {
-  // If it's already a voice_id format, return as is
-  if (voiceStyle.includes('-')) {
-    return voiceStyle
-  }
-
-  // Otherwise map from Chinese description
-  return VOICE_MAPPING[voiceStyle] || 'female-sweet'
-}
-
 export const minimaxTextToAudioTool = createTool({
   id: TOOL_ID,
   description: MINIMAX_TOOL_DESCRIPTION,
@@ -62,227 +43,153 @@ export const minimaxTextToAudioTool = createTool({
     resourceId,
     runtimeContext,
   }): Promise<MinimaxTextToAudioOutput> => {
-    // Hard error: missing required runtime dependency
-    if (!threadId) {
-      throw new Error('threadId is required for minimax-text-to-audio')
-    }
+    invariant(threadId, 'threadId is required')
 
-    if (!runtimeContext) {
-      throw new Error('runtimeContext is required')
-    }
+    logger.info('Starting Minimax text-to-audio generation', {
+      threadId,
+      runId,
+      resourceId,
+      textLength: input.text.length,
+      outputPath: input.output.path,
+    })
 
     const { convex } = ContextX.get(runtimeContext)
 
     try {
       const client = MinimaxTextToAudio.client
 
-      // Convert voice style to voice_id
-      const voiceId = getVoiceId(input.voice)
+      const voiceId = 'male-qn-qingse'
 
-      // Submit audio generation task
-      const result = await firstValueFrom(
-        client.createTask({
+      logger.debug('Creating audio task with Minimax API', {
+        model: 'speech-02-turbo',
+        voiceId,
+        outputFormat: 'mp3',
+      })
+
+      const audioTask = await firstValueFrom(
+        client.create({
           model: 'speech-02-turbo', // Use turbo model for faster generation
           text: input.text,
           voice_setting: {
             voice_id: voiceId,
-            speed: 1.0,
-            vol: 1.0,
           },
           audio_setting: {
             output_format: 'mp3',
-            sample_rate: 24000,
-            bitrate: 128,
-            channel: 1,
           },
           stream: false,
           output_format: 'hex',
         }),
       )
 
-      // Check initial response
-      if (result.base_resp?.status_code !== 0) {
-        return {
-          error: `Minimax API error: ${result.base_resp?.status_msg || 'Unknown error'}`,
-        }
-      }
+      logger.info('Audio task created', {
+        traceId: audioTask.trace_id,
+        threadId,
+      })
 
-      // If we got audio directly (non-streaming mode)
-      if (result.data?.audio) {
-        // Create Convex task for tracking
-        const convexTaskId = await convex.mutation(api.tasks.createTask, {
-          resourceId: resourceId || 'none',
-          runId: runId || 'none',
-          threadId,
-          assetType: 'audio',
-          toolId: TOOL_ID,
-          internalTaskId: result.trace_id,
-          provider: 'minimax',
-          input: {
-            text: input.text,
-            voice: input.voice,
-          },
-        })
-
-        // Decode hex audio to binary
-        const audioBytes = MinimaxTextToAudio.decodeAudioChunk(
-          result.data.audio,
-        )
-        const audioBlob = new Blob([audioBytes], { type: 'audio/mpeg' })
-        const audioBase64 = await blobToBase64(audioBlob)
-
-        // Write audio file to VFS
-        const { success, storageUrl, error } = await convex.mutation(
-          api.vfs.writeFile,
-          {
-            threadId,
-            path: input.output.path,
-            content: audioBase64,
-            contentType: 'audio/mpeg',
-            description:
-              input.output.description || 'Generated audio narration',
-          },
-        )
-
-        if (!success || !storageUrl) {
-          await convex.mutation(api.tasks.updateTaskProgress, {
-            taskId: convexTaskId,
-            progress: 100,
-            status: 'failed',
-            error: error || 'Failed to save audio file',
-          })
-          return { error: error || 'Failed to save audio file' }
-        }
-
-        // Update task as completed
-        await convex.mutation(api.tasks.updateTaskProgress, {
-          taskId: convexTaskId,
-          progress: 100,
-          status: 'completed',
-          output: {
-            file_path: input.output.path,
-            duration_seconds: result.extra_info?.audio_length || 0,
-            storageUrl,
-          },
-        })
-
-        return {
-          file_path: input.output.path,
-          duration_seconds: result.extra_info?.audio_length || 0,
-        }
-      }
-
-      // For async tasks, we need to poll
-      if (!result.trace_id) {
-        return { error: 'No task ID returned from Minimax API' }
-      }
-
-      // Create Convex task for tracking
       const convexTaskId = await convex.mutation(api.tasks.createTask, {
         resourceId: resourceId || 'none',
         runId: runId || 'none',
         threadId,
         assetType: 'audio',
         toolId: TOOL_ID,
-        internalTaskId: result.trace_id,
+        internalTaskId: audioTask.trace_id,
         provider: 'minimax',
         input: {
           text: input.text,
-          voice: input.voice,
+          voice: voiceId,
         },
       })
 
-      // Poll for task completion
-      const pollSubscription = client
-        .pollTaskStatus(result.trace_id)
-        .subscribe({
-          next: async (status) => {
-            // Calculate progress (Minimax doesn't provide progress, so we estimate)
-            const progress =
-              status.data?.audio || status.data?.audio_url ? 100 : 50
+      logger.debug('Convex task created', {
+        convexTaskId,
+        internalTaskId: audioTask.trace_id,
+      })
 
-            await convex.mutation(api.tasks.addTaskEvent, {
-              taskId: convexTaskId,
-              eventType: 'progress_update',
-              progress,
-              data: status,
-            })
-          },
-          error: async (error) => {
-            await convex.mutation(api.tasks.updateTaskProgress, {
-              taskId: convexTaskId,
-              progress: 0,
-              status: 'failed',
-              error: error.message,
-            })
-          },
-        })
+      logger.info('Starting to poll for audio generation result', {
+        traceId: audioTask.trace_id,
+      })
 
-      // Wait for the final result
-      const finalStatus = await firstValueFrom(
-        client.pollTaskStatus(result.trace_id),
+      const audioResult = await lastValueFrom(
+        MinimaxTextToAudio.client.poll(audioTask.trace_id).pipe(
+          tap((it) => {
+            logger.debug('Minimax text-to-audio task progress', {
+              traceId: audioTask.trace_id,
+              status: it.data?.status,
+            })
+          }),
+        ),
       )
 
-      pollSubscription.unsubscribe()
+      logger.info('Audio generation completed', {
+        traceId: audioTask.trace_id,
+        status: audioResult.data?.status,
+        subtitle_file: audioResult.subtitle_file,
+        audio_url: audioResult.data?.audio_url,
+        hasAudioData: !!audioResult.data?.audio,
+      })
 
-      if (!finalStatus.data?.audio) {
-        const errorMessage =
-          finalStatus.base_resp?.status_msg || 'Audio generation failed'
-        await convex.mutation(api.tasks.updateTaskProgress, {
-          taskId: convexTaskId,
-          progress: 100,
-          status: 'failed',
-          error: errorMessage,
-        })
-        return { error: errorMessage }
-      }
+      const audioHexString = audioResult.data?.audio
+      const durationSeconds = audioResult.extra_info?.audio_length
 
-      // Decode and save audio
-      const audioBytes = MinimaxTextToAudio.decodeAudioChunk(
-        finalStatus.data.audio,
-      )
-      const audioBlob = new Blob([audioBytes], { type: 'audio/mpeg' })
-      const audioBase64 = await blobToBase64(audioBlob)
+      invariant(audioHexString, 'audioHexData is required')
+      invariant(durationSeconds, 'durationSeconds is required')
 
-      // Write audio file to VFS
-      const { success, storageUrl, error } = await convex.mutation(
-        api.vfs.writeFile,
-        {
-          threadId,
-          path: input.output.path,
-          content: audioBase64,
-          contentType: 'audio/mpeg',
-          description: input.output.description || 'Generated audio narration',
+      logger.debug('Saving audio file to storage', {
+        path: input.output.path,
+        bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
+        durationSeconds,
+      })
+
+      const savedFile = await MediaFileStorage.saveFile({
+        convex,
+        bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
+        threadId,
+        path: input.output.path,
+        source: {
+          type: 'hex',
+          data: audioHexString,
         },
-      )
+        contentType: 'audio/mpeg',
+        description: input.output.description || 'Generated audio narration',
+        metadata: {
+          durationSeconds,
+        },
+      })
 
-      if (!success || !storageUrl) {
-        await convex.mutation(api.tasks.updateTaskProgress, {
-          taskId: convexTaskId,
-          progress: 100,
-          status: 'failed',
-          error: error || 'Failed to save audio file',
-        })
-        return { error: error || 'Failed to save audio file' }
-      }
+      logger.info('Audio file saved successfully', {
+        path: savedFile.path,
+        key: savedFile.key,
+        durationSeconds,
+      })
 
-      // Update task as completed
       await convex.mutation(api.tasks.updateTaskProgress, {
         taskId: convexTaskId,
         progress: 100,
         status: 'completed',
         output: {
-          file_path: input.output.path,
-          duration_seconds: finalStatus.extra_info?.audio_length || 0,
-          storageUrl,
+          file_path: savedFile.path,
+          duration_seconds: durationSeconds,
+          key: savedFile.key,
         },
+      })
+
+      logger.info('Minimax text-to-audio generation completed successfully', {
+        threadId,
+        outputPath: input.output.path,
+        durationSeconds,
       })
 
       return {
         file_path: input.output.path,
-        duration_seconds: finalStatus.extra_info?.audio_length || 0,
+        duration_seconds: durationSeconds,
       }
     } catch (error) {
+      logger.error('Failed to generate audio with Minimax', {
+        threadId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      })
+
       // Soft error: return error message to LLM
       return {
         error: error instanceof Error ? error.message : String(error),
@@ -290,21 +197,3 @@ export const minimaxTextToAudioTool = createTool({
     }
   },
 })
-
-// Helper function to convert Blob to base64
-async function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        // Remove data URL prefix
-        const base64 = reader.result.split(',')[1]
-        resolve(base64)
-      } else {
-        reject(new Error('Failed to convert blob to base64'))
-      }
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
-}

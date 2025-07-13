@@ -129,7 +129,7 @@ describe('MiniMax Voice Cloning - Verification', () => {
 
       try {
         const ttsResult = await firstValueFrom(
-          MinimaxTextToAudio.client.createTask({
+          MinimaxTextToAudio.client.create({
             model: 'speech-02-turbo',
             text: 'Hello, this is a test using the cloned voice.',
             voice_setting: {
@@ -234,7 +234,7 @@ describe('MiniMax Voice Cloning - Verification', () => {
       })
 
       const ttsResult = await firstValueFrom(
-        MinimaxTextToAudio.client.createTask({
+        MinimaxTextToAudio.client.create({
           model: 'speech-02-turbo',
           text: 'Testing if the previously cloned voice is available.',
           voice_setting: {
