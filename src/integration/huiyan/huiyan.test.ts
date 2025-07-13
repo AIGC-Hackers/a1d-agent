@@ -3,13 +3,13 @@ import { join } from 'path'
 import { generateText } from 'ai'
 import { describe, expect, it } from 'vitest'
 
-import { huiyan, LanguageModel } from './llm'
+import { Huiyan } from './llm'
 import { Midjourney } from './midjourney'
 
 describe('Huiyan LLM Integration', () => {
   describe('API Integration', () => {
     it.skip('should work with GPT-4o-mini', async () => {
-      const model = huiyan(LanguageModel.GPT_4O_MINI)
+      const model = Huiyan.model(Huiyan.Model.GPT_4O_MINI)
 
       const result = await generateText({
         model,
@@ -18,7 +18,7 @@ describe('Huiyan LLM Integration', () => {
       })
 
       expect(result.text).toBeTruthy()
-      console.log(`${LanguageModel.GPT_4O_MINI} response:`, result.text)
+      console.log(`${Huiyan.Model.GPT_4O_MINI} response:`, result.text)
     }, 10000)
   })
 

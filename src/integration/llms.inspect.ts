@@ -4,8 +4,8 @@ import OpenAI from 'openai'
 
 import { x302 } from './302/llm'
 import { baseUrl } from './huiyan/config'
-import { huiyan, LanguageModel } from './huiyan/llm'
-import { xai } from './xai'
+import { Huiyan } from './huiyan/llm'
+import { Xai } from './xai'
 
 type TestResult = {
   provider: string
@@ -85,17 +85,17 @@ async function runTests(): Promise<void> {
   const tests = [
     {
       name: 'XAI',
-      model: xai('grok-3-mini-fast-latest'),
+      model: Xai.model('grok-3-mini-fast-latest'),
       modelName: 'grok-3-mini-fast-latest',
     },
     {
       name: 'Huiyan/GPT-4o-mini',
-      model: huiyan(LanguageModel.GPT_4O_MINI),
+      model: Huiyan.model(Huiyan.Model.GPT_4O_MINI),
       modelName: 'gpt-4o-mini',
     },
     {
       name: 'Huiyan/claude-sonnet',
-      model: huiyan(LanguageModel.CLAUDE_SONNET_4),
+      model: Huiyan.model(Huiyan.Model.CLAUDE_SONNET_4),
       modelName: 'claude-sonnet',
     },
     {
