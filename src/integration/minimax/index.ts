@@ -1,4 +1,4 @@
-export * from './t2a'
+export * from './minimax-text-to-audio'
 export * from './voice-cloning'
 export * from './video'
 export * from './image'

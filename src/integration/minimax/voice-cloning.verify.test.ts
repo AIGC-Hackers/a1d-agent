@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs'
 import { describe, expect, it } from 'vitest'
 
 import { defaultMinimaxContext } from './config'
-import { createText2AudioTask } from './t2a'
+import { MinimaxTextToAudio } from './minimax-text-to-audio'
 import { cloneVoice, uploadFile } from './voice-cloning'
 
 function logTestEvent(event: {
@@ -129,19 +129,16 @@ describe('MiniMax Voice Cloning - Verification', () => {
 
       try {
         const ttsResult = await firstValueFrom(
-          createText2AudioTask(
-            {
-              model: 'speech-02-turbo',
-              text: 'Hello, this is a test using the cloned voice.',
-              voice_setting: {
-                voice_id: voiceId, // Use the cloned voice
-              },
-              audio_setting: {
-                output_format: 'mp3',
-              },
+          MinimaxTextToAudio.client.createTask({
+            model: 'speech-02-turbo',
+            text: 'Hello, this is a test using the cloned voice.',
+            voice_setting: {
+              voice_id: voiceId, // Use the cloned voice
             },
-            defaultMinimaxContext,
-          ),
+            audio_setting: {
+              output_format: 'mp3',
+            },
+          }),
         )
 
         logTestEvent({
@@ -237,19 +234,16 @@ describe('MiniMax Voice Cloning - Verification', () => {
       })
 
       const ttsResult = await firstValueFrom(
-        createText2AudioTask(
-          {
-            model: 'speech-02-turbo',
-            text: 'Testing if the previously cloned voice is available.',
-            voice_setting: {
-              voice_id: existingVoiceId,
-            },
-            audio_setting: {
-              output_format: 'mp3',
-            },
+        MinimaxTextToAudio.client.createTask({
+          model: 'speech-02-turbo',
+          text: 'Testing if the previously cloned voice is available.',
+          voice_setting: {
+            voice_id: existingVoiceId,
           },
-          defaultMinimaxContext,
-        ),
+          audio_setting: {
+            output_format: 'mp3',
+          },
+        }),
       )
 
       logTestEvent({

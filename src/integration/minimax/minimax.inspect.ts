@@ -6,7 +6,7 @@ import {
   createText2AudioTask,
   decodeAudioChunk,
   textToAudioStream,
-} from './t2a'
+} from './minimax-text-to-audio'
 import { generateVideoStream } from './video'
 import { listVoices } from './voice-cloning'
 
