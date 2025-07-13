@@ -74,9 +74,6 @@ importers:
       openai:
         specifier: ^5.8.3
         version: 5.8.3(ws@8.18.3)(zod@3.25.67)
-      partysocket:
-        specifier: ^1.1.4
-        version: 1.1.4
       postgres:
         specifier: ^3.4.7
         version: 3.4.7
@@ -3962,9 +3959,6 @@ packages:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
 
-  event-target-polyfill@0.0.4:
-    resolution: {integrity: sha512-Gs6RLjzlLRdT8X9ZipJdIZI/Y6/HhRLyq9RdDlCsnpxr/+Nn6bU2EFGuC94GjxqhM+Nmij2Vcq98yoHrU8uNFQ==}
-
   event-target-shim@5.0.1:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
     engines: {node: '>=6'}
@@ -4976,9 +4970,6 @@ packages:
 
   partial-json@0.1.7:
     resolution: {integrity: sha512-Njv/59hHaokb/hRUjce3Hdv12wd60MtM9Z5Olmn+nehe0QDAsRtRbJPvJ0Z91TusF0SuZRIvnM+S4l6EIP8leA==}
-
-  partysocket@1.1.4:
-    resolution: {integrity: sha512-jXP7PFj2h5/v4UjDS8P7MZy6NJUQ7sspiFyxL4uc/+oKOL+KdtXzHnTV8INPGxBrLTXgalyG3kd12Qm7WrYc3A==}
 
   path-key@2.0.1:
     resolution: {integrity: sha512-fEHGKCSmUSDPv4uoj8AlD+joPlq3peND+HRYyxFz4KPw4z926S/b8rIuFs2FYJg3BwsxJf6A9/3eIdLaYC+9Dw==}
@@ -10778,8 +10769,6 @@ snapshots:
 
   etag@1.8.1: {}
 
-  event-target-polyfill@0.0.4: {}
-
   event-target-shim@5.0.1: {}
 
   events@3.3.0: {}
@@ -11823,10 +11812,6 @@ snapshots:
 
   partial-json@0.1.7:
     optional: true
-
-  partysocket@1.1.4:
-    dependencies:
-      event-target-polyfill: 0.0.4
 
   path-key@2.0.1: {}
 
