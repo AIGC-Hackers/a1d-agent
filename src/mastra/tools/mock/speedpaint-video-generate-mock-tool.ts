@@ -5,7 +5,6 @@ import { ulid } from 'ulid'
 import {
   SPEEDPAINT_TOOL_DESCRIPTION,
   speedpaintVideoGenerateInputSchema,
-  speedpaintVideoGenerateOutputSchema,
 } from '../schemas/speedpaint-schemas'
 
 // 模拟视频文件路径
@@ -35,7 +34,6 @@ export const speedpaintVideoGenerateMockTool = createTool({
   id: 'speedpaint-video-generate',
   description: `${SPEEDPAINT_TOOL_DESCRIPTION} (Mock version)`,
   inputSchema: speedpaintVideoGenerateInputSchema,
-  outputSchema: speedpaintVideoGenerateOutputSchema,
   execute: async ({ context: input }) => {
     // 生成任务ID
     const taskId = `mock-task-${ulid()}`

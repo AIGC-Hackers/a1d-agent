@@ -8,10 +8,11 @@ import { logger } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
 import { createTool } from '@mastra/core/tools'
 import { ConvexHttpClient } from 'convex/browser'
-import { z } from 'zod'
 
-import { SPEEDPAINT_TOOL_DESCRIPTION } from './schemas/speedpaint-schemas'
-import { fileDescriptorSchema } from './system-tools'
+import {
+  SPEEDPAINT_TOOL_DESCRIPTION,
+  speedpaintVideoGenerateInputSchema,
+} from './schemas/speedpaint-schemas'
 
 type SpeedpaintVideoGenerateOutput =
   | {
@@ -22,19 +23,16 @@ type SpeedpaintVideoGenerateOutput =
       fileSavedPath: string
     }
   | { error: string }
+
 const TOOL_ID = 'speedpaint-video-generate'
 
 export const speedpaintVideoGenerateTool = createTool({
   id: TOOL_ID,
   description: SPEEDPAINT_TOOL_DESCRIPTION,
-  inputSchema: z.object({
-    image_path: z.string().describe('Image path in vfs'),
-    audio_path: z.string().describe('Audio path in vfs'),
-    output: fileDescriptorSchema.describe('Output path in vfs'),
-  }),
+  inputSchema: speedpaintVideoGenerateInputSchema,
   execute: async (context): Promise<SpeedpaintVideoGenerateOutput> => {
     const { context: input, resourceId, threadId, runId } = context
-    const { image_path, audio_path, output } = input
+    const { image_path, duration_seconds, output } = input
 
     invariant(threadId, 'threadId is required')
 
@@ -44,7 +42,6 @@ export const speedpaintVideoGenerateTool = createTool({
       convex,
       threadId,
       image_path,
-      audio_path,
     })
 
     if (Result.isErr(inputData)) {
@@ -75,7 +72,7 @@ export const speedpaintVideoGenerateTool = createTool({
         provider: 'a1d',
         input: {
           image_path,
-          audio_path,
+          duration_seconds,
           output_path: output.path,
         },
       })
@@ -130,7 +127,7 @@ export const speedpaintVideoGenerateTool = createTool({
         metadata: {
           width: inputData.data.width,
           height: inputData.data.height,
-          durationSeconds: inputData.data.audioDuration,
+          durationSeconds: duration_seconds,
         },
       })
 
@@ -167,7 +164,7 @@ export const speedpaintVideoGenerateTool = createTool({
         inputImagePath: image_path,
         width: inputData.data.width,
         height: inputData.data.height,
-        durationSeconds: inputData.data.audioDuration,
+        durationSeconds: duration_seconds,
         fileSavedPath: output.path,
       }
     } catch (error) {
@@ -186,26 +183,17 @@ async function getInputData(props: {
   convex: ConvexHttpClient
   threadId: string
   image_path: string
-  audio_path: string
 }) {
-  const { convex, threadId, image_path, audio_path } = props
+  const { convex, threadId, image_path } = props
 
   // find & verify image file in vfs
   const imageFile = await convex.query(api.vfs.readFile, {
     threadId: threadId,
     path: image_path,
   })
+
   if (!imageFile) {
     return Result.err(new Error(`Image file not found: ${image_path}`))
-  }
-
-  const audioFile = await convex.query(api.vfs.readFile, {
-    threadId: threadId,
-    path: audio_path,
-  })
-
-  if (!audioFile) {
-    return Result.err(new Error(`Audio file not found: ${audio_path}`))
   }
 
   const {
@@ -218,13 +206,9 @@ async function getInputData(props: {
     key: imageKey,
   })
 
-  const { durationSeconds: audioDuration } =
-    MediaFileStorage.Schema.AudioObject.assert(audioFile.metadata)
-
   return Result.ok({
     imageUrl,
     width,
     height,
-    audioDuration,
   })
 }
