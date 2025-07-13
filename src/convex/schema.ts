@@ -1,6 +1,36 @@
 import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 
+// Type Validators
+export const assetType = v.union(
+  v.literal('image'),
+  v.literal('video'),
+  v.literal('audio'),
+)
+
+export const taskStatus = v.union(
+  v.literal('started'),
+  v.literal('generating'),
+  v.literal('completed'),
+  v.literal('failed'),
+)
+
+export const eventType = v.union(
+  v.literal('task_started'),
+  v.literal('progress_update'),
+  v.literal('image_preview'),
+  v.literal('task_completed'),
+  v.literal('error_occurred'),
+)
+
+export const taskEvent = v.object({
+  eventType: eventType,
+  progress: v.optional(v.number()),
+  data: v.optional(v.any()),
+  error: v.optional(v.string()),
+  timestamp: v.number(),
+})
+
 export default defineSchema({
   // VFS 文件存储 - 目前只支持小文件直接存储
   file: defineTable({
@@ -28,20 +58,11 @@ export default defineSchema({
 
     // 任务基本信息
     toolId: v.string(), // mock-image-generate, midjourney-image-generate 等
-    assetType: v.union(
-      v.literal('image'),
-      v.literal('video'),
-      v.literal('audio'),
-    ),
+    assetType: assetType,
     provider: v.string(), // mock-provider, huiyan, minimax 等
 
     // 任务状态
-    status: v.union(
-      v.literal('started'),
-      v.literal('generating'),
-      v.literal('completed'),
-      v.literal('failed'),
-    ),
+    status: taskStatus,
     progress: v.number(), // 0-100
 
     // 输入输出
@@ -50,23 +71,7 @@ export default defineSchema({
     error: v.optional(v.string()),
 
     // 事件序列
-    events: v.optional(
-      v.array(
-        v.object({
-          eventType: v.union(
-            v.literal('task_started'),
-            v.literal('progress_update'),
-            v.literal('image_preview'),
-            v.literal('task_completed'),
-            v.literal('error_occurred'),
-          ),
-          progress: v.optional(v.number()),
-          data: v.optional(v.any()),
-          error: v.optional(v.string()),
-          timestamp: v.number(),
-        }),
-      ),
-    ),
+    events: v.optional(v.array(taskEvent)),
   })
     .index('by_thread', ['threadId'])
     .index('by_resource', ['resourceId'])
