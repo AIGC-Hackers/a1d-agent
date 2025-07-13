@@ -17,7 +17,14 @@ export type QuadrantPosition =
 
 export const splitImageToQuadrants = async (
   input: ImageInput,
-): Promise<QuadrantResult> => {
+): Promise<{
+  topLeft: Buffer
+  topRight: Buffer
+  bottomLeft: Buffer
+  bottomRight: Buffer
+  width: number
+  height: number
+}> => {
   const { width, height } = await sharp(input).metadata()
 
   if (!width || !height) {
@@ -62,27 +69,9 @@ export const splitImageToQuadrants = async (
     topRight,
     bottomLeft,
     bottomRight,
+    width,
+    height,
   }
-}
-
-export const splitImageToQuadrantArray = async (
-  input: ImageInput,
-): Promise<Buffer[]> => {
-  const result = await splitImageToQuadrants(input)
-  return [
-    result.topLeft,
-    result.topRight,
-    result.bottomLeft,
-    result.bottomRight,
-  ]
-}
-
-export const getQuadrantByPosition = async (
-  input: ImageInput,
-  position: QuadrantPosition,
-): Promise<Buffer> => {
-  const result = await splitImageToQuadrants(input)
-  return result[position]
 }
 
 export const resizeImage = async (
