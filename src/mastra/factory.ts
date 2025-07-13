@@ -1,4 +1,3 @@
-import type { Mastra } from '@mastra/core'
 import type { RuntimeContext } from '@mastra/core/runtime-context'
 import type { Context, Next } from 'hono'
 import { lazy } from '@/lib/lazy'
@@ -8,9 +7,7 @@ import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
 import { PinoLogger } from '@mastra/loggers'
 import { PostgresStore } from '@mastra/pg'
 import { type } from 'arktype'
-import { events } from 'fetch-event-stream'
-import PartySocket from 'partysocket'
-import { createContext } from 'unctx'
+import { ConvexHttpClient } from 'convex/browser'
 
 import { env } from '../lib/env'
 
@@ -49,64 +46,29 @@ export function createVirtualFileSystem(projectId: string) {
   )
 }
 
-const streamRequestBodySchema = type({
-  threadId: 'string?',
-  resourceId: 'string?',
-})
-
-export const partySocketContext = createContext<Pick<PartySocket, 'send'>>()
-
-export function streamMiddleware() {
-  const handler = async (c: Context, next: Next) => {
-    const body = await c.req.json()
-
-    const input = streamRequestBodySchema(body)
-
-    if (input instanceof type.errors) {
-      return next()
+export namespace ContextX {
+  export function middleware() {
+    return async (c: Context, next: Next) => {
+      const runtimeContext = c.get('runtimeContext') as RuntimeContext
+      const convex = new ConvexHttpClient(env.value.CONVEX_URL)
+      runtimeContext.set('convex', convex)
+      await next()
     }
-
-    const { threadId, resourceId } = input
-    if (!threadId || !resourceId) {
-      return next()
-    }
-
-    const partySocket = new PartySocket({
-      host: 'project-name.username.partykit.dev', // or localhost:1999 in dev
-      room: resourceId,
-      // add an optional id to identify the client,
-      // if not provided, a random id will be generated
-      // note that the id needs to be unique per connection,
-      // not per user, so e.g. multiple devices or tabs need a different id
-      // id: resourceId,
-
-      // optionally, specify the party to connect to.
-      // if not provided, will connect to the "main" party defined in partykit.json
-      party: 'main',
-
-      // optionally, pass an object of query string parameters to add to the request
-      query: async () => ({
-        token: '123',
-      }),
-    })
-
-    const runtimeContext = c.get('runtimeContext') as RuntimeContext
-    runtimeContext.set('partySocket', partySocket)
-
-    await partySocketContext.callAsync(partySocket, next)
-    const response = c.res.clone()
-
-    for await (const chunk of events(response)) {
-      if (chunk.event && chunk.data) {
-        partySocket.send(JSON.stringify(chunk))
-      }
-    }
-
-    partySocket.close()
   }
 
-  return {
-    path: '/api/**/stream',
-    handler,
+  const schema = type({
+    convex: type.instanceOf(ConvexHttpClient),
+  })
+  type ContextType = typeof schema.infer
+
+  export function get(runtimeContext: RuntimeContext): ContextType {
+    const convex = runtimeContext.get('convex') as ConvexHttpClient
+    const key = '_ref'
+    if (!runtimeContext.has(key)) {
+      const ctx = schema.assert({ convex })
+      runtimeContext.set(key, ctx)
+    }
+
+    return runtimeContext.get(key)
   }
 }
