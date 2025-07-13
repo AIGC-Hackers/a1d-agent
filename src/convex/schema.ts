@@ -50,7 +50,7 @@ export default defineSchema({
       filterFields: ['threadId'],
     }),
 
-  // 任务表
+  // 任务表 - 瞬时状态
   task: defineTable({
     threadId: v.string(),
     resourceId: v.string(),
@@ -59,6 +59,7 @@ export default defineSchema({
     // 任务基本信息
     toolId: v.string(), // mock-image-generate, midjourney-image-generate 等
     assetType: assetType,
+    internalTaskId: v.string(), // 任务ID
     provider: v.string(), // mock-provider, huiyan, minimax 等
 
     // 任务状态
@@ -69,13 +70,22 @@ export default defineSchema({
     input: v.any(), // 工具输入参数
     output: v.optional(v.any()), // 最终输出结果
     error: v.optional(v.string()),
-
-    // 事件序列
-    events: v.optional(v.array(taskEvent)),
   })
     .index('by_thread', ['threadId'])
     .index('by_resource', ['resourceId'])
     .index('by_status', ['status'])
     .index('by_tool', ['toolId'])
     .index('by_thread_status', ['threadId', 'status']),
+
+  // 任务事件历史表
+  task_delta: defineTable({
+    taskId: v.id('task'),
+    eventType: eventType,
+    progress: v.optional(v.number()),
+    data: v.optional(v.any()),
+    error: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index('by_task', ['taskId'])
+    .index('by_task_and_time', ['taskId', 'timestamp']),
 })

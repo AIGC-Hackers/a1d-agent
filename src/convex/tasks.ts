@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
 
+import { Doc } from './_generated/dataModel'
 import { mutation, query } from './_generated/server'
 import { assetType, eventType, taskStatus } from './schema'
 
@@ -10,6 +11,7 @@ export const createTask = mutation({
     resourceId: v.string(),
     runId: v.optional(v.string()),
     toolId: v.string(),
+    internalTaskId: v.string(),
     assetType,
     provider: v.string(),
     input: v.any(),
@@ -17,18 +19,20 @@ export const createTask = mutation({
   handler: async (ctx, args) => {
     const now = Date.now()
 
+    // 1. 创建任务（不再包含 events 字段）
     const taskId = await ctx.db.insert('task', {
       ...args,
       status: 'started',
       progress: 0,
-      events: [
-        {
-          eventType: 'task_started',
-          progress: 0,
-          data: { input: args.input },
-          timestamp: now,
-        },
-      ],
+    })
+
+    // 2. 插入初始事件到 task_delta 表
+    await ctx.db.insert('task_delta', {
+      taskId,
+      eventType: 'task_started',
+      progress: 0,
+      data: { input: args.input },
+      timestamp: now,
     })
 
     return taskId
@@ -45,10 +49,11 @@ export const updateTaskProgress = mutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { progress, status, output, error } = args
+    const { taskId, progress, status, output, error } = args
 
-    // 更新任务
-    const updateData: any = {
+    // 1. 更新任务表（inplace）
+    type TaskUpdate = Partial<Omit<Doc<'task'>, '_id' | '_creationTime'>>
+    const updateData: TaskUpdate = {
       progress,
     }
 
@@ -56,9 +61,7 @@ export const updateTaskProgress = mutation({
     if (output) updateData.output = output
     if (error) updateData.error = error
 
-    await ctx.db.patch(args.taskId, updateData)
-
-    return { success: true }
+    await ctx.db.patch(taskId, updateData)
   },
 })
 
@@ -76,17 +79,19 @@ export const addTaskEvent = mutation({
     const task = await ctx.db.get(taskId)
     if (!task) throw new Error('Task not found')
 
-    const newEvent = {
+    await ctx.db.patch(taskId, {
+      progress,
+      error,
+    })
+
+    // 直接插入事件到 task_delta 表
+    await ctx.db.insert('task_delta', {
+      taskId,
       eventType,
       progress,
       data,
       error,
       timestamp: Date.now(),
-    }
-
-    const currentEvents = (task as any).events || []
-    await ctx.db.patch(taskId, {
-      events: [...currentEvents, newEvent],
     })
 
     return { success: true }
@@ -102,11 +107,16 @@ export const getTaskWithEvents = query({
     const task = await ctx.db.get(args.taskId)
     if (!task) return null
 
+    // 从 task_delta 表查询事件
+    const events = await ctx.db
+      .query('task_delta')
+      .withIndex('by_task_and_time', (q) => q.eq('taskId', args.taskId))
+      .order('asc')
+      .collect()
+
     return {
       task,
-      events: ((task as any).events || []).sort(
-        (a: any, b: any) => a.timestamp - b.timestamp,
-      ),
+      events,
     }
   },
 })
@@ -140,5 +150,26 @@ export const getActiveTasks = query({
       .collect()
 
     return tasks
+  },
+})
+
+// 获取任务的所有历史事件
+export const getTaskDeltas = query({
+  args: {
+    taskId: v.id('task'),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const query = ctx.db
+      .query('task_delta')
+      .withIndex('by_task_and_time', (q) => q.eq('taskId', args.taskId))
+      .order('desc')
+
+    const deltas = args.limit
+      ? await query.take(args.limit)
+      : await query.collect()
+
+    // 返回时按时间正序，最早的在前
+    return deltas.reverse()
   },
 })
