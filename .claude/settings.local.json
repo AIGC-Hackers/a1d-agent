@@ -1,6 +1,6 @@
 {
-  "enabledMcpjsonServers": ["context7", "mastra", "convex"],
   "permissions": {
-    "allow": ["Bash(git commit:*)"]
-  }
+    "allow": ["Bash(git commit:*)", "mcp__mastra__mastraDocs"]
+  },
+  "enabledMcpjsonServers": ["context7", "mastra", "convex"]
 }
