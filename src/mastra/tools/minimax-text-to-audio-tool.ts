@@ -2,7 +2,7 @@ import { api } from '@/convex/_generated/api'
 import { MinimaxTextToAudio } from '@/integration/minimax/minimax-text-to-audio'
 import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
-import { ContextX, logger } from '@/mastra/factory'
+import { ContextX, MastraX } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
 import { createTool } from '@mastra/core/tools'
 import { firstValueFrom, lastValueFrom, tap } from 'rxjs'
@@ -45,7 +45,7 @@ export const minimaxTextToAudioTool = createTool({
   }): Promise<MinimaxTextToAudioOutput> => {
     invariant(threadId, 'threadId is required')
 
-    logger.info('Starting Minimax text-to-audio generation', {
+    MastraX.logger.info('Starting Minimax text-to-audio generation', {
       threadId,
       runId,
       resourceId,
@@ -60,7 +60,7 @@ export const minimaxTextToAudioTool = createTool({
 
       const voiceId = 'male-qn-qingse'
 
-      logger.debug('Creating audio task with Minimax API', {
+      MastraX.logger.debug('Creating audio task with Minimax API', {
         model: 'speech-02-turbo',
         voiceId,
         outputFormat: 'mp3',
@@ -81,7 +81,7 @@ export const minimaxTextToAudioTool = createTool({
         }),
       )
 
-      logger.info('Audio task created', {
+      MastraX.logger.info('Audio task created', {
         traceId: audioTask.trace_id,
         threadId,
       })
@@ -100,19 +100,19 @@ export const minimaxTextToAudioTool = createTool({
         },
       })
 
-      logger.debug('Convex task created', {
+      MastraX.logger.debug('Convex task created', {
         convexTaskId,
         internalTaskId: audioTask.trace_id,
       })
 
-      logger.info('Starting to poll for audio generation result', {
+      MastraX.logger.info('Starting to poll for audio generation result', {
         traceId: audioTask.trace_id,
       })
 
       const audioResult = await lastValueFrom(
         MinimaxTextToAudio.client.poll(audioTask.trace_id).pipe(
           tap((it) => {
-            logger.debug('Minimax text-to-audio task progress', {
+            MastraX.logger.debug('Minimax text-to-audio task progress', {
               traceId: audioTask.trace_id,
               status: it.data?.status,
             })
@@ -120,7 +120,7 @@ export const minimaxTextToAudioTool = createTool({
         ),
       )
 
-      logger.info('Audio generation completed', {
+      MastraX.logger.info('Audio generation completed', {
         traceId: audioTask.trace_id,
         status: audioResult.data?.status,
         subtitle_file: audioResult.subtitle_file,
@@ -134,13 +134,13 @@ export const minimaxTextToAudioTool = createTool({
       invariant(audioHexString, 'audioHexData is required')
       invariant(durationSeconds, 'durationSeconds is required')
 
-      logger.debug('Saving audio file to storage', {
+      MastraX.logger.debug('Saving audio file to storage', {
         path: input.output.path,
         bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
         durationSeconds,
       })
 
-      const savedFile = await MediaFileStorage.saveFile({
+      const savedFile = await MediaFileStorage.saveFile('audio', {
         convex,
         bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
         threadId,
@@ -156,7 +156,7 @@ export const minimaxTextToAudioTool = createTool({
         },
       })
 
-      logger.info('Audio file saved successfully', {
+      MastraX.logger.info('Audio file saved successfully', {
         path: savedFile.path,
         key: savedFile.key,
         durationSeconds,
@@ -173,18 +173,21 @@ export const minimaxTextToAudioTool = createTool({
         },
       })
 
-      logger.info('Minimax text-to-audio generation completed successfully', {
-        threadId,
-        outputPath: input.output.path,
-        durationSeconds,
-      })
+      MastraX.logger.info(
+        'Minimax text-to-audio generation completed successfully',
+        {
+          threadId,
+          outputPath: input.output.path,
+          durationSeconds,
+        },
+      )
 
       return {
         file_path: input.output.path,
         duration_seconds: durationSeconds,
       }
     } catch (error) {
-      logger.error('Failed to generate audio with Minimax', {
+      MastraX.logger.error('Failed to generate audio with Minimax', {
         threadId,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,

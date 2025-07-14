@@ -2,7 +2,7 @@ import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
-import { storage } from '../factory'
+import { MastraX } from '../factory'
 import { googleSearchTool } from '../tools/google-search-tool'
 import { kontextImageEditMockTool } from '../tools/mock/kontext-image-edit-mock-tool'
 import { midjourneyImageGenerateMockTool } from '../tools/mock/midjourney-image-generate-mock-tool'
@@ -22,7 +22,7 @@ export const drawOutAgentMock = new Agent({
   model: openrouter('anthropic/claude-sonnet-4'),
   // model: openrouter('openai/gpt-4.1'),
   memory: new Memory({
-    storage: storage.value,
+    storage: MastraX.storage.value,
   }),
   defaultGenerateOptions({ runtimeContext }) {
     return {

@@ -2,12 +2,11 @@ import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
-import { storage } from '../factory'
+import { MastraX } from '../factory'
 import { drawOutVideoCutoutTool } from '../tools/draw-out-video-cutout-tool'
 import { googleSearchTool } from '../tools/google-search-tool'
 import { kontextImageEditTool } from '../tools/kontext-image-edit-tool'
 import { midjourneyImageGenerateTool } from '../tools/midjourney-image-generate-tool'
-import { midjourneyVideoGenerateTool } from '../tools/midjourney-video-generate-tool'
 import { minimaxTextToAudioTool } from '../tools/minimax-text-to-audio-tool'
 import { speedpaintVideoGenerateTool } from '../tools/speedpaint-video-generate-tool'
 import * as systemTools from '../tools/system-tools'
@@ -21,7 +20,7 @@ export const drawOutAgent = new Agent({
   instructions: drawOutInstructions,
   model: openrouter('anthropic/claude-sonnet-4'),
   memory: new Memory({
-    storage: storage.value,
+    storage: MastraX.storage.value,
   }),
   tools: ({ runtimeContext }) => {
     return {
@@ -37,7 +36,6 @@ export const drawOutAgent = new Agent({
       // Production tools
       googleSearch: googleSearchTool,
       midjourneyImageGenerate: midjourneyImageGenerateTool,
-      midjourneyVideoGenerate: midjourneyVideoGenerateTool,
       speedpaintVideoGenerate: speedpaintVideoGenerateTool,
       kontextImageEdit: kontextImageEditTool,
       minimaxTextToAudio: minimaxTextToAudioTool,

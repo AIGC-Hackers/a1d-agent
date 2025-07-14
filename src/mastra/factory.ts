@@ -11,22 +11,23 @@ import { ConvexHttpClient } from 'convex/browser'
 
 import { env } from '../lib/env'
 
-function createLogger() {
-  return new PinoLogger({
-    name: 'Mastra',
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  })
+export namespace MastraX {
+  function createLogger() {
+    return new PinoLogger({
+      name: 'Mastra',
+      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    })
+  }
+
+  function createStorage() {
+    return new PostgresStore({
+      connectionString: env.value.POSTGRES_URL,
+    })
+  }
+
+  export const logger = createLogger()
+  export const storage = lazy(() => createStorage())
 }
-
-export const logger = createLogger()
-
-function createStorage() {
-  return new PostgresStore({
-    connectionString: env.value.POSTGRES_URL,
-  })
-}
-
-export const storage = lazy(() => createStorage())
 
 export function createVirtualFileSystem(projectId: string) {
   // 使用 Convex 存储
@@ -50,10 +51,16 @@ export namespace ContextX {
   export function middleware() {
     return async (c: Context, next: Next) => {
       const runtimeContext = c.get('runtimeContext') as RuntimeContext
-      const convex = new ConvexHttpClient(env.value.CONVEX_URL)
-      runtimeContext.set('convex', convex)
+      set(runtimeContext)
       await next()
     }
+  }
+
+  function set(c: RuntimeContext) {
+    const convex = new ConvexHttpClient(env.value.CONVEX_URL)
+    c.set('convex', convex)
+
+    const threadId = c.get('threadId')
   }
 
   const schema = type({

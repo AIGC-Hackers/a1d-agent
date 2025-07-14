@@ -4,7 +4,7 @@ import { Speedpainter } from '@/integration/speedpainter'
 import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
 import { Result } from '@/lib/result'
-import { logger } from '@/mastra/factory'
+import { MastraX } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
 import { createTool } from '@mastra/core/tools'
 import { ConvexHttpClient } from 'convex/browser'
@@ -38,29 +38,40 @@ export const speedpaintVideoGenerateTool = createTool({
   description: SPEEDPAINT_TOOL_DESCRIPTION,
   inputSchema: speedpaintVideoGenerateInputSchema,
   execute: async (context): Promise<SpeedpaintVideoGenerateOutput> => {
-    const { context: input, resourceId, threadId, runId } = context
+    const {
+      context: input,
+      resourceId,
+      threadId,
+      runId,
+      runtimeContext,
+    } = context
+
     const { image_path, duration_seconds, output } = input
 
     invariant(threadId, 'threadId is required')
 
     const convex = new ConvexHttpClient(env.value.CONVEX_URL)
 
-    const inputData = await getInputData({
+    const inputData = await MediaFileStorage.getFileInfo('image', {
       convex,
       threadId,
-      image_path,
+      path: image_path,
     })
 
-    if (Result.isErr(inputData)) {
-      return { error: inputData.error.message }
-    }
-
     // 创建 Convex 任务记录 - 生成过程开始就创建
-    logger.info('Creating SpeedPainter video generation task', inputData.data)
+    MastraX.logger.info(
+      'Creating SpeedPainter video generation task',
+      inputData.metadata,
+    )
+
+    const imageUrl = S3.createPublicUrl({
+      bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
+      key: inputData.metadata.key,
+    })
 
     try {
       const { taskId: speedpainterTaskId } = await Speedpainter.createTask({
-        imageUrl: inputData.data.imageUrl,
+        imageUrl,
         mimeType: 'image/png',
         colorFillDuration: 0,
         sketchDuration: 0,
@@ -90,12 +101,12 @@ export const speedpaintVideoGenerateTool = createTool({
       })
 
       // 订阅流，更新进度
-      logger.info('Waiting for SpeedPainter generation to complete...')
+      MastraX.logger.info('Waiting for SpeedPainter generation to complete...')
 
       let finalResult: Speedpainter.TaskStatus | null = null
 
       for await (const status of videoStream) {
-        logger.info('SpeedPainter progress update', {
+        MastraX.logger.info('SpeedPainter progress update', {
           status: status.status,
           progress: status.progress,
         })
@@ -114,12 +125,12 @@ export const speedpaintVideoGenerateTool = createTool({
         return { error: 'SpeedPainter task ended without final status' }
       }
 
-      logger.info('SpeedPainter generation completed successfully', {
+      MastraX.logger.info('SpeedPainter generation completed successfully', {
         videoUrl: finalResult.videoUrl,
         sketchImageUrl: finalResult.sketchImageUrl,
       })
 
-      const saveResult = await MediaFileStorage.saveFile({
+      const saveResult = await MediaFileStorage.saveFile('video', {
         convex,
         resourceId,
         threadId,
@@ -132,8 +143,8 @@ export const speedpaintVideoGenerateTool = createTool({
         contentType: 'video/mp4',
         description: `SpeedPaint video generated from ${image_path}`,
         metadata: {
-          width: inputData.data.width,
-          height: inputData.data.height,
+          width: inputData.metadata.width,
+          height: inputData.metadata.height,
           durationSeconds: duration_seconds,
         },
       })
@@ -160,7 +171,7 @@ export const speedpaintVideoGenerateTool = createTool({
         },
       })
 
-      logger.info('SpeedPaint video generation completed', {
+      MastraX.logger.info('SpeedPaint video generation completed', {
         convexTaskId,
         speedpainterTaskId,
         publicUrl,
@@ -169,8 +180,8 @@ export const speedpaintVideoGenerateTool = createTool({
       // 返回结果
       return {
         inputImagePath: image_path,
-        width: inputData.data.width,
-        height: inputData.data.height,
+        width: inputData.metadata.width,
+        height: inputData.metadata.height,
         durationSeconds: duration_seconds,
         fileSavedPath: output.path,
       }
@@ -185,37 +196,3 @@ export const speedpaintVideoGenerateTool = createTool({
     }
   },
 })
-
-async function getInputData(props: {
-  convex: ConvexHttpClient
-  threadId: string
-  image_path: string
-}) {
-  const { convex, threadId, image_path } = props
-
-  // find & verify image file in vfs
-  const imageFile = await convex.query(api.vfs.readFile, {
-    threadId: threadId,
-    path: image_path,
-  })
-
-  if (!imageFile) {
-    return Result.err(new Error(`Image file not found: ${image_path}`))
-  }
-
-  const {
-    key: imageKey,
-    width,
-    height,
-  } = MediaFileStorage.Schema.ImageObject.assert(imageFile.metadata)
-  const imageUrl = S3.createPublicUrl({
-    bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
-    key: imageKey,
-  })
-
-  return Result.ok({
-    imageUrl,
-    width,
-    height,
-  })
-}
