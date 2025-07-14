@@ -2,11 +2,7 @@ import { firstValueFrom, merge, Observable } from 'rxjs'
 
 import { defaultMinimaxContext } from './config'
 import { generateImageStream } from './image'
-import {
-  createText2AudioTask,
-  decodeAudioChunk,
-  textToAudioStream,
-} from './minimax-text-to-audio'
+import { MinimaxTextToAudio } from './minimax-text-to-audio'
 import { generateVideoStream } from './video'
 import { listVoices } from './voice-cloning'
 
@@ -54,19 +50,16 @@ function createT2ATest(): () => Observable<TestEvent> {
       })
 
       firstValueFrom(
-        createText2AudioTask(
-          {
-            model: 'speech-02-turbo',
-            text: 'Hello, this is a test of Minimax text to audio API.',
-            voice_setting: {
-              voice_id: 'default',
-            },
-            audio_setting: {
-              output_format: 'mp3',
-            },
+        MinimaxTextToAudio.client.create({
+          model: 'speech-02-turbo',
+          text: 'Hello, this is a test of Minimax text to audio API.',
+          voice_setting: {
+            voice_id: 'default',
           },
-          defaultMinimaxContext,
-        ),
+          audio_setting: {
+            output_format: 'mp3',
+          },
+        }),
       )
         .then((result) => {
           const latency = Date.now() - startTime
@@ -137,21 +130,18 @@ function createT2ASSEStreamTest(): () => Observable<TestEvent> {
       // Run the async iterator
       const runAsync = async () => {
         try {
-          for await (const chunk of textToAudioStream(
-            {
-              model: 'speech-02-turbo',
-              text: 'Hello, this is a test of Minimax real-time streaming API.',
-              voice_setting: {
-                voice_id: 'default',
-              },
-              audio_setting: {
-                output_format: 'mp3',
-              },
+          for await (const chunk of MinimaxTextToAudio.client.stream({
+            model: 'speech-02-turbo',
+            text: 'Hello, this is a test of Minimax real-time streaming API.',
+            voice_setting: {
+              voice_id: 'default',
             },
-            defaultMinimaxContext,
-          )) {
+            audio_setting: {
+              output_format: 'mp3',
+            },
+          })) {
             chunkCount++
-            const audioBytes = decodeAudioChunk(chunk.audio)
+            const audioBytes = Buffer.from(chunk.audio, 'base64')
             totalBytes += audioBytes.length
 
             observer.next({

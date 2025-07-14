@@ -314,11 +314,16 @@ function createWavespeedFluxTest(prompt?: string): () => Observable<TestEvent> {
         level: 'info',
       })
 
-      WaveSpeedFluxKontext.create({
-        prompt: prompt || 'a simple red circle on white background',
-        image:
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      const client = new WaveSpeedFluxKontext.Client({
+        apiKey: env.value.WAVESPEED_API_KEY,
       })
+
+      client
+        .create({
+          prompt: prompt || 'a simple red circle on white background',
+          image:
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+        })
         .then((result) => {
           const latency = Date.now() - startTime
 

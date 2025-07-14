@@ -42,7 +42,6 @@ export const kontextImageEditMockTool = createTool({
     console.log(`[Mock Kontext Image Edit] Edited image:`)
     console.log(`  Original: ${input.image_path}`)
     console.log(`  Edit prompt: ${input.prompt.substring(0, 50)}...`)
-    console.log(`  Model: ${input.model}`)
     console.log(`  Mock edited file: ${selectedEditedImage}`)
     console.log(`  Edit ID: ${editId}`)
 
@@ -56,7 +55,6 @@ export const kontextImageEditMockTool = createTool({
         edited_image_path: outputPath,
         original_image_path: input.image_path,
         edit_prompt: input.prompt,
-        model_used: input.model,
       },
     }
   },

@@ -47,7 +47,7 @@ export const minimaxTextToAudioMockTool = createTool({
     console.log(
       `[Mock Text-to-Audio] Generated audio for text (${wordCount} words):`,
     )
-    console.log(`  Voice: ${input.voice}`)
+    console.log(`  Voice: default`)
     console.log(`  Mock file: ${selectedAudioFile}`)
     console.log(`  Duration: ${duration} seconds`)
     console.log(`  Output path: ${input.output.path}`)
