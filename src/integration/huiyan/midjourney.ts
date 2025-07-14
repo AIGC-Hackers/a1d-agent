@@ -46,6 +46,11 @@ export namespace Midjourney {
       return submitImagine(input, this.ctx)
     }
 
+    private parseProgress(job: Midjourney302.MidjourneyImageJob): number {
+      const pstr = String(job.progress) ?? ''
+      return pstr !== '' ? Number(pstr.replace('%', '')) : 0
+    }
+
     pollStream(
       jobId: string,
       opts?: {
@@ -56,16 +61,9 @@ export namespace Midjourney {
       let isCompleted = false
       return timer(0, opts?.pollInterval ?? 1000 * 10).pipe(
         switchMap(() => this.getJob(jobId)),
+        map((it) => ({ ...it, progress: this.parseProgress(it) })),
         distinctUntilChanged((a, b) => a.progress === b.progress),
-        map((job) => job),
-        takeWhile((job) => {
-          const pstr = String(job.progress) ?? ''
-          let progress = 0
-          if (pstr !== '') {
-            progress = Number(pstr.replace('%', ''))
-          }
-          return progress !== 100
-        }),
+        takeWhile((job) => job.progress !== 100, true),
         timeout(opts?.timeout ?? 1000 * 60 * 10),
         tap((job) => {
           const pstr = String(job.progress) ?? ''
