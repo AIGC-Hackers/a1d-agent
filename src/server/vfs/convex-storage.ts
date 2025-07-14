@@ -1,15 +1,15 @@
 import { Result } from '@/lib/result'
-import { ConvexClient } from 'convex/browser'
+import { ConvexHttpClient } from 'convex/browser'
 
 import { api } from '../../convex/_generated/api'
 import { FileInfo, Storage, VFile, VFSError, VFSErrorCode } from './types'
 
 export class ConvexStorage implements Storage {
-  private client: ConvexClient
+  private client: ConvexHttpClient
   private threadId: string
 
   constructor(convexUrl: string, threadId: string) {
-    this.client = new ConvexClient(convexUrl)
+    this.client = new ConvexHttpClient(convexUrl)
     this.threadId = threadId
   }
 

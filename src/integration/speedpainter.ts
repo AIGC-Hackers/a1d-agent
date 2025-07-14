@@ -1,6 +1,6 @@
 import { env } from '@/lib/env'
 import { events } from 'fetch-event-stream'
-import { isEqual } from 'lodash-es'
+import isEqual from 'lodash-es/isEqual'
 
 export namespace Speedpainter {
   export type AppType = 'iu' | 'sp' | 'vu'
