@@ -3,6 +3,7 @@ import type { PutObjectCommandOutput } from '@aws-sdk/client-s3'
 import { api } from '@/convex/_generated/api'
 import { S3 } from '@/integration/s3'
 import { splitImageToQuadrants } from '@/lib/image'
+import { invariant } from '@/lib/invariant'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { type } from 'arktype'
 import { ConvexHttpClient } from 'convex/browser'
@@ -11,47 +12,112 @@ import { firstValueFrom, from, mergeMap, toArray } from 'rxjs'
 import { FileSource } from '../../lib/file-source'
 
 export namespace MediaFileStorage {
-  export namespace Schema {
-    export const S3Object = type({
+  const $ = type.scope({
+    Object: {
       key: 'string',
-      _upload: type.unknown.as<PutObjectCommandOutput>(),
-    })
-
-    export const ImageInfo = type({
+      upload: type.unknown.as<PutObjectCommandOutput>(),
+    },
+    ImageInput: {
       width: 'number',
       height: 'number',
-    })
+    },
+    ImageOutput: 'ImageInput & Object',
 
-    export const AudioInfo = type({
+    VideoInput: {
+      width: 'number',
+      height: 'number',
       durationSeconds: 'number',
-    })
+    },
+    VideoOutput: 'VideoInput & Object',
 
-    export const VideoInfo = ImageInfo.and(AudioInfo)
+    AudioInput: {
+      durationSeconds: 'number',
+    },
+    AudioOutput: 'AudioInput & Object',
+  })
 
-    export type ImageInfo = typeof ImageInfo.infer
-    export type AudioInfo = typeof AudioInfo.infer
-    export type VideoInfo = typeof VideoInfo.infer
+  export const schemas = $.export()
 
-    export const ImageObject = ImageInfo.and(S3Object)
-    export const AudioObject = AudioInfo.and(S3Object)
-    export const VideoObject = VideoInfo.and(S3Object)
+  type AudioInput = typeof schemas.AudioInput.infer
+  type AudioOutput = typeof schemas.AudioOutput.infer
+  type ImageInput = typeof schemas.ImageInput.infer
+  type ImageOutput = typeof schemas.ImageOutput.infer
+  type VideoInput = typeof schemas.VideoInput.infer
+  type VideoOutput = typeof schemas.VideoOutput.infer
 
-    export type ImageObject = typeof ImageObject.infer
-    export type AudioObject = typeof AudioObject.infer
-    export type VideoObject = typeof VideoObject.infer
+  type TypeMap = {
+    image: {
+      input: ImageInput
+      output: ImageOutput
+    }
+    audio: {
+      input: AudioInput
+      output: AudioOutput
+    }
+    video: {
+      input: VideoInput
+      output: VideoOutput
+    }
   }
 
-  export async function saveFile(props: {
-    convex: ConvexHttpClient
-    resourceId?: string
-    threadId: string
-    path: string
-    source: FileSource.Input
-    bucket: string
-    contentType?: string
-    description?: string
-    metadata: Schema.ImageInfo | Schema.AudioInfo | Schema.VideoInfo
-  }) {
+  export async function getFileInfo<
+    T extends keyof TypeMap,
+    Meta = TypeMap[T]['output'],
+  >(
+    type: T,
+    opts: {
+      convex: ConvexHttpClient
+      threadId: string
+      path: string
+    },
+  ): Promise<{
+    metadata: Meta
+  }> {
+    const file = await opts.convex.query(api.vfs.readFile, {
+      threadId: opts.threadId,
+      path: opts.path,
+    })
+    invariant(
+      file,
+      `File not found, threadId: ${opts.threadId}, path: ${opts.path}`,
+    )
+
+    switch (type) {
+      case 'image': {
+        const metadata: ImageOutput = schemas.ImageOutput.assert(file.metadata)
+        // @ts-ignore
+        return { metadata }
+      }
+      case 'audio': {
+        const metadata: AudioOutput = schemas.AudioOutput.assert(file.metadata)
+        // @ts-ignore
+        return { metadata }
+      }
+      case 'video': {
+        const metadata: VideoOutput = schemas.VideoOutput.assert(file.metadata)
+        // @ts-ignore
+        return { metadata }
+      }
+    }
+  }
+
+  export async function saveFile<
+    T extends keyof TypeMap,
+    Meta = TypeMap[T]['input'],
+  >(
+    type: T,
+    props: {
+      convex: ConvexHttpClient
+      resourceId?: string
+      threadId: string
+      path: string
+      source: FileSource.Input
+      bucket: string
+      contentType?: string
+      description?: string
+      metadata: Meta
+    },
+  ) {
     const key = join('/', props.threadId, props.path)
 
     const data = await FileSource.get(props.source)
@@ -80,9 +146,9 @@ export namespace MediaFileStorage {
       description: props.description,
       size: data instanceof Uint8Array ? data.length : 0,
       metadata: {
-        _upload: upload,
-        ...props.metadata,
         key,
+        upload,
+        ...props.metadata,
       },
     })
 
@@ -113,7 +179,7 @@ export namespace MediaFileStorage {
     ]).pipe(
       mergeMap(async (quadrant, index) => {
         const filepath = join('/', props.path, `${index}.png`)
-        return await saveFile({
+        return await saveFile('image', {
           convex: props.convex,
           resourceId: props.resourceId,
           threadId: props.threadId,

@@ -2,7 +2,7 @@ import { api } from '@/convex/_generated/api'
 import { Midjourney } from '@/integration/302/midjourney'
 import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
-import { ContextX, logger } from '@/mastra/factory'
+import { ContextX, MastraX } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
 import { createTool } from '@mastra/core/tools'
 import { firstValueFrom, lastValueFrom, tap } from 'rxjs'
@@ -59,7 +59,9 @@ export const midjourneyImageGenerateTool = createTool({
 
     try {
       // 提交生成任务
-      logger.info('Submitting Midjourney image generation task', { prompt })
+      MastraX.logger.info('Submitting Midjourney image generation task', {
+        prompt,
+      })
 
       const submitResult = await firstValueFrom(
         Midjourney.client.submitImagine({ prompt }),
@@ -85,7 +87,7 @@ export const midjourneyImageGenerateTool = createTool({
       // 使用流式接口获取进度
       const status$ = Midjourney.client.pollStream(midjourneyTaskId).pipe(
         tap(async (status) => {
-          logger.info('Midjourney progress update', {
+          MastraX.logger.info('Midjourney progress update', {
             progress: status.progress,
             status: status.status,
             hasImage: !!status.imageUrl,
@@ -101,7 +103,7 @@ export const midjourneyImageGenerateTool = createTool({
         }),
       )
 
-      logger.info('Waiting for Midjourney generation to complete...')
+      MastraX.logger.info('Waiting for Midjourney generation to complete...')
 
       // 获取最终结果
       const finalResult = await lastValueFrom(status$)
@@ -123,9 +125,12 @@ export const midjourneyImageGenerateTool = createTool({
         return { error: errorMessage }
       }
 
-      logger.info('Midjourney generation completed, saving quadrant images', {
-        imageUrl: finalResult.imageUrl,
-      })
+      MastraX.logger.info(
+        'Midjourney generation completed, saving quadrant images',
+        {
+          imageUrl: finalResult.imageUrl,
+        },
+      )
 
       // 保存四象限图片
       const savedQuadrants = await MediaFileStorage.saveQuadrantImage({
@@ -154,7 +159,7 @@ export const midjourneyImageGenerateTool = createTool({
         },
       })
 
-      logger.info('Midjourney image generation completed', {
+      MastraX.logger.info('Midjourney image generation completed', {
         convexTaskId,
         midjourneyTaskId,
         savedFiles: filePaths.length,
