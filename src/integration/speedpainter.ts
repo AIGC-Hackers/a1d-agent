@@ -1,3 +1,4 @@
+import type { ServerSentEventMessage } from 'fetch-event-stream'
 import { env } from '@/lib/env'
 import { events } from 'fetch-event-stream'
 import isEqual from 'lodash-es/isEqual'
@@ -146,7 +147,7 @@ export namespace Speedpainter {
       throw new Error(errorText || 'Failed to get task status stream')
     }
 
-    let lastEvent: TaskStatus | null = null
+    let lastEvent: ServerSentEventMessage | null = null
 
     for await (const event of events(response)) {
       if (lastEvent) {
@@ -155,6 +156,7 @@ export namespace Speedpainter {
           continue
         }
       }
+      lastEvent = event
 
       if (event.data) {
         const payload = JSON.parse(event.data) as Omit<TaskStatus, 'progress'>
