@@ -3,6 +3,7 @@ import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { MastraX } from '../factory'
+import { drawOutVideoCutoutScriptTool } from '../tools/draw-out-video-cutout-script-tool'
 import { drawOutVideoCutoutTool } from '../tools/draw-out-video-cutout-tool'
 import { googleSearchTool } from '../tools/google-search-tool'
 import { kontextImageEditTool } from '../tools/kontext-image-edit-tool'
@@ -57,7 +58,8 @@ export const drawOutAgent = new Agent({
       speedpaintVideoGenerate: speedpaintVideoGenerateTool,
 
       // Composition tools
-      drawOutVideoCutout: drawOutVideoCutoutTool,
+      // drawOutVideoCutout: drawOutVideoCutoutTool,
+      drawOutVideoCutoutScript: drawOutVideoCutoutScriptTool,
     }
   },
 })
