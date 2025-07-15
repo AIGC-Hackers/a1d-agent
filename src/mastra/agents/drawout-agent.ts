@@ -19,17 +19,19 @@ export const drawOutAgent = new Agent({
   description: 'Draw out the story',
   instructions: drawOutInstructions,
   model: openrouter('anthropic/claude-sonnet-4'),
-  defaultGenerateOptions: {
-    maxSteps: 128,
-  },
-  defaultStreamOptions({ runtimeContext }) {
+  memory: new Memory({
+    storage: MastraX.storage.value,
+  }),
+  defaultGenerateOptions({ runtimeContext }) {
     return {
       maxSteps: 128,
     }
   },
-  memory: new Memory({
-    storage: MastraX.storage.value,
-  }),
+  defaultStreamOptions({ runtimeContext }) {
+    return {
+      maxSteps: 256,
+    }
+  },
   tools: ({ runtimeContext }) => {
     return {
       // System tools
@@ -37,16 +39,24 @@ export const drawOutAgent = new Agent({
       fileRead: systemTools.readFileTool,
       fileDelete: systemTools.deleteFileTool,
 
-      // Todo tools
+      // Planning tools
       todoWrite: todoWriteTool,
       todoRead: todoReadTool,
 
       // Production tools
       googleSearch: googleSearchTool,
+
+      // Image tools
       midjourneyImageGenerate: midjourneyImageGenerateTool,
-      speedpaintVideoGenerate: speedpaintVideoGenerateTool,
-      kontextImageEdit: kontextImageEditTool,
+      // kontextImageEdit: kontextImageEditTool,
+
+      // Audio tools
       minimaxTextToAudio: minimaxTextToAudioTool,
+
+      // Video tools
+      speedpaintVideoGenerate: speedpaintVideoGenerateTool,
+
+      // Composition tools
       drawOutVideoCutout: drawOutVideoCutoutTool,
     }
   },
