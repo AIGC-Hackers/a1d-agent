@@ -1,5 +1,6 @@
-import { events } from 'fetch-event-stream'
-import { Observable, switchMap, takeWhile, timer } from 'rxjs'
+import { FileSource } from '@/lib/file-source'
+import { events as sseEvents } from 'fetch-event-stream'
+import { filter, map, Observable, switchMap, takeWhile, timer } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 
 import type { MinimaxContext } from './config'
@@ -103,6 +104,64 @@ export namespace MinimaxTextToAudio {
     base_resp?: BaseResp
   }
 
+  export type TaskInfo = {
+    trace_id: string
+    status: number
+    statusText: string
+    headers: Record<string, string>
+    timestamp: string
+  }
+
+  export type AudioChunkEvent = {
+    type: 'audio_chunk'
+    data: {
+      audio: string // hex-encoded audio data
+      trace_id: string
+      status: number
+    }
+    timestamp: string
+  }
+
+  export type StatusUpdateEvent = {
+    type: 'status_update'
+    data: {
+      trace_id: string
+      status: number
+      base_resp: BaseResp
+    }
+    timestamp: string
+  }
+
+  export type ExtraInfoEvent = {
+    type: 'extra_info'
+    data: {
+      trace_id: string
+      extra_info: ExtraInfo
+    }
+    timestamp: string
+  }
+
+  export type CompleteEvent = {
+    type: 'complete'
+    data: {
+      trace_id: string
+      final_audio?: string // hex-encoded final audio data if present
+    }
+    timestamp: string
+  }
+
+  export type StreamEvent =
+    | AudioChunkEvent
+    | StatusUpdateEvent
+    | ExtraInfoEvent
+    | CompleteEvent
+
+  export type AudioStreamResult = {
+    task: TaskInfo
+    events: Observable<StreamEvent>
+    stream: () => ReadableStream<Uint8Array>
+  }
+
   export class Client {
     constructor(private readonly ctx: MinimaxContext) {}
 
@@ -114,8 +173,9 @@ export namespace MinimaxTextToAudio {
       return poll({ taskId }, this.ctx)
     }
 
+    // New method for the enhanced streaming interface
     stream(input: Text2AudioInput) {
-      return stream(input, this.ctx)
+      return createStream(input, this.ctx)
     }
   }
 
@@ -143,6 +203,12 @@ export namespace MinimaxTextToAudio {
     input: Text2AudioInput,
     context: MinimaxContext,
   ): Observable<Text2AudioOutput> {
+    console.error(
+      '⚠️ DEPRECATED: create() method is not working properly. ' +
+        'The Minimax T2A API is synchronous and does not support task creation + polling. ' +
+        'Use the official API directly or the stream() method instead.',
+    )
+
     const url = `${context.baseUrl}/v1/t2a_v2?GroupId=${context.groupId}`
 
     return fromFetch(url, {
@@ -177,6 +243,12 @@ export namespace MinimaxTextToAudio {
     },
     context: MinimaxContext,
   ): Observable<AudioTaskStatus> {
+    console.error(
+      '⚠️ DEPRECATED: poll() method is not working properly. ' +
+        'The /v1/query/t2a_v2/ endpoint does not exist in the Minimax API. ' +
+        'The Minimax T2A API is synchronous and does not require polling.',
+    )
+
     const { taskId, pollInterval = 2000 } = params
     const url = `${context.baseUrl}/v1/query/t2a_v2/${taskId}?GroupId=${context.groupId}`
 
@@ -232,7 +304,7 @@ export namespace MinimaxTextToAudio {
     }
 
     // Use fetch-event-stream to iterate over SSE events
-    for await (const event of events(response)) {
+    for await (const event of sseEvents(response)) {
       if (event.data && event.data !== '[DONE]') {
         try {
           const data = JSON.parse(event.data)
@@ -253,6 +325,155 @@ export namespace MinimaxTextToAudio {
           }
         }
       }
+    }
+  }
+
+  // New enhanced streaming function
+  async function createStream(
+    input: Text2AudioInput,
+    context: MinimaxContext,
+  ): Promise<AudioStreamResult> {
+    const url = `${context.baseUrl}/v1/t2a_v2?GroupId=${context.groupId}`
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...getMinimaxHeaders(context),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...input,
+        stream: true, // Enable SSE streaming
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(
+        `Minimax API request failed: ${response.status} ${response.statusText}`,
+      )
+    }
+
+    // Extract task info from response
+    const task: TaskInfo = {
+      trace_id: response.headers.get('trace-id') || '',
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      timestamp: new Date().toISOString(),
+    }
+
+    // Create events observable
+    const events = new Observable<StreamEvent>((subscriber) => {
+      const processEvents = async () => {
+        try {
+          for await (const event of sseEvents(response)) {
+            const timestamp = new Date().toISOString()
+
+            if (event.data && event.data !== '[DONE]') {
+              try {
+                const data = JSON.parse(event.data)
+
+                // Check if this is an audio chunk
+                if (data.data?.audio && data.data.audio.length > 0) {
+                  subscriber.next({
+                    type: 'audio_chunk',
+                    data: {
+                      audio: data.data.audio,
+                      trace_id: data.trace_id,
+                      status: data.data.status,
+                    },
+                    timestamp,
+                  })
+                }
+
+                // Check for status updates (empty audio but with status)
+                if (data.data?.status && !data.data.audio) {
+                  subscriber.next({
+                    type: 'status_update',
+                    data: {
+                      trace_id: data.trace_id,
+                      status: data.data.status,
+                      base_resp: data.base_resp,
+                    },
+                    timestamp,
+                  })
+                }
+
+                // Check for extra_info
+                if (data.extra_info) {
+                  subscriber.next({
+                    type: 'extra_info',
+                    data: {
+                      trace_id: data.trace_id,
+                      extra_info: data.extra_info,
+                    },
+                    timestamp,
+                  })
+
+                  // If this event also has final audio, emit complete event
+                  if (data.data?.audio) {
+                    subscriber.next({
+                      type: 'complete',
+                      data: {
+                        trace_id: data.trace_id,
+                        final_audio: data.data.audio,
+                      },
+                      timestamp,
+                    })
+                  } else {
+                    subscriber.next({
+                      type: 'complete',
+                      data: {
+                        trace_id: data.trace_id,
+                      },
+                      timestamp,
+                    })
+                  }
+                }
+              } catch (error) {
+                // Skip malformed events
+                if (import.meta.env.DEV) {
+                  console.warn('Failed to parse SSE event:', event.data, error)
+                }
+              }
+            }
+          }
+          subscriber.complete()
+        } catch (error) {
+          subscriber.error(error)
+        }
+      }
+
+      processEvents()
+    })
+
+    const stream = () =>
+      new ReadableStream({
+        start(controller) {
+          events.subscribe({
+            next(event) {
+              if (event.type === 'audio_chunk' && event.data.audio) {
+                controller.enqueue(FileSource.decodeHexString(event.data.audio))
+              } else if (event.type === 'complete' && event.data.final_audio) {
+                controller.enqueue(
+                  FileSource.decodeHexString(event.data.final_audio),
+                )
+              }
+            },
+            error(error) {
+              controller.error(error)
+            },
+            complete() {
+              controller.close()
+            },
+          })
+        },
+      })
+
+    return {
+      task,
+      events,
+      stream,
     }
   }
 }

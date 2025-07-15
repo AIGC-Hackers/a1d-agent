@@ -56,11 +56,9 @@ export namespace ContextX {
     }
   }
 
-  function set(c: RuntimeContext) {
+  export function set(c: RuntimeContext) {
     const convex = new ConvexHttpClient(env.value.CONVEX_URL)
     c.set('convex', convex)
-
-    const threadId = c.get('threadId')
   }
 
   const schema = type({

@@ -5,7 +5,6 @@ import { invariant } from '@/lib/invariant'
 import { ContextX, MastraX } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
 import { createTool } from '@mastra/core/tools'
-import { firstValueFrom, lastValueFrom, tap } from 'rxjs'
 import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
@@ -60,29 +59,28 @@ export const minimaxTextToAudioTool = createTool({
 
       const voiceId = 'male-qn-qingse'
 
-      MastraX.logger.debug('Creating audio task with Minimax API', {
+      MastraX.logger.debug('Starting audio stream with Minimax API', {
         model: 'speech-02-turbo',
         voiceId,
         outputFormat: 'mp3',
       })
 
-      const audioTask = await firstValueFrom(
-        client.create({
-          model: 'speech-02-turbo', // Use turbo model for faster generation
-          text: input.text,
-          voice_setting: {
-            voice_id: voiceId,
-          },
-          audio_setting: {
-            output_format: 'mp3',
-          },
-          stream: false,
-          output_format: 'hex',
-        }),
-      )
+      const streamResult = await client.stream({
+        model: 'speech-02-turbo', // Use turbo model for faster generation
+        text: input.text,
+        voice_setting: {
+          voice_id: voiceId,
+        },
+        audio_setting: {
+          output_format: 'mp3',
+        },
+        stream: true,
+      })
 
-      MastraX.logger.info('Audio task created', {
-        traceId: audioTask.trace_id,
+      const traceId = streamResult.task.trace_id
+
+      MastraX.logger.info('Audio stream started', {
+        traceId,
         threadId,
       })
 
@@ -92,7 +90,7 @@ export const minimaxTextToAudioTool = createTool({
         threadId,
         assetType: 'audio',
         toolId: TOOL_ID,
-        internalTaskId: audioTask.trace_id,
+        internalTaskId: traceId,
         provider: 'minimax',
         input: {
           text: input.text,
@@ -102,34 +100,82 @@ export const minimaxTextToAudioTool = createTool({
 
       MastraX.logger.debug('Convex task created', {
         convexTaskId,
-        internalTaskId: audioTask.trace_id,
+        internalTaskId: traceId,
       })
 
-      MastraX.logger.info('Starting to poll for audio generation result', {
-        traceId: audioTask.trace_id,
+      MastraX.logger.info('Processing audio stream events', {
+        traceId,
       })
 
-      const audioResult = await lastValueFrom(
-        MinimaxTextToAudio.client.poll(audioTask.trace_id).pipe(
-          tap((it) => {
-            MastraX.logger.debug('Minimax text-to-audio task progress', {
-              traceId: audioTask.trace_id,
-              status: it.data?.status,
+      // Collect audio chunks and extra info from stream
+      let audioChunks: string[] = []
+      let durationSeconds: number | undefined
+      let totalProgress = 0
+
+      // TODO refactor stream api to return aggregated data
+
+      await new Promise<void>((resolve, reject) => {
+        streamResult.events.subscribe({
+          next: (event) => {
+            MastraX.logger.debug('Stream event received', {
+              traceId,
+              eventType: event.type,
             })
-          }),
-        ),
-      )
 
-      MastraX.logger.info('Audio generation completed', {
-        traceId: audioTask.trace_id,
-        status: audioResult.data?.status,
-        subtitle_file: audioResult.subtitle_file,
-        audio_url: audioResult.data?.audio_url,
-        hasAudioData: !!audioResult.data?.audio,
+            if (event.type === 'audio_chunk') {
+              audioChunks.push(event.data.audio)
+              totalProgress += 10 // Approximate progress increment
+
+              // Update progress in Convex (throttled)
+              if (audioChunks.length % 3 === 0) {
+                convex
+                  .mutation(api.tasks.updateTaskProgress, {
+                    taskId: convexTaskId,
+                    progress: Math.min(totalProgress, 90),
+                    status: 'generating',
+                  })
+                  .catch((err) => {
+                    MastraX.logger.warn('Failed to update task progress', {
+                      error: err,
+                    })
+                  })
+              }
+            } else if (event.type === 'extra_info') {
+              durationSeconds = event.data.extra_info.audio_length
+              MastraX.logger.info('Received audio extra info', {
+                traceId,
+                durationSeconds,
+                audioFormat: event.data.extra_info.audio_format,
+                audioSize: event.data.extra_info.audio_size,
+              })
+            } else if (event.type === 'complete') {
+              // Handle final audio chunk if present
+              if (event.data.final_audio) {
+                audioChunks.push(event.data.final_audio)
+              }
+              MastraX.logger.info('Audio stream completed', {
+                traceId,
+                totalChunks: audioChunks.length,
+              })
+              resolve()
+            }
+          },
+          error: (error) => {
+            MastraX.logger.error('Stream error', {
+              traceId,
+              error: error.message,
+            })
+            reject(error)
+          },
+          complete: () => {
+            MastraX.logger.debug('Stream completed', { traceId })
+            resolve()
+          },
+        })
       })
 
-      const audioHexString = audioResult.data?.audio
-      const durationSeconds = audioResult.extra_info?.audio_length
+      // Combine all audio chunks
+      const audioHexString = audioChunks.join('')
 
       invariant(audioHexString, 'audioHexData is required')
       invariant(durationSeconds, 'durationSeconds is required')
@@ -138,21 +184,24 @@ export const minimaxTextToAudioTool = createTool({
         path: input.output.path,
         bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
         durationSeconds,
+        audioSize: Math.floor(audioHexString.length / 2),
       })
 
       const savedFile = await MediaFileStorage.saveFile('audio', {
         convex,
-        bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
+        resourceId,
         threadId,
         path: input.output.path,
         source: {
           type: 'hex',
           data: audioHexString,
+          contentType: 'audio/mpeg',
         },
+        bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
         contentType: 'audio/mpeg',
         description: input.output.description || 'Generated audio narration',
         metadata: {
-          durationSeconds,
+          durationSeconds: durationSeconds / 1000, // Convert milliseconds to seconds
         },
       })
 
@@ -168,7 +217,7 @@ export const minimaxTextToAudioTool = createTool({
         status: 'completed',
         output: {
           file_path: savedFile.path,
-          duration_seconds: durationSeconds,
+          duration_seconds: durationSeconds / 1000, // Convert milliseconds to seconds
           key: savedFile.key,
         },
       })
@@ -178,13 +227,13 @@ export const minimaxTextToAudioTool = createTool({
         {
           threadId,
           outputPath: input.output.path,
-          durationSeconds,
+          durationSeconds: durationSeconds / 1000,
         },
       )
 
       return {
         file_path: input.output.path,
-        duration_seconds: durationSeconds,
+        duration_seconds: durationSeconds / 1000, // Convert milliseconds to seconds
       }
     } catch (error) {
       MastraX.logger.error('Failed to generate audio with Minimax', {
@@ -200,3 +249,23 @@ export const minimaxTextToAudioTool = createTool({
     }
   },
 })
+
+// if (import.meta.main) {
+//   const args = {
+//     text: '2025年，氢能存储技术迎来历史性突破。三大核心技术同时取得重大进展，为清洁能源革命奠定坚实基础。',
+//     output: {
+//       path: '/scene-1/audio.mp3',
+//       description: '场景1开场引入旁白音频',
+//     },
+//   }
+//   const rt = new RuntimeContext()
+//   ContextX.set(rt)
+
+//   const result = await minimaxTextToAudioTool.execute!({
+//     context: args,
+//     threadId: 'test',
+//     runtimeContext: rt,
+//   })
+
+//   console.log(result)
+// }

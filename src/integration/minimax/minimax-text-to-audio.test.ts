@@ -111,7 +111,7 @@ describe('Minimax Text-to-Audio API', () => {
       let chunkCount = 0
       let totalBytes = 0
 
-      for await (const chunk of MinimaxTextToAudio.client.stream({
+      const result = await MinimaxTextToAudio.client.stream({
         model: 'speech-02-turbo',
         text: 'This is a streaming test with real-time audio generation.',
         voice_setting: {
@@ -119,23 +119,35 @@ describe('Minimax Text-to-Audio API', () => {
           speed: 1.2,
         },
         stream: true,
-      })) {
-        expect(chunk.audio).toBeDefined()
-        expect(typeof chunk.audio).toBe('string')
-        expect(chunk.trace_id).toBeDefined()
+      })
 
-        chunks.push(chunk.audio)
-        chunkCount++
-        totalBytes += chunk.audio.length
+      await new Promise<void>((resolve) => {
+        result.events.subscribe({
+          next: (event) => {
+            if (event.type === 'audio_chunk') {
+              expect(event.data.audio).toBeDefined()
+              expect(typeof event.data.audio).toBe('string')
+              expect(event.data.trace_id).toBeDefined()
 
-        // Validate hex encoding
-        expect(chunk.audio).toMatch(/^[0-9a-fA-F]*$/)
+              chunks.push(event.data.audio)
+              chunkCount++
+              totalBytes += event.data.audio.length
 
-        // Break after collecting enough chunks for testing
-        if (chunkCount >= 5) {
-          break
-        }
-      }
+              // Validate hex encoding
+              expect(event.data.audio).toMatch(/^[0-9a-fA-F]*$/)
+
+              // Break after collecting enough chunks for testing
+              if (chunkCount >= 5) {
+                resolve()
+              }
+            }
+          },
+          complete: () => resolve(),
+          error: (err) => {
+            throw err
+          },
+        })
+      })
 
       expect(chunkCount).toBeGreaterThan(0)
       expect(totalBytes).toBeGreaterThan(0)
@@ -145,20 +157,30 @@ describe('Minimax Text-to-Audio API', () => {
     it('should provide extra info in streaming response', async () => {
       let hasExtraInfo = false
 
-      for await (const chunk of MinimaxTextToAudio.client.stream({
+      const result = await MinimaxTextToAudio.client.stream({
         model: 'speech-01-hd',
         text: 'Testing extra info in streaming response.',
         voice_setting: {
           voice_id: 'female-shaonv',
         },
-      })) {
-        if (chunk.extra_info) {
-          hasExtraInfo = true
-          expect(chunk.extra_info.audio_sample_rate).toBeDefined()
-          expect(chunk.extra_info.audio_format).toBeDefined()
-          break
-        }
-      }
+      })
+
+      await new Promise<void>((resolve) => {
+        result.events.subscribe({
+          next: (event) => {
+            if (event.type === 'extra_info') {
+              hasExtraInfo = true
+              expect(event.data.extra_info.audio_sample_rate).toBeDefined()
+              expect(event.data.extra_info.audio_format).toBeDefined()
+              resolve()
+            }
+          },
+          complete: () => resolve(),
+          error: (err) => {
+            throw err
+          },
+        })
+      })
 
       expect(hasExtraInfo).toBe(true)
     })
