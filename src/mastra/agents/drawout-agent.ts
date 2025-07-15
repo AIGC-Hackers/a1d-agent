@@ -25,7 +25,7 @@ export const drawOutAgent = new Agent({
   }),
   defaultGenerateOptions({ runtimeContext }) {
     return {
-      maxSteps: 128,
+      maxSteps: 256,
     }
   },
   defaultStreamOptions({ runtimeContext }) {

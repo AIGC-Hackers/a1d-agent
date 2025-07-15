@@ -17,21 +17,6 @@ export const midjourneyImageGenerateInputSchema = z.object({
   ),
 })
 
-export const midjourneyImageGenerateOutputSchema = z.object({
-  success: z.boolean(),
-  result: z.array(
-    z.object({
-      id: z.string(),
-      resource_id: z.string().optional(),
-      job_id: z.string(),
-      file_name: z.string().optional(),
-      file_size: z.number(),
-      key: z.string(),
-    }),
-  ),
-  error: z.string().optional(),
-})
-
 export const MIDJOURNEY_TOOL_DESCRIPTION = 'Generate images using Midjourney'
 
 export type MidjourneyImageGenerateOutput =
@@ -63,11 +48,18 @@ export const midjourneyImageGenerateTool = createTool({
         prompt,
       })
 
+      const client = new Midjourney.Client({
+        apiKey: env.value.X_302_API_KEY,
+      })
+
       const submitResult = await firstValueFrom(
-        Midjourney.client.submitImagine({ prompt }),
+        client.submitImagine({ prompt }),
       )
 
       const midjourneyTaskId = submitResult.result
+      MastraX.logger.info('Midjourney task submitted', {
+        midjourneyTaskId,
+      })
 
       // 创建 Convex 任务记录
       const convexTaskId = await convex.mutation(api.tasks.createTask, {
@@ -77,7 +69,7 @@ export const midjourneyImageGenerateTool = createTool({
         assetType: 'image',
         toolId: TOOL_ID,
         internalTaskId: midjourneyTaskId,
-        provider: '302',
+        provider: Midjourney.provider,
         input: {
           prompt,
           output_path: output.path,
@@ -85,7 +77,7 @@ export const midjourneyImageGenerateTool = createTool({
       })
 
       // 使用流式接口获取进度
-      const status$ = Midjourney.client.pollStream(midjourneyTaskId).pipe(
+      const status$ = client.pollStream(midjourneyTaskId).pipe(
         tap(async (status) => {
           MastraX.logger.info('Midjourney progress update', {
             progress: status.progress,
@@ -177,7 +169,7 @@ export const midjourneyImageGenerateTool = createTool({
         error instanceof Error ? error.message : String(error)
 
       return {
-        error: errorMessage,
+        error: `Midjourney image generation failed: ${errorMessage}`,
       }
     }
   },
