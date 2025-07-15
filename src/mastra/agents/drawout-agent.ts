@@ -19,6 +19,14 @@ export const drawOutAgent = new Agent({
   description: 'Draw out the story',
   instructions: drawOutInstructions,
   model: openrouter('anthropic/claude-sonnet-4'),
+  defaultGenerateOptions: {
+    maxSteps: 128,
+  },
+  defaultStreamOptions({ runtimeContext }) {
+    return {
+      maxSteps: 128,
+    }
+  },
   memory: new Memory({
     storage: MastraX.storage.value,
   }),

@@ -59,6 +59,9 @@ importers:
       convex:
         specifier: ^1.25.2
         version: 1.25.2(react@19.1.0)
+      convex-helpers:
+        specifier: ^0.1.99
+        version: 0.1.99(@standard-schema/spec@1.0.0)(convex@1.25.2(react@19.1.0))(hono@4.8.4)(react@19.1.0)(typescript@5.8.3)(zod@3.25.67)
       drizzle-orm:
         specifier: ^0.44.2
         version: 0.44.2(@libsql/client@0.15.9)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(@upstash/redis@1.35.1)(bun-types@1.2.18(@types/react@19.1.8))(pg@8.16.3)(postgres@3.4.7)
@@ -3587,6 +3590,28 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  convex-helpers@0.1.99:
+    resolution: {integrity: sha512-W4sV9676vWWIwfYvG76Dxf7biDgpYggvwTLW5fJgLhXIb/XUCacO2AOXu+HrW85GvPRb1LLjhWgWPH8byHiTsw==}
+    hasBin: true
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      convex: ^1.13.0
+      hono: ^4.0.5
+      react: ^17.0.2 || ^18.0.0 || ^19.0.0
+      typescript: ^5.5
+      zod: ^3.22.4
+    peerDependenciesMeta:
+      '@standard-schema/spec':
+        optional: true
+      hono:
+        optional: true
+      react:
+        optional: true
+      typescript:
+        optional: true
+      zod:
+        optional: true
 
   convex@1.25.2:
     resolution: {integrity: sha512-4r3Lsln9ceOOQ8OqQM13yQtZ6rXWcW1BCfqVkP7LXI8sovpbKzEn6CusT9bE2Rv3STqAHYu153adAj37pZm34A==}
@@ -10366,6 +10391,16 @@ snapshots:
   content-type@1.0.5: {}
 
   convert-source-map@2.0.0: {}
+
+  convex-helpers@0.1.99(@standard-schema/spec@1.0.0)(convex@1.25.2(react@19.1.0))(hono@4.8.4)(react@19.1.0)(typescript@5.8.3)(zod@3.25.67):
+    dependencies:
+      convex: 1.25.2(react@19.1.0)
+    optionalDependencies:
+      '@standard-schema/spec': 1.0.0
+      hono: 4.8.4
+      react: 19.1.0
+      typescript: 5.8.3
+      zod: 3.25.67
 
   convex@1.25.2(react@19.1.0):
     dependencies:
