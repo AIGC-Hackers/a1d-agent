@@ -118,25 +118,56 @@ export namespace MediaFileStorage {
       metadata: Meta
     },
   ) {
-    const key = join('/', props.threadId, props.path)
+    const key = join(props.threadId, props.path).replace(/^\/+/, '') // Remove leading slashes
 
-    const data = await FileSource.get(props.source)
+    // Handle different source types to avoid streaming issues
+    let bodyData: Uint8Array
+    let inferredContentType: string
 
-    const inferredContentType =
-      props.contentType || FileSource.inferContentType(props.path)
+    switch (props.source.type) {
+      case 'hex': {
+        bodyData = FileSource.decodeHexString(props.source.data)
+        inferredContentType = props.contentType || props.source.contentType || FileSource.inferContentType(props.path)
+        break
+      }
+      case 'base64': {
+        const binaryString = atob(props.source.data)
+        bodyData = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bodyData[i] = binaryString.charCodeAt(i)
+        }
+        inferredContentType = props.contentType || props.source.contentType || FileSource.inferContentType(props.path)
+        break
+      }
+      case 'url': {
+        // For URLs, we still need to use the streaming approach
+        const data = await FileSource.get(props.source)
+        bodyData = new Uint8Array(await data.arrayBuffer())
+        inferredContentType = props.contentType || FileSource.inferContentType(props.path)
+        break
+      }
+    }
 
     const upload: PutObjectCommandOutput = await S3.client().send(
       new PutObjectCommand({
         Bucket: props.bucket,
         Key: key,
-        Body: data.body,
+        Body: bodyData,
         ContentType: inferredContentType,
         Metadata: {
           threadId: props.threadId,
-          resourceId: props.resourceId ?? '<none>',
+          resourceId: props.resourceId ?? 'none',
         },
       }),
     )
+
+    // Clean AWS response to avoid Convex reserved fields
+    const uploadMetadata = {
+      ETag: upload.ETag,
+      VersionId: upload.VersionId,
+      ServerSideEncryption: upload.ServerSideEncryption,
+      // Remove $metadata and other AWS internal fields
+    }
 
     const entityId = await props.convex.mutation(api.vfs.writeFile, {
       threadId: props.threadId,
@@ -144,10 +175,10 @@ export namespace MediaFileStorage {
       content: '',
       contentType: inferredContentType,
       description: props.description,
-      size: data instanceof Uint8Array ? data.length : 0,
+      size: bodyData.length,
       metadata: {
         key,
-        upload,
+        upload: uploadMetadata,
         ...props.metadata,
       },
     })
@@ -178,7 +209,7 @@ export namespace MediaFileStorage {
       quadrants.bottomRight,
     ]).pipe(
       mergeMap(async (quadrant, index) => {
-        const filepath = join('/', props.path, `${index}.png`)
+        const filepath = join(props.path, `${index}.png`)
         return await saveFile('image', {
           convex: props.convex,
           resourceId: props.resourceId,
