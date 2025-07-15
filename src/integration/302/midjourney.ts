@@ -17,6 +17,8 @@ import { baseUrl } from '../openrouter'
 import { switchMapResponseToJson } from '../utils'
 
 export namespace Midjourney {
+  export const provider = '302'
+
   export type BotType = 'MID_JOURNEY' | 'NIJI_JOURNEY'
 
   export type SubmitImagineInput = {
@@ -99,10 +101,6 @@ export namespace Midjourney {
       return cancelJob({ jobId: id }, this.ctx)
     }
   }
-
-  export const client = new Client({
-    apiKey: env.value.X_302_API_KEY,
-  })
 
   function submitImagine(input: SubmitImagineInput, ctx: X302Context) {
     return fromFetch(`${baseUrl}/mj/submit/imagine`, {
