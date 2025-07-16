@@ -104,7 +104,7 @@
 
 用户回答: "目标是金融科技公司的技术决策者，90秒，希望他们预约我们的量子计算咨询服务"
 
-预期响应: 使用googleSearch查询"quantum computing finance industry 2024 real applications breakthrough"，询问视觉配置
+预期响应: 使用googleSearch查询"quantum computing finance industry 2025 real applications breakthrough"，询问视觉配置
 
 用户回答: "使用9:16竖屏格式（适合社交媒体），专业但不失活力的语调，现代科技风格"
 
@@ -131,14 +131,14 @@
 ### 测试用例 8.1: 科学教育主题
 
 ```
-用户输入: "制作一个解释CRISPR基因编辑技术最新突破的教育视频，要包含2024年的诺贝尔奖相关成果"
+用户输入: "制作一个解释CRISPR基因编辑技术最新突破的教育视频，要包含2025年的诺贝尔奖相关成果"
 
 预期阶段: Phase 1
 预期响应: 询问目标受众等信息，可能需要了解CRISPR技术的最新发展和诺贝尔奖相关信息
 
 用户回答: "面向生物技术专业的研究生和研究人员，150秒，鼓励他们参加我们的基因编辑研讨会"
 
-预期响应: 执行googleSearch搜索"CRISPR gene editing 2024 Nobel Prize breakthrough latest developments"，询问视觉配置
+预期响应: 执行googleSearch搜索"CRISPR gene editing 2025 Nobel Prize breakthrough latest developments"，询问视觉配置
 
 用户回答: "16:9格式，学术但易懂的语调，详细的科学插图风格，使用实验室常见的蓝白配色"
 
@@ -242,13 +242,13 @@
 ### 测试用例 17.1: 行业趋势主题
 
 ```
-用户输入: "创建一个关于2024年AI在医疗诊断领域最新突破的视频，特别是在罕见疾病诊断方面的应用"
+用户输入: "创建一个关于2025年AI在医疗诊断领域最新突破的视频，特别是在罕见疾病诊断方面的应用"
 
 预期响应: 询问目标受众和其他配置，可能需要搜索AI医疗诊断的最新进展和具体案例
 
 用户回答: "目标是医疗机构的管理者和医生，100秒，希望他们了解并采用我们的AI诊断系统"
 
-预期响应: 使用googleSearch查询"AI medical diagnosis rare diseases 2024 breakthrough applications healthcare"，询问视觉配置
+预期响应: 使用googleSearch查询"AI medical diagnosis rare diseases 2025 breakthrough applications healthcare"，询问视觉配置
 
 用户回答: "16:9格式，专业可信的语调，清晰的医疗图解风格，使用医疗行业标准的蓝绿色系"
 
@@ -306,7 +306,7 @@
 
 用户回答: "面向航天爱好者和科技投资者，120秒，希望他们关注我们的航天科技分析平台"
 
-预期响应: 执行googleSearch搜索"SpaceX Mars mission 2024 latest announcement technology breakthrough"，询问视觉配置
+预期响应: 执行googleSearch搜索"SpaceX Mars mission 2025 latest announcement technology breakthrough"，询问视觉配置
 
 用户回答: "16:9格式，充满激情和前瞻性的语调，未来科技风格的插图，使用太空主题的深蓝和橙色"
 
@@ -322,7 +322,7 @@
 
 用户回答: "汽车行业的供应链经理和采购主管，90秒，推广我们的供应链风险管理解决方案"
 
-预期响应: 使用googleSearch查询"global chip shortage 2024 automotive industry impact latest market data statistics"，询问视觉配置
+预期响应: 使用googleSearch查询"global chip shortage 2025 automotive industry impact latest market data statistics"，询问视觉配置
 
 用户回答: "16:9格式，严谨专业的语调，数据可视化风格，使用商务蓝色系"
 
@@ -338,7 +338,7 @@
 
 用户回答: "科技公司的合规官和法务团队，180秒，希望他们预约我们的AI合规咨询服务"
 
-预期响应: 使用googleSearch查询"EU AI Act 2024 latest regulations requirements tech companies compliance"，询问视觉配置
+预期响应: 使用googleSearch查询"EU AI Act 2025 latest regulations requirements tech companies compliance"，询问视觉配置
 
 用户回答: "16:9格式，权威但易理解的语调，清晰的信息图表风格，使用欧盟蓝和白色的配色"
 
@@ -390,7 +390,7 @@
 
 用户回答: "面向企业HR和管理者，120秒，帮助他们识别员工心理健康问题的早期信号"
 
-预期响应: 使用googleSearch查询"workplace mental health 2024 research early warning signs employee wellbeing"，询问视觉配置
+预期响应: 使用googleSearch查询"workplace mental health 2025 research early warning signs employee wellbeing"，询问视觉配置
 
 用户回答: "16:9格式，专业关怀的语调，温和的插图风格，使用舒缓的蓝绿色系"
 
@@ -400,13 +400,13 @@
 ### 测试用例 29: 金融投资主题
 
 ```
-用户输入: "制作一个解释加密货币市场最新趋势的投资教育视频，要包含2024年的监管变化"
+用户输入: "制作一个解释加密货币市场最新趋势的投资教育视频，要包含2025年的监管变化"
 
 预期响应: 询问目标受众和投资经验水平，需要搜索加密货币监管最新动态
 
 用户回答: "中等投资经验的个人投资者，150秒，推广我们的加密货币投资课程"
 
-预期响应: 使用googleSearch查询"cryptocurrency regulation 2024 market trends bitcoin ethereum investment outlook"，询问视觉配置
+预期响应: 使用googleSearch查询"cryptocurrency regulation 2025 market trends bitcoin ethereum investment outlook"，询问视觉配置
 
 用户回答: "16:9格式，专业但不失亲和力的语调，现代金融图表风格，使用金色和深蓝的配色"
 
@@ -572,7 +572,7 @@
 
 预期响应: 询问原视频主题、需要更新的内容和改进方向
 
-用户回答: "关于远程工作工具的介绍，要加入2024年的新工具，视觉要更现代"
+用户回答: "关于远程工作工具的介绍，要加入2025年的新工具，视觉要更现代"
 
 预期响应: 询问目标受众和具体的工具更新需求
 
@@ -828,7 +828,7 @@
 
 用户回答: "面向科技投资者和医疗专业人士，150秒，关注医疗应用潜力"
 
-预期响应: 使用googleSearch查询"brain computer interface 2024 Neuralink breakthrough medical applications"，询问视觉配置
+预期响应: 使用googleSearch查询"brain computer interface 2025 Neuralink breakthrough medical applications"，询问视觉配置
 
 用户回答: "16:9格式，前瞻专业的语调，未来科技风格，使用神经网络蓝紫配色"
 

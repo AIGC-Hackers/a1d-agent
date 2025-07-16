@@ -1,3 +1,4 @@
+import { Groq } from '@/integration/groq'
 import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
@@ -20,7 +21,7 @@ export const drawOutAgent = new Agent({
   name: 'Drawout.ai',
   description: 'Draw out the story',
   instructions: drawOutInstructions,
-  model: openrouter('anthropic/claude-sonnet-4'),
+  model: Groq.model('moonshotai/kimi-k2-instruct'),
   memory: new Memory({
     storage: MastraX.storage.value,
   }),
