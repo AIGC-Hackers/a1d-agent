@@ -66,7 +66,7 @@ export const speedpaintVideoGenerateTool = createTool({
 
     const imageUrl = S3.createPublicUrl({
       bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
-      key: inputData.metadata.key,
+      key: `${inputData.metadata.key}`,
     })
 
     try {

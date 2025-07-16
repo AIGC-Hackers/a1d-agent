@@ -24,8 +24,7 @@ export namespace S3 {
    * @deprecated
    */
   export function createPublicUrl(opts: { bucket: string; key: string }) {
-    return `https://pub-ccb4d18cb7504fdca75fba79f847927b.r2.dev/${opts.key}`
-
-    return `https://${opts.bucket}.r2.cloudflarestorage.com/${opts.key}`
+    const key = opts.key.startsWith('/') ? opts.key.slice(1) : opts.key
+    return `https://pub-ccb4d18cb7504fdca75fba79f847927b.r2.dev/${key}`
   }
 }
