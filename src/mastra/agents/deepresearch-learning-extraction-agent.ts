@@ -1,4 +1,4 @@
-import { openrouter, OpenRouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
 export const deepResearchLearningExtractionAgent = new Agent({

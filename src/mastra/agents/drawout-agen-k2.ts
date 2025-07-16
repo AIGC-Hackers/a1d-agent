@@ -1,15 +1,11 @@
 import { Groq } from '@/integration/groq'
-import { openrouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { MastraX } from '../factory'
 import { drawOutVideoCutoutScriptTool } from '../tools/draw-out-video-cutout-script-tool'
-import { drawOutVideoCutoutTool } from '../tools/draw-out-video-cutout-tool'
 import { googleSearchTool } from '../tools/google-search-tool'
-import { kontextImageEditTool } from '../tools/kontext-image-edit-tool'
 import { kontextTextToImageTool } from '../tools/kontext-text-to-image-tool'
-import { midjourneyImageGenerateTool } from '../tools/midjourney-image-generate-tool'
 import { minimaxTextToAudioTool } from '../tools/minimax-text-to-audio-tool'
 import { speedpaintVideoGenerateTool } from '../tools/speedpaint-video-generate-tool'
 import * as systemTools from '../tools/system-tools'
@@ -18,7 +14,7 @@ import { todoWriteTool } from '../tools/todo-write-tool'
 import { drawOutInstructions } from './drawout-agent.instructions'
 
 export const drawOutAgentK2 = new Agent({
-  name: 'Drawout.ai K2',
+  name: 'Drawout.ai + K2',
   description: 'Draw out the story with K2',
   instructions: ({ runtimeContext }) => {
     runtimeContext.set('model', 'k2')

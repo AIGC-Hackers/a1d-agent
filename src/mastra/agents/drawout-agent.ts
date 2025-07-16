@@ -1,15 +1,11 @@
-import { Groq } from '@/integration/groq'
-import { openrouter } from '@/integration/openrouter'
+import { Anthropic } from '@/integration/anthropic'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
 import { MastraX } from '../factory'
 import { drawOutVideoCutoutScriptTool } from '../tools/draw-out-video-cutout-script-tool'
-import { drawOutVideoCutoutTool } from '../tools/draw-out-video-cutout-tool'
 import { googleSearchTool } from '../tools/google-search-tool'
-import { kontextImageEditTool } from '../tools/kontext-image-edit-tool'
 import { kontextTextToImageTool } from '../tools/kontext-text-to-image-tool'
-import { midjourneyImageGenerateTool } from '../tools/midjourney-image-generate-tool'
 import { minimaxTextToAudioTool } from '../tools/minimax-text-to-audio-tool'
 import { speedpaintVideoGenerateTool } from '../tools/speedpaint-video-generate-tool'
 import * as systemTools from '../tools/system-tools'
@@ -24,7 +20,7 @@ export const drawOutAgent = new Agent({
     runtimeContext.set('model', 'claude')
     return drawOutInstructions({ runtimeContext })
   },
-  model: Groq.model('moonshotai/kimi-k2-instruct'),
+  model: Anthropic.model('claude-4-sonnet-20250514'),
   memory: new Memory({
     storage: MastraX.storage.value,
   }),
