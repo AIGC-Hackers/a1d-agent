@@ -1,8 +1,8 @@
 import { env } from '@/lib/env'
 import { fromFetch } from 'rxjs/fetch'
 
-import { baseUrl } from '../openrouter'
 import { switchMapResponseToJson } from '../utils'
+import { baseUrl } from './config'
 
 export type RecraftStyles =
   | 'digital_illustration/pixel_art'
