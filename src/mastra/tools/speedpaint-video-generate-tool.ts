@@ -129,6 +129,7 @@ export const speedpaintVideoGenerateTool = createTool({
           taskId: convexTaskId,
           eventType: 'progress_update',
           data: status,
+          progress: status.progress,
         })
 
         finalResult = status
