@@ -4,8 +4,9 @@ import { Speedpainter } from '@/integration/speedpainter'
 import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
 import { Result } from '@/lib/result'
-import { MastraX } from '@/mastra/factory'
+import { ContextX, MastraX } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
+import { RuntimeContext } from '@mastra/core/runtime-context'
 import { createTool } from '@mastra/core/tools'
 import { ConvexHttpClient } from 'convex/browser'
 import { z } from 'zod'
@@ -14,7 +15,19 @@ import { fileDescriptorSchema } from './system-tools'
 
 export const speedpaintVideoGenerateInputSchema = z.object({
   image_path: z.string().describe('VFS path to source image'),
-  duration_seconds: z.number().describe('Duration from audio file'),
+  duration_seconds: z
+    .number()
+    .min(3)
+    .max(90)
+    .describe('Must be exactly equal to the audio file duration'),
+  color_fill_duration: z
+    .number()
+    .min(1)
+    .max(90)
+    .optional()
+    .describe(
+      'Duration for color fill (must be less than or equal to duration_seconds)',
+    ),
   output: fileDescriptorSchema.describe('VFS path for video clip'),
 })
 
@@ -73,8 +86,8 @@ export const speedpaintVideoGenerateTool = createTool({
       const { taskId: speedpainterTaskId } = await Speedpainter.createTask({
         imageUrl,
         mimeType: 'image/png',
-        colorFillDuration: 0,
-        sketchDuration: 0,
+        colorFillDuration: input.color_fill_duration ?? 0,
+        sketchDuration: duration_seconds,
         needCanvas: false,
         needHand: false,
         needFadeout: false,
@@ -196,3 +209,35 @@ export const speedpaintVideoGenerateTool = createTool({
     }
   },
 })
+
+// if (import.meta.main) {
+//   const imageUrl =
+//     'https://pub-ccb4d18cb7504fdca75fba79f847927b.r2.dev/672215d7-fb6c-4869-834c-3eb1a0a6c15c/scene-3/image.png'
+
+//   const args = {
+//     image_path: '/scene-3/image.png', // Assume image is already in VFS
+//     duration_seconds: 10,
+//     color_fill_duration: 0,
+//     output: {
+//       path: '/test-speedpaint/scene-3/animation.mp4',
+//       description:
+//         'Test SpeedPaint video generation - 10 second animation from EU AI law pyramid',
+//     },
+//   }
+
+//   const rt = new RuntimeContext()
+//   ContextX.set(rt)
+
+//   // "/scene-6/image.png"
+//   // "672215d7-fb6c-4869-834c-3eb1a0a6c15c"
+
+//   // Uncomment to run the actual test (requires image in VFS)
+//   const result = await speedpaintVideoGenerateTool.execute!({
+//     context: args,
+//     threadId: '672215d7-fb6c-4869-834c-3eb1a0a6c15c',
+//     resourceId: 'test-resource',
+//     runtimeContext: rt,
+//   })
+
+//   console.log('\nSpeedPaint generation result:', result)
+// }

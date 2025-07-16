@@ -1,3 +1,4 @@
+import { inspect } from 'node:util'
 import type { ServerSentEventMessage } from 'fetch-event-stream'
 import { env } from '@/lib/env'
 import { events } from 'fetch-event-stream'
@@ -191,3 +192,23 @@ export namespace Speedpainter {
 
   export type SourceType = 'framer' | 'api' | 'web' | 'canva'
 }
+
+// if (import.meta.main) {
+//   const t = await Speedpainter.createTask({
+//     imageUrl:
+//       'https://pub-ccb4d18cb7504fdca75fba79f847927b.r2.dev/672215d7-fb6c-4869-834c-3eb1a0a6c15c/scene-3/image.png',
+
+//     mimeType: 'image/png',
+//     sketchDuration: 10,
+//     colorFillDuration: 0,
+//     needCanvas: false,
+//     needHand: false,
+//     needFadeout: false,
+//   })
+
+//   for await (const status of Speedpainter.getTaskStatusStream({
+//     taskId: t.taskId,
+//   })) {
+//     console.log(inspect(status, { depth: null }))
+//   }
+// }
