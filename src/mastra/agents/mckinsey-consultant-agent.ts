@@ -1,4 +1,5 @@
 import { x302 } from '@/integration/302/llm'
+import { openai } from '@ai-sdk/openai'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
@@ -166,5 +167,19 @@ export const mckinseyConsultantAgent = new Agent({
     'A strategic consultant who can help with business analysis and strategy',
   instructions: instruction,
   model: x302('o4-mini-deep-research'),
+  defaultGenerateOptions({ runtimeContext }) {
+    return {
+      maxSteps: 64,
+    }
+  },
+  defaultStreamOptions({ runtimeContext }) {
+    return {
+      maxSteps: 64,
+    }
+  },
+  tools: {
+    // @ts-expect-error
+    webSearch: openai.tools.webSearchPreview(),
+  },
   memory: new Memory(),
 })
