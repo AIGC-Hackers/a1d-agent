@@ -1,9 +1,9 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { createStep, createWorkflow } from '@mastra/core'
 import { Agent } from '@mastra/core/agent'
 import { z } from 'zod'
 
-const llm = openrouter('openai/gpt-4.1')
+const llm = OpenRouter.model(OpenRouter.Model.OpenAIGpt41)
 
 const agent = new Agent({
   name: 'Weather Agent',
