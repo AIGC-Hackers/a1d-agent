@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
@@ -19,8 +19,8 @@ export const drawOutAgentMock = new Agent({
   description:
     'Mock version of Draw out the story - for development and testing',
   instructions: drawOutInstructions,
-  model: openrouter('anthropic/claude-sonnet-4'),
-  // model: openrouter('openai/gpt-4.1'),
+  model: OpenRouter.model(OpenRouter.Model.AnthropicClaudeSonnet4),
+  // model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
   memory: new Memory({
     storage: MastraX.storage.value,
   }),

@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
 
 import { midjourneyImageGenerateTool } from '../tools/midjourney-image-generate-tool'
@@ -98,8 +98,8 @@ Example complete prompt:
 "A majestic dragon perched on ancient ruins, cinematic lighting, fantasy art style, highly detailed, golden hour --ar 16:9"`
 
 export const midjourneyAgent = new Agent({
-  // model: openrouter('google/gemini-2.5-pro'),
-  model: openrouter('openai/gpt-4.1'),
+  // model: OpenRouter.model(OpenRouter.Model.GoogleGemini25Pro),
+  model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
   name: 'Midjourney',
   description: 'A Midjourney agent that can generate images using Midjourney.',
   instructions,

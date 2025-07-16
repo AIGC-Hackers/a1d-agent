@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
 export const deepResearchReportAgent = new Agent({
@@ -25,5 +25,5 @@ export const deepResearchReportAgent = new Agent({
 
   Structure your reports with clear sections, headings, and focus on synthesizing the information
   into a cohesive narrative rather than simply listing facts.`,
-  model: openrouter('openai/gpt-4.1'),
+  model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
 })

@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
 import { weatherTool } from '../tools/weather-tool'
@@ -17,6 +17,6 @@ export const weatherAgent = new Agent({
 
       Use the weatherTool to fetch current weather data.
 `,
-  model: openrouter('openai/gpt-4o-mini'),
+  model: OpenRouter.model(OpenRouter.Model.OpenAIGpt4oMini),
   tools: { weatherTool },
 })

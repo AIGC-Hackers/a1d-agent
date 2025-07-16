@@ -17,11 +17,11 @@ import { todoReadTool } from '../tools/todo-read-tool'
 import { todoWriteTool } from '../tools/todo-write-tool'
 import { drawOutInstructions } from './drawout-agent.instructions'
 
-export const drawOutAgent = new Agent({
-  name: 'Drawout.ai',
-  description: 'Draw out the story',
+export const drawOutAgentK2 = new Agent({
+  name: 'Drawout.ai K2',
+  description: 'Draw out the story with K2',
   instructions: ({ runtimeContext }) => {
-    runtimeContext.set('model', 'claude')
+    runtimeContext.set('model', 'k2')
     return drawOutInstructions({ runtimeContext })
   },
   model: Groq.model('moonshotai/kimi-k2-instruct'),

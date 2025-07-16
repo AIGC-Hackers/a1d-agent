@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
 
 import { todoReadTool } from '../tools/todo-read-tool'
@@ -62,7 +62,7 @@ export const todoAgent = new Agent({
 
 Always maintain a clear, organized approach to task management and help users stay focused and productive.`,
 
-  model: openrouter('openai/gpt-4o-mini'),
+  model: OpenRouter.model(OpenRouter.Model.OpenAIGpt4oMini),
 
   tools: {
     todoRead: todoReadTool,

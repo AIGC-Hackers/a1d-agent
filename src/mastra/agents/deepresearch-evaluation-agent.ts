@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
 export const deepResearchEvaluationAgent = new Agent({
@@ -25,5 +25,5 @@ export const deepResearchEvaluationAgent = new Agent({
   - isRelevant: boolean indicating if the result is relevant
   - reason: brief explanation of your decision
   `,
-  model: openrouter('openai/gpt-4.1'),
+  model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
 })

@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core/agent'
 
 import { deepResearchEvaluateResultTool } from '../tools/deepresearch-evaluate-result-tool'
@@ -37,7 +37,7 @@ export const deepResearchAgent = new Agent({
 
   Use all the tools available to you to research the topic.
   `,
-  model: openrouter('openai/gpt-4.1'),
+  model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
   tools: {
     googleSearch: googleSearchTool,
     evaluateResult: deepResearchEvaluateResultTool,

@@ -1,4 +1,4 @@
-import { openrouter } from '@/integration/openrouter'
+import { OpenRouter } from '@/integration/openrouter'
 import { Agent, createTool } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 import { streamText } from 'ai'
@@ -15,7 +15,7 @@ const toolcallStreamTool = createTool({
 
     const response = streamText({
       prompt: 'hello',
-      model: openrouter('openai/gpt-4.1'),
+      model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
     })
 
     for await (const chunk of response.textStream) {
@@ -39,7 +39,7 @@ export const testAgent = new Agent({
   description: 'Develop and test agent functionality',
   instructions:
     'you are a test agent, Complete agent functionality testing according to user instructions. You can generate images using the mock-image-generate tool for testing real-time event streams.',
-  model: openrouter('openai/gpt-4.1'),
+  model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
   tools: {
     stream: toolcallStreamTool,
   },
