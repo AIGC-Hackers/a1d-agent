@@ -1,19 +1,29 @@
 import { api } from '@/convex/_generated/api'
-import { Midjourney } from '@/integration/302/midjourney'
+import { MidjourneyProxy } from '@/integration/midjourney/factory'
 import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
 import { ContextX, MastraX } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
+import { RuntimeContext } from '@mastra/core/runtime-context'
 import { createTool } from '@mastra/core/tools'
-import { firstValueFrom, lastValueFrom, tap } from 'rxjs'
+import { lastValueFrom, tap } from 'rxjs'
 import { z } from 'zod'
 
 import { fileDescriptorSchema } from './system-tools'
 
+/**
+ * ⚠️ 警告：Midjourney 的代理服务极其不稳定，生成任务经常失败或延迟。
+ * 高度建议不要再使用本工具，优先考虑使用 Kontext/FAL 等更可靠的生成服务。
+ */
+
 export const midjourneyImageGenerateInputSchema = z.object({
   prompt: z.string(),
+  aspectRatio: z
+    .enum(['1:2', '16:9', '9:16', '4:3', '3:4', '1:1'])
+    .optional()
+    .default('1:1'),
   output: fileDescriptorSchema.describe(
-    'VFS path prefix for images (generates 4 images with -1 to -4 suffix)',
+    'VFS path prefix for images (generates 4 images with 0 to 3 suffix)',
   ),
 })
 
@@ -36,29 +46,43 @@ export const midjourneyImageGenerateTool = createTool({
   inputSchema: midjourneyImageGenerateInputSchema,
   execute: async (context): Promise<MidjourneyImageGenerateOutput> => {
     const { context: input, resourceId, threadId, runId } = context
-    const { prompt, output } = input
+    const { prompt, output, aspectRatio = '1:1' } = input
+    const provider = 'huiyan'
 
     invariant(threadId, 'threadId is required')
 
     const { convex } = ContextX.get(context.runtimeContext)
 
     try {
-      // 提交生成任务
+      // 创建客户端
+      const client = MidjourneyProxy.client(provider)
+
       MastraX.logger.info('Submitting Midjourney image generation task', {
         prompt,
+        provider: client.provider,
+        aspectRatio,
       })
 
-      const client = new Midjourney.Client({
-        apiKey: env.value.X_302_API_KEY,
+      // 提交生成任务
+      const taskResult = await client.imagine({
+        prompt,
+        aspectRatio,
       })
 
-      const submitResult = await firstValueFrom(
-        client.submitImagine({ prompt }),
-      )
+      if (!taskResult.success) {
+        MastraX.logger.error('Failed to submit Midjourney task', {
+          error: taskResult.error.message,
+          provider,
+        })
+        return { error: taskResult.error.message }
+      }
 
-      const midjourneyTaskId = submitResult.result
+      const task = taskResult.data
+      const midjourneyTaskId = task.id
+
       MastraX.logger.info('Midjourney task submitted', {
         midjourneyTaskId,
+        provider,
       })
 
       // 创建 Convex 任务记录
@@ -69,7 +93,7 @@ export const midjourneyImageGenerateTool = createTool({
         assetType: 'image',
         toolId: TOOL_ID,
         internalTaskId: midjourneyTaskId,
-        provider: Midjourney.provider,
+        provider: provider,
         input: {
           prompt,
           output_path: output.path,
@@ -77,40 +101,52 @@ export const midjourneyImageGenerateTool = createTool({
       })
 
       // 使用流式接口获取进度
-      const status$ = client.pollStream(midjourneyTaskId).pipe(
-        tap(async (status) => {
-          MastraX.logger.info('Midjourney progress update', {
-            progress: status.progress,
-            status: status.status,
-            hasImage: !!status.imageUrl,
-          })
+      const status$ = task
+        .stream({
+          interval: 5000,
+          timeout: 600000, // 10 minutes
+        })
+        .pipe(
+          tap(async (state) => {
+            MastraX.logger.info('Midjourney progress update', {
+              progress: state.progress,
+              status: state.status,
+              hasImage: state.status === 'completed' && 'imageUrl' in state,
+              provider,
+            })
 
-          // 更新 Convex 任务进度
-          await convex.mutation(api.tasks.addTaskEvent, {
-            taskId: convexTaskId,
-            eventType: 'progress_update',
-            progress: status.progress,
-            data: status,
-          })
-        }),
-      )
+            // 更新 Convex 任务进度
+            await convex.mutation(api.tasks.addTaskEvent, {
+              taskId: convexTaskId,
+              eventType: 'progress_update',
+              progress: state.progress,
+              data: state.payload,
+            })
+          }),
+        )
 
       MastraX.logger.info('Waiting for Midjourney generation to complete...')
 
       // 获取最终结果
-      const finalResult = await lastValueFrom(status$)
+      const finalState = await lastValueFrom(status$)
 
-      if (
-        !finalResult ||
-        finalResult.progress !== 100 ||
-        !finalResult.imageUrl
-      ) {
+      if (finalState.status === 'failed') {
         const errorMessage =
-          finalResult?.failReason ||
-          'Midjourney task ended without final result'
+          finalState.error?.message || 'Midjourney task failed'
         await convex.mutation(api.tasks.updateTaskProgress, {
           taskId: convexTaskId,
-          progress: finalResult.progress,
+          progress: finalState.progress,
+          status: 'failed',
+          error: errorMessage,
+        })
+        return { error: errorMessage }
+      }
+
+      if (finalState.status !== 'completed' || !('imageUrl' in finalState)) {
+        const errorMessage = 'Midjourney task ended without final result'
+        await convex.mutation(api.tasks.updateTaskProgress, {
+          taskId: convexTaskId,
+          progress: finalState.progress,
           status: 'failed',
           error: errorMessage,
         })
@@ -120,7 +156,8 @@ export const midjourneyImageGenerateTool = createTool({
       MastraX.logger.info(
         'Midjourney generation completed, saving quadrant images',
         {
-          imageUrl: finalResult.imageUrl,
+          imageUrl: finalState.imageUrl,
+          provider,
         },
       )
 
@@ -130,7 +167,7 @@ export const midjourneyImageGenerateTool = createTool({
         resourceId,
         threadId,
         path: output.path,
-        imageUrl: finalResult.imageUrl,
+        imageUrl: finalState.imageUrl,
         bucket: env.value.CLOUDFLARE_R2_BUCKET_NAME,
       })
 
@@ -144,7 +181,7 @@ export const midjourneyImageGenerateTool = createTool({
         output: {
           file_paths: filePaths,
           task_id: convexTaskId,
-          original_image_url: finalResult.imageUrl,
+          original_image_url: finalState.imageUrl,
           r2_keys: savedQuadrants.map((r) => r.key),
           vfs_entity_ids: savedQuadrants.map((r) => r.entityId),
           midjourney_task_id: midjourneyTaskId,
@@ -174,3 +211,32 @@ export const midjourneyImageGenerateTool = createTool({
     }
   },
 })
+
+if (import.meta.main) {
+  const provider = (process.argv[2] as '302' | 'huiyan') || 'huiyan'
+
+  const args = {
+    prompt:
+      'A serene Japanese garden with cherry blossoms, koi pond, traditional bridge, photorealistic, 8k',
+    output: {
+      path: '/test-mj/garden',
+      description: 'Test Midjourney generation - Japanese garden scene',
+    },
+    provider,
+    aspectRatio: '16:9' as const,
+  }
+
+  const rt = new RuntimeContext()
+  ContextX.set(rt)
+
+  console.log(`Testing with provider: ${provider}`)
+
+  const result = await midjourneyImageGenerateTool.execute!({
+    context: args,
+    threadId: 'test-mj',
+    resourceId: 'test-resource',
+    runtimeContext: rt,
+  })
+
+  console.log('Midjourney generation result:', result)
+}

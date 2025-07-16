@@ -28,7 +28,7 @@ export const runtimeEnvSchema = type({
   // https://wavespeed.ai/
   WAVESPEED_API_KEY: 'string',
 
-  // FAL_API_KEY: 'string',
+  FAL_API_KEY: 'string',
   OPENROUTER_API_KEY: 'string',
   XAI_API_KEY: 'string',
   GEMINI_API_KEY: 'string',

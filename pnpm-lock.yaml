@@ -26,6 +26,9 @@ importers:
       '@convex-dev/auth':
         specifier: ^0.0.87
         version: 0.0.87(@auth/core@0.37.4)(convex@1.25.2(react@19.1.0))(react@19.1.0)
+      '@fal-ai/client':
+        specifier: ^1.6.0
+        version: 1.6.0
       '@google/genai':
         specifier: ^1.9.0
         version: 1.9.0(@modelcontextprotocol/sdk@1.15.0)
@@ -1223,6 +1226,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@fal-ai/client@1.6.0':
+    resolution: {integrity: sha512-6KUWtIm7HRv/+62zlxXEOdtzB2axXU6tmv1ruJDt37NbsjrIfQiXf24CggytatPh2hqOOl1/z+nDzhDg8vd3qA==}
+    engines: {node: '>=18.0.0'}
+
   '@google/genai@0.8.0':
     resolution: {integrity: sha512-Zs+OGyZKyMbFofGJTR9/jTQSv8kITh735N3tEuIZj4VlMQXTC0soCFahysJ9NaeenRlD7xGb6fyqmX+FwrpU6Q==}
     engines: {node: '>=18.0.0'}
@@ -1510,6 +1517,10 @@ packages:
   '@modelcontextprotocol/sdk@1.15.0':
     resolution: {integrity: sha512-67hnl/ROKdb03Vuu0YOr+baKTvf1/5YBHBm9KnZdjdAh8hjt4FRCPD5ucwxGB237sBpzlqQsLy1PFu7z/ekZ9Q==}
     engines: {node: '>=18'}
+
+  '@msgpack/msgpack@3.1.2':
+    resolution: {integrity: sha512-JEW4DEtBzfe8HvUYecLU9e6+XJnKDlUAIve8FvPzF3Kzs6Xo/KuZkZJsDH0wJXl/qEZbeeE7edxDNY3kMs39hQ==}
+    engines: {node: '>= 18'}
 
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
@@ -3992,6 +4003,10 @@ packages:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
 
+  eventsource-parser@1.1.2:
+    resolution: {integrity: sha512-v0eOBUbiaFojBu2s2NPBfYUoRR9GjcDNvCXVaqEf5vVfpIAh9f8RCo4vXTP8c63QRKCFwoLpMpTdPwwhEKVgzA==}
+    engines: {node: '>=14.18'}
+
   eventsource-parser@3.0.3:
     resolution: {integrity: sha512-nVpZkTMM9rF6AQ9gPJpFsNAMt48wIzB5TQgiTLdHiuO8XEDhUgZEhqKlZWXbIzo9VmJ/HvysHqEaVeD5v9TPvA==}
     engines: {node: '>=20.0.0'}
@@ -5323,6 +5338,9 @@ packages:
   revalidator@0.1.8:
     resolution: {integrity: sha512-xcBILK2pA9oh4SiinPEZfhP8HfrB/ha+a2fTMyl7Om2WjlDVrOQy99N2MXXlUHqGJz4qEu2duXxHJjDWuK/0xg==}
     engines: {node: '>= 0.4.0'}
+
+  robot3@0.4.1:
+    resolution: {integrity: sha512-hzjy826lrxzx8eRgv80idkf8ua1JAepRc9Efdtj03N3KNJuznQCPlyCJ7gnUmDFwZCLQjxy567mQVKmdv2BsXQ==}
 
   rollup-plugin-esbuild@6.2.1:
     resolution: {integrity: sha512-jTNOMGoMRhs0JuueJrJqbW8tOwxumaWYq+V5i+PD+8ecSCVkuX27tGW7BXqDgoULQ55rO7IdNxPcnsWtshz3AA==}
@@ -7414,6 +7432,12 @@ snapshots:
   '@esbuild/win32-x64@0.25.6':
     optional: true
 
+  '@fal-ai/client@1.6.0':
+    dependencies:
+      '@msgpack/msgpack': 3.1.2
+      eventsource-parser: 1.1.2
+      robot3: 0.4.1
+
   '@google/genai@0.8.0':
     dependencies:
       google-auth-library: 9.15.1
@@ -7819,6 +7843,8 @@ snapshots:
       zod-to-json-schema: 3.24.6(zod@3.25.67)
     transitivePeerDependencies:
       - supports-color
+
+  '@msgpack/msgpack@3.1.2': {}
 
   '@neon-rs/load@0.0.4':
     optional: true
@@ -10808,6 +10834,8 @@ snapshots:
 
   events@3.3.0: {}
 
+  eventsource-parser@1.1.2: {}
+
   eventsource-parser@3.0.3: {}
 
   eventsource@3.0.7:
@@ -12185,6 +12213,8 @@ snapshots:
   reusify@1.1.0: {}
 
   revalidator@0.1.8: {}
+
+  robot3@0.4.1: {}
 
   rollup-plugin-esbuild@6.2.1(esbuild@0.25.6)(rollup@4.44.2):
     dependencies:

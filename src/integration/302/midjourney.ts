@@ -13,8 +13,8 @@ import {
 import { fromFetch } from 'rxjs/fetch'
 
 import type { X302Context } from './config'
-import { baseUrl } from '../openrouter'
 import { switchMapResponseToJson } from '../utils'
+import { baseUrl } from './config'
 
 export namespace Midjourney {
   export const provider = '302'

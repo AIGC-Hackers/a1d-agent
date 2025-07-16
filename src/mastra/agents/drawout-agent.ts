@@ -7,6 +7,7 @@ import { drawOutVideoCutoutScriptTool } from '../tools/draw-out-video-cutout-scr
 import { drawOutVideoCutoutTool } from '../tools/draw-out-video-cutout-tool'
 import { googleSearchTool } from '../tools/google-search-tool'
 import { kontextImageEditTool } from '../tools/kontext-image-edit-tool'
+import { kontextTextToImageTool } from '../tools/kontext-text-to-image-tool'
 import { midjourneyImageGenerateTool } from '../tools/midjourney-image-generate-tool'
 import { minimaxTextToAudioTool } from '../tools/minimax-text-to-audio-tool'
 import { speedpaintVideoGenerateTool } from '../tools/speedpaint-video-generate-tool'
@@ -48,8 +49,9 @@ export const drawOutAgent = new Agent({
       googleSearch: googleSearchTool,
 
       // Image tools
-      midjourneyImageGenerate: midjourneyImageGenerateTool,
+      // midjourneyImageGenerate: midjourneyImageGenerateTool,
       // kontextImageEdit: kontextImageEditTool,
+      kontextTextToImage: kontextTextToImageTool,
 
       // Audio tools
       minimaxTextToAudio: minimaxTextToAudioTool,
