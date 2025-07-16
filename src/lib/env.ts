@@ -33,6 +33,7 @@ export const runtimeEnvSchema = type({
   OPENROUTER_API_KEY: 'string',
   XAI_API_KEY: 'string',
   GEMINI_API_KEY: 'string',
+  ANTHROPIC_API_KEY: 'string',
 
   CLOUDFLARE_ACCOUNT_ID: 'string',
   CLOUDFLARE_ACCESS_KEY_ID: 'string',
