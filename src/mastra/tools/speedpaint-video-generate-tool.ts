@@ -19,11 +19,13 @@ export const speedpaintVideoGenerateInputSchema = z.object({
     .number()
     .min(3)
     .max(90)
+    .transform(Math.round) // FIXME @moose
     .describe('Must be exactly equal to the audio file duration'),
   color_fill_duration: z
     .number()
     .min(1)
     .max(90)
+    .transform(Math.round) // FIXME @moose
     .optional()
     .describe(
       'Duration for color fill (must be less than or equal to duration_seconds)',
@@ -59,7 +61,7 @@ export const speedpaintVideoGenerateTool = createTool({
       runtimeContext,
     } = context
 
-    const { image_path, duration_seconds, output } = input
+    const { image_path, duration_seconds, color_fill_duration, output } = input
 
     invariant(threadId, 'threadId is required')
 
@@ -86,7 +88,7 @@ export const speedpaintVideoGenerateTool = createTool({
       const { taskId: speedpainterTaskId } = await Speedpainter.createTask({
         imageUrl,
         mimeType: 'image/png',
-        colorFillDuration: input.color_fill_duration ?? 0,
+        colorFillDuration: color_fill_duration ?? 3,
         sketchDuration: duration_seconds,
         needCanvas: false,
         needHand: false,
@@ -211,34 +213,30 @@ export const speedpaintVideoGenerateTool = createTool({
   },
 })
 
-// if (import.meta.main) {
-//   const imageUrl =
-//     'https://pub-ccb4d18cb7504fdca75fba79f847927b.r2.dev/672215d7-fb6c-4869-834c-3eb1a0a6c15c/scene-3/image.png'
+if (import.meta.main) {
+  const rt = new RuntimeContext()
+  ContextX.set(rt)
 
-//   const args = {
-//     image_path: '/scene-3/image.png', // Assume image is already in VFS
-//     duration_seconds: 10,
-//     color_fill_duration: 0,
-//     output: {
-//       path: '/test-speedpaint/scene-3/animation.mp4',
-//       description:
-//         'Test SpeedPaint video generation - 10 second animation from EU AI law pyramid',
-//     },
-//   }
+  // "/scene-6/image.png"
+  // "672215d7-fb6c-4869-834c-3eb1a0a6c15c"
 
-//   const rt = new RuntimeContext()
-//   ContextX.set(rt)
+  // http://localhost:4111/agents/drawOutK2/chat/5cafdf34-3cc1-4df5-8673-057561db776b
+  const threadId = '5cafdf34-3cc1-4df5-8673-057561db776b'
+  const result = await speedpaintVideoGenerateTool.execute!({
+    context: {
+      image_path: '/test/circle.png', // Assume image is already in VFS
+      duration_seconds: 10,
+      color_fill_duration: 0,
+      output: {
+        path: '/test-speedpaint/scene-3/animation.mp4',
+        description:
+          'Test SpeedPaint video generation - 10 second animation from EU AI law pyramid',
+      },
+    },
+    threadId,
+    resourceId: 'test-resource',
+    runtimeContext: rt,
+  })
 
-//   // "/scene-6/image.png"
-//   // "672215d7-fb6c-4869-834c-3eb1a0a6c15c"
-
-//   // Uncomment to run the actual test (requires image in VFS)
-//   const result = await speedpaintVideoGenerateTool.execute!({
-//     context: args,
-//     threadId: '672215d7-fb6c-4869-834c-3eb1a0a6c15c',
-//     resourceId: 'test-resource',
-//     runtimeContext: rt,
-//   })
-
-//   console.log('\nSpeedPaint generation result:', result)
-// }
+  console.log('\nSpeedPaint generation result:', result)
+}
