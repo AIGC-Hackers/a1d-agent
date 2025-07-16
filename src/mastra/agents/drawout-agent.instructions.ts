@@ -163,7 +163,9 @@ When users say "resume", "continue", "try again", or provide mid-workflow feedba
 
 ## Error Recovery
 - If any tool fails, keep the task in_progress in your todo list
-- Retry with different parameters or approach
+- **Assess retry potential**: Check if error is due to temporary issues (network, API limits) vs fundamental problems (invalid prompts, unsupported formats)
+- **Maximum 2 retry attempts per task** - after 2 failures, mark task as problematic and seek user guidance
+- Retry with different parameters or approach only if error suggests it might work
 - Only mark tasks complete when assets are successfully generated and verified
 - **Never delete or overwrite existing assets during error recovery**
 - If regeneration is needed, create new versions (e.g., audio-v3.mp3) rather than replacing successful assets
