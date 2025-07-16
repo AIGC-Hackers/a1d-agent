@@ -1,9 +1,9 @@
 import { api } from '@/convex/_generated/api'
 import { MinimaxTextToAudio } from '@/integration/minimax/minimax-text-to-audio'
 import { env } from '@/lib/env'
-import { invariant } from '@/lib/invariant'
 import { ContextX, MastraX } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
+import { RuntimeContext } from '@mastra/core/runtime-context'
 import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
 
@@ -42,7 +42,9 @@ export const minimaxTextToAudioTool = createTool({
     resourceId,
     runtimeContext,
   }): Promise<MinimaxTextToAudioOutput> => {
-    invariant(threadId, 'threadId is required')
+    if (!threadId) {
+      throw new Error('threadId is required')
+    }
 
     MastraX.logger.info('Starting Minimax text-to-audio generation', {
       threadId,
@@ -177,8 +179,12 @@ export const minimaxTextToAudioTool = createTool({
       // Combine all audio chunks
       const audioHexString = audioChunks.join('')
 
-      invariant(audioHexString, 'audioHexData is required')
-      invariant(durationSeconds, 'durationSeconds is required')
+      if (!audioHexString) {
+        throw new Error('audioHexData is required')
+      }
+      if (!durationSeconds) {
+        throw new Error('durationSeconds is required')
+      }
 
       MastraX.logger.debug('Saving audio file to storage', {
         path: input.output.path,
@@ -250,22 +256,22 @@ export const minimaxTextToAudioTool = createTool({
   },
 })
 
-// if (import.meta.main) {
-//   const args = {
-//     text: '2025年，氢能存储技术迎来历史性突破。三大核心技术同时取得重大进展，为清洁能源革命奠定坚实基础。',
-//     output: {
-//       path: '/scene-1/audio.mp3',
-//       description: '场景1开场引入旁白音频',
-//     },
-//   }
-//   const rt = new RuntimeContext()
-//   ContextX.set(rt)
+if (import.meta.main) {
+  const args = {
+    text: '选择专业，选择安心。了解更多产品信息，请咨询我们的专业团队。',
+    output: {
+      path: '/scene-1/audio.mp3',
+      description: '场景1开场引入旁白音频',
+    },
+  }
+  const rt = new RuntimeContext()
+  ContextX.set(rt)
 
-//   const result = await minimaxTextToAudioTool.execute!({
-//     context: args,
-//     threadId: 'test',
-//     runtimeContext: rt,
-//   })
+  const result = await minimaxTextToAudioTool.execute!({
+    context: args,
+    threadId: 'test',
+    runtimeContext: rt,
+  })
 
-//   console.log(result)
-// }
+  console.log(result)
+}
