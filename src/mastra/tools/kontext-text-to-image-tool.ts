@@ -13,7 +13,39 @@ import { z } from 'zod'
 import { fileDescriptorSchema } from './system-tools'
 
 export const kontextTextToImageInputSchema = z.object({
-  prompt: z.string(),
+  prompt: z.string()
+    .describe(`Craft visual prompts as a detailed canvas blueprint. Master techniques:
+
+STRUCTURE: [Subject] + [Composition] + [Style] + [Details] + [Atmosphere]
+• Subject first: "Four-tier pyramid structure" not "illustration of pyramid"
+• Composition: centered, rule of thirds, diagonal flow, hierarchical layout
+• Style tokens: hand-drawn, sketch style, line art, technical drawing, doodle art
+• Detail modifiers: clean lines, varied line weights, cross-hatching, minimal shading
+
+WHITEBOARD STYLE SPECIFICS:
+• Use: "hand-drawn style", "sketch aesthetic", "marker illustration style"
+• Avoid: "whiteboard", "on board", "whiteboard background", "drawn on white surface"
+• Focus on content floating in space, not mounted on surfaces
+
+VISUAL HIERARCHY:
+• Primary elements: bold lines, larger scale, center placement
+• Secondary: medium weight, supporting positions
+• Tertiary: thin lines, subtle details, environmental elements
+
+COLOR STRATEGY:
+• Monochrome base with accent colors: "black line art with blue and orange accents"
+• Limited palette: "two-tone design", "three-color scheme"
+• Emphasis through color: "red highlighting critical elements"
+
+NEGATIVE SPACE:
+• Embrace emptiness: "floating elements", "isolated components", "clean composition"
+• No frames or borders unless specifically needed for the design
+
+Example transformation:
+❌ "Professional whiteboard illustration showing AI pyramid on white background"
+✅ "Four-tier pyramid structure in hand-drawn style, bold black lines with varied weights, centered composition, tier labels in clean sans-serif, red-orange-yellow-green gradient from top to bottom, floating icons around each level, technical drawing aesthetic, isolated on pure white"
+
+Remember: Describe what IS there, not what it's ON or IN.`),
   aspectRatio: z.enum([
     '21:9',
     '16:9',

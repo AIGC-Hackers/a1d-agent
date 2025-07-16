@@ -1,4 +1,4 @@
-import { env } from '@/lib/env'
+import { S3 } from '@/integration/s3'
 import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
 
@@ -28,10 +28,11 @@ export const drawOutVideoCutoutScriptTool = createTool({
       .string()
       .describe('Generated shell script containing curl and ffmpeg commands'),
   }),
-  execute: async ({ context: input }) => {
+  execute: async ({ context: input, threadId }) => {
     const { audios, speedpaint_videos, output_filename } = input
 
-    const base_url = `https://${env.value.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`
+    const publicUrl = (key: string) =>
+      S3.createPublicUrl({ bucket: 'dev', key: `/${threadId}/${key}` })
 
     if (audios.length !== speedpaint_videos.length) {
       throw new Error(
@@ -52,14 +53,14 @@ export const drawOutVideoCutoutScriptTool = createTool({
     script += '# Download audio files\n'
     audios.forEach((audio, index) => {
       const filename = `audio-${index + 1}.mp3`
-      script += `curl -L "${base_url}/${audio}" -o "${filename}"\n`
+      script += `curl -L "${publicUrl(audio)}" -o "${filename}"\n`
     })
     script += '\n'
 
     script += '# Download speedpaint video files\n'
     speedpaint_videos.forEach((video, index) => {
       const filename = `speedpaint-${index + 1}.mp4`
-      script += `curl -L "${base_url}/${video}" -o "${filename}"\n`
+      script += `curl -L "${publicUrl(video)}" -o "${filename}"\n`
     })
     script += '\n'
 
