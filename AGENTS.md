@@ -75,10 +75,8 @@ This file provides guidance to AI agents working in this repository.
 
 ## Database & Storage
 
-- **Database**: PostgreSQL with Drizzle ORM
+- **Database**: Convex `src/convex`
 - **Storage**: Uses `@mastra/pg` PostgresStore for production
-- **Configuration**: Database config in `drizzle.config.ts`
-- **Schema**: Located in `src/server/db/`
 
 ## External Integrations
 
