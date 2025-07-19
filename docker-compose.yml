@@ -13,6 +13,7 @@ services:
       - .env.local
     environment:
       - NODE_ENV=production
+      - DOTENV_PRIVATE_KEY=1234567890
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4111/health"]
       interval: 30s

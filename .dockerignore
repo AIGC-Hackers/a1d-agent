@@ -18,6 +18,7 @@
 
 # Include essential configuration files
 !.env.example
+!.env.production
 
 # Always exclude these even if they match include patterns
 node_modules/
@@ -25,6 +26,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.production
 *.log
 .DS_Store
 Thumbs.db

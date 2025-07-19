@@ -45,6 +45,7 @@ RUN groupadd -g 1001 nodejs && \
 # Copy dependencies from deps stage and built application from build stage
 COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=build --chown=nodejs:nodejs /app/.mastra/output ./output
+COPY --from=build --chown=nodejs:nodejs /app/.env.production ./.env.production
 COPY --chown=nodejs:nodejs package.json pnpm-lock.yaml ./
 
 # Switch to non-root user

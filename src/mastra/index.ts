@@ -22,7 +22,7 @@ import { weatherWorkflow } from './workflows/weather-workflow'
 
 config({
   overload: true,
-  path: [process.env.NODE_ENV === 'production' ? '../.env' : '.env.production'],
+  path: [process.env.NODE_ENV === 'production' ? '.env.production' : '../.env'],
 })
 
 export const mastra = new Mastra({
