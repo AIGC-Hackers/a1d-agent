@@ -52,6 +52,9 @@ jobs:
         curl -fsSL https://get.pulumi.com | sh
         echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
 
+    - name: Install dotenvx
+      run: curl -sfS https://dotenvx.sh/install.sh | sh
+
     - name: Azure Login
       run: |
         cd pulumi
@@ -76,9 +79,6 @@ jobs:
           ..
       env:
         DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
-
-    - name: Install dotenvx
-      run: curl -sfS https://dotenvx.sh/install.sh | sh
 
     - name: Configure Pulumi
       run: |
