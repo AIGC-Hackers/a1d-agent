@@ -1,0 +1,6 @@
+{
+	"recommendations": [
+		"dotenv.dotenvx-vscode",
+		"esbenp.prettier-vscode"
+	]
+}
