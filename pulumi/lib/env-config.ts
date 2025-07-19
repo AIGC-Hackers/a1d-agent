@@ -76,7 +76,7 @@ function escapeShellValue(value: string): string {
     .replace(/\t/g, '\\t') // 转义制表符
 }
 
-export function generatePulumiConfigCommands(): string[] {
+export function generatePulumiConfigCommands(cwd: string = '.'): string[] {
   const { required, optional } = getEnvSchema()
   const commands: string[] = []
 
@@ -87,10 +87,10 @@ export function generatePulumiConfigCommands(): string[] {
 
     if (value) {
       const escapedValue = escapeShellValue(value)
-      commands.push(`pulumi config set --secret ${configKey} "${escapedValue}"`)
+      commands.push(`pulumi config set -C ${cwd} --secret ${configKey} "${escapedValue}"`)
     } else {
       commands.push(
-        `# Missing required: pulumi config set --secret ${configKey} "YOUR_${envVar.key}"`,
+        `# Missing required: pulumi config set -C ${cwd} --secret ${configKey} "YOUR_${envVar.key}"`,
       )
     }
   }
@@ -102,14 +102,14 @@ export function generatePulumiConfigCommands(): string[] {
 
     if (value) {
       const escapedValue = escapeShellValue(value)
-      commands.push(`pulumi config set --secret ${configKey} "${escapedValue}"`)
+      commands.push(`pulumi config set -C ${cwd} --secret ${configKey} "${escapedValue}"`)
     } else if (envVar.defaultValue) {
       commands.push(
-        `# Optional with default: pulumi config set --secret ${configKey} "${envVar.defaultValue}"`,
+        `# Optional with default: pulumi config set -C ${cwd} --secret ${configKey} "${envVar.defaultValue}"`,
       )
     } else {
       commands.push(
-        `# Optional: pulumi config set --secret ${configKey} "YOUR_${envVar.key}"`,
+        `# Optional: pulumi config set -C ${cwd} --secret ${configKey} "YOUR_${envVar.key}"`,
       )
     }
   }
@@ -165,6 +165,8 @@ export function generatePulumiEnvVars(): Array<{
 // CLI 功能
 if (import.meta.main) {
   const command = process.argv[2]
+  const options = process.argv.slice(3)
+  const shouldExecute = options.includes('--execute') || options.includes('-x')
 
   switch (command) {
     case 'schema':
@@ -172,11 +174,40 @@ if (import.meta.main) {
       break
 
     case 'commands':
-      const commands = generatePulumiConfigCommands()
+      // 根据当前目录判断 cwd
+      const currentPath = process.cwd()
+      const cwd = currentPath.endsWith('/pulumi') ? '.' : './pulumi'
+
+      const commands = generatePulumiConfigCommands(cwd)
       console.log('#!/bin/bash')
       console.log('# Auto-generated Pulumi config commands')
+      if (shouldExecute) {
+        console.log('# Executing commands...')
+      }
       console.log('')
-      commands.forEach((cmd: string) => console.log(cmd))
+
+      if (shouldExecute) {
+        // 执行命令
+        const { $ } = await import('bun')
+
+        for (const cmd of commands) {
+          if (cmd.startsWith('#')) {
+            console.log(cmd) // 打印注释
+          } else {
+            console.log(`Executing: ${cmd}`)
+            try {
+              // 直接执行命令（已经包含 -C 参数）
+              await $`${cmd}`.quiet()
+              console.log('✓ Success')
+            } catch (error: any) {
+              console.error(`✗ Failed: ${error.message}`)
+            }
+          }
+        }
+      } else {
+        // 只打印命令
+        commands.forEach((cmd: string) => console.log(cmd))
+      }
       break
 
     case 'secrets':
@@ -202,13 +233,27 @@ if (import.meta.main) {
       break
 
     default:
-      console.log('Usage: bun pulumi/utils/env-config.ts <command>')
+      console.log('Usage: bun pulumi/lib/env-config.ts <command> [options]')
+      console.log('')
       console.log('Commands:')
       console.log('  schema    - Show environment schema')
       console.log('  commands  - Generate pulumi config set commands')
       console.log('  secrets   - Generate Pulumi secrets configuration')
       console.log(
         '  env       - Generate Pulumi environment variables configuration',
+      )
+      console.log('')
+      console.log('Options:')
+      console.log(
+        '  --execute, -x  - Execute commands instead of just printing (for commands command)',
+      )
+      console.log('')
+      console.log('Examples:')
+      console.log(
+        '  bun pulumi/lib/env-config.ts commands          # Print commands',
+      )
+      console.log(
+        '  bun pulumi/lib/env-config.ts commands -x       # Execute commands',
       )
   }
 }

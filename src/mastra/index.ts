@@ -1,3 +1,4 @@
+import { config } from '@dotenvx/dotenvx'
 import { Mastra } from '@mastra/core/mastra'
 
 import { deepResearchAgent } from './agents/deepresearch-agent.js'
@@ -18,6 +19,11 @@ import { ContextX, MastraX } from './factory'
 import { deepResearchGenerateReportWorkflow } from './workflows/deepresearch-generate-report-workflow'
 import { deepResearchWorkflow } from './workflows/deepresearch-workflow'
 import { weatherWorkflow } from './workflows/weather-workflow'
+
+config({
+  overload: true,
+  path: [process.env.NODE_ENV === 'production' ? '../.env' : '.env.production'],
+})
 
 export const mastra = new Mastra({
   workflows: {
