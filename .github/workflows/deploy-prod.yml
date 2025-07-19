@@ -16,7 +16,7 @@ on:
 env:
   AZURE_ACR_NAME: a1dazureacr
   IMAGE_NAME: a1d-agent
-  PULUMI_STACK: prod
+  PULUMI_STACK: ethan-huo/dev
 
 jobs:
   validate:
@@ -32,7 +32,6 @@ jobs:
     needs: validate
     if: needs.validate.outputs.should_deploy == 'true'
     runs-on: ubuntu-latest
-    environment: production
     
     steps:
     - name: Checkout code
@@ -92,7 +91,7 @@ jobs:
       run: |
         cd pulumi
         pnpm install
-        dotenvx run -f ../.env.production -- pulumi stack select ${{ env.PULUMI_STACK }}
+        pulumi stack select ${{ env.PULUMI_STACK }}
         dotenvx run -f ../.env.production -- pulumi up --yes
       env:
         DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
