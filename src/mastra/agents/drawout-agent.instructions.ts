@@ -1,16 +1,17 @@
 import type { RuntimeContext } from '@mastra/core/runtime-context'
 import { defineVars } from '@/lib/string-template'
 
-import { drawoutAgentState } from '../state/drawout-agent.state'
-
 export function drawOutInstructions({
   runtimeContext,
 }: {
   runtimeContext: RuntimeContext
 }) {
   const ctx = defineVars({
-    currentTime: new Date().toISOString(),
-
+    currentTime: new Date().toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }),
     // user localtion
     // memory
   })

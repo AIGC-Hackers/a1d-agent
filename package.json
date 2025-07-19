@@ -7,7 +7,7 @@
     "dev": "run-p dev:*",
     "dev:convex": "dotenvx run -- convex dev",
     "dev:mastra": "dotenvx run -- mastra dev",
-    "build": "mastra build",
+    "build": "./scripts/build.sh",
     "start": "dotenvx run  -- mastra start",
     "env:check": "dotenvx run -- bun scripts/env-check.ts",
     "env:example": "dotenvx ext genexample",

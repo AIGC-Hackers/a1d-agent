@@ -7,26 +7,53 @@
 ### Azure 凭证
 
 1. **AZURE_CREDENTIALS** - Azure 服务主体凭证
-   ```json
-   {
-     "clientId": "<AZURE_CLIENT_ID>",
-     "clientSecret": "<AZURE_CLIENT_SECRET>",
-     "subscriptionId": "<AZURE_SUBSCRIPTION_ID>",
-     "tenantId": "<AZURE_TENANT_ID>"
-   }
-   ```
-   
-   获取方式：
-   ```bash
-   # 创建服务主体
-   az ad sp create-for-rbac --name "a1d-agent-github-actions" \
-     --role contributor \
-     --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP> \
-     --json-auth
-   ```
+```json
+{
+  "clientId": "<AZURE_CLIENT_ID>",
+  "clientSecret": "<AZURE_CLIENT_SECRET>",
+  "subscriptionId": "<AZURE_SUBSCRIPTION_ID>",
+  "tenantId": "<AZURE_TENANT_ID>"
+}
+```
+
+获取方式：
+```bash
+# 创建服务主体
+az ad sp create-for-rbac --name "a1d-agent-github-actions" \
+  --role contributor \
+  --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP> \
+  --json-auth
+```
+
+
+需要执行的操作：
+
+1. 使用具有 Owner 或 User Access Administrator 权限的账户登录 Azure Portal
+2. 导航到订阅 -> 访问控制 (IAM)
+3. 添加角色分配：
+  - 角色：Contributor（或者至少需要以下权限：）
+      - 读取订阅
+    - 管理容器注册表
+    - 管理容器实例
+  - 成员：选择服务主体 a1d-agent-github-actions
+
+或者使用 Azure CLI（需要有权限的账户）：
+
+# 使用有权限的账户登录
+az login
+
+# 为服务主体分配 Contributor 角色
+az role assignment create \
+  --assignee ba224055-2592-491e-a56f-9cf2ee314f7e \
+  --role Contributor \
+  --scope /subscriptions/50226c95-7971-4c95-97ee-4d9e30a806d3
+
+在分配角色之后，服务主体才能访问订阅资源。
+
 
 2. **PULUMI_ACCESS_TOKEN** - Pulumi 访问令牌
-   - 从 https://app.pulumi.com/account/tokens 获取
+
+- 从 https://app.pulumi.com/account/tokens 获取
 
 ### 应用环境变量
 
