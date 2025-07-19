@@ -21,7 +21,7 @@ env:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.event.inputs.confirm == 'deploy'
+    if: github.event_name == 'push' || github.event_name == 'release' || github.event.inputs.confirm == 'deploy'
     outputs:
       should_deploy: ${{ steps.validate.outputs.should_deploy }}
     steps:
@@ -84,18 +84,17 @@ jobs:
     - name: Configure Pulumi
       run: |
         cd pulumi
-        pulumi login
+        dotenvx run -f ../.env.production -- pulumi login
       env:
-        PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
 
     - name: Deploy with Pulumi
       run: |
         cd pulumi
         pnpm install
-        pulumi stack select ${{ env.PULUMI_STACK }}
+        dotenvx run -f ../.env.production -- pulumi stack select ${{ env.PULUMI_STACK }}
         dotenvx run -f ../.env.production -- pulumi up --yes
       env:
-        PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
         DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
 
     - name: Production Deployment Summary
