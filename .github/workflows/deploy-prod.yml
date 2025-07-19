@@ -48,9 +48,9 @@ jobs:
         version: latest
 
     - name: Install Pulumi
-      uses: pulumi/actions@v6
-      with:
-        command: version
+      run: |
+        curl -fsSL https://get.pulumi.com | sh
+        echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
 
     - name: Azure Login
       run: |
