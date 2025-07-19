@@ -28,7 +28,7 @@ config:
   a1d-agent:openrouterApiKey:
     secure: AAABAK+CW/8AQofqF8dPvghnvZ7mTIFHRI6NhKlXhnoe41lnTIZnqfyFkVIcQjt5AAepgjqHZr4Mt4ZZB7gKazpHJG4ghTYmCv/QunrVv3I2zn1I44VBnWfyggbjEp6ZbDgX0cIgigM7
   a1d-agent:postgresUrl:
-    secure: AAABAG873Z7oVzvMnn2qHCyjXcn/pJh804Z82JQM7gLw0Gg9OTyVWQntO+gEzVensiF/05idzZEIBdcQhlGFy/FRNcVkNmIMTfU3QF8=
+    secure: AAABAG55r6levFC9M8hIBDksZouedHttJEOoimU8Ojorgpdivu58owlWrjDtXGWri4jgMrQKhU3yVY764l2uW+DglfcYjK7DKvLKKbDGHVp4vBBau4rzf971PkUt0l/Ca9EBs7qyMQAuyiedmU05BNI6MzI=
   a1d-agent:speedpainterApiKey:
     secure: AAABAM+f9Ol1iKW8e+T3fb+9K27jtOVccX8yoZNvYGFK+xbo3xH+jsypO9x83K1BmZUlWdI=
   a1d-agent:wavespeedApiKey:

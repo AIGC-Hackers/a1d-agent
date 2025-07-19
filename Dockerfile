@@ -13,9 +13,9 @@ FROM base AS deps
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install production dependencies
+# Install all dependencies (including dev) to avoid preinstall script errors
 RUN pnpm fetch --frozen-lockfile && \
-    pnpm install --frozen-lockfile --prod
+    pnpm install --frozen-lockfile
 
 FROM base AS build
 # Copy package files
@@ -58,7 +58,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:4111/health || exit 1
 
 # Use tini for proper signal handling
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Start application
-CMD ["node", "--import=output/instrumentation.mjs", "output/index.mjs"]
+CMD ["node", "--import=./output/instrumentation.mjs", "./output/index.mjs"]

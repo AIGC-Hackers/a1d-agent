@@ -4,7 +4,8 @@ export const runtimeEnvSchema = type({
   // ----------------------------------
   // databases
   // ----------------------------------
-  POSTGRES_URL: 'string.url',
+  POSTGRES_DEV_URL: 'string.url',
+  POSTGRES_PROD_URL: 'string.url',
 
   // ----------------------------------
   // integrations

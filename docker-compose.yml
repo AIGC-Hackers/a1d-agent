@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  a1d-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "4111:4111"
+    env_file:
+      - .env
+      - .env.local
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4111/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    volumes:
+      # Mount for debugging if needed
+      - ./logs:/app/logs:rw
+    networks:
+      - a1d-network
+
+  # Optional: Add a local PostgreSQL for testing if needed
+  # postgres:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: a1d_agent
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - a1d-network
+
+networks:
+  a1d-network:
+    driver: bridge
+
+# volumes:
+#   postgres_data:

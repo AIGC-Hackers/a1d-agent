@@ -45,12 +45,10 @@ export const mastra = new Mastra({
     drawOutDeepResearch: drawOutDeepResearchAgent,
     drawOutVideoCutout: drawOutVideoCutoutAgent,
   },
-  storage: MastraX.storage.value,
+  storage: MastraX.storage.value, // 暂时禁用 PostgreSQL storage
   logger: MastraX.logger,
   server: {
-    apiRoutes: [
-      MastraX.healthRoute(),
-    ],
+    apiRoutes: [MastraX.healthRoute()],
     middleware: [ContextX.middleware()],
   },
 })

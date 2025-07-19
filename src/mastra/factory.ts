@@ -22,7 +22,10 @@ export namespace MastraX {
 
   function createStorage() {
     return new PostgresStore({
-      connectionString: env.value.POSTGRES_URL,
+      connectionString:
+        process.env.NODE_ENV === 'production'
+          ? env.value.POSTGRES_PROD_URL
+          : env.value.POSTGRES_DEV_URL,
     })
   }
 

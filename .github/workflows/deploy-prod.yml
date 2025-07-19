@@ -1,0 +1,106 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm production deployment'
+        required: true
+        type: string
+
+env:
+  AZURE_ACR_NAME: a1dazureacr
+  IMAGE_NAME: a1d-agent
+  PULUMI_STACK: prod
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event.inputs.confirm == 'deploy'
+    outputs:
+      should_deploy: ${{ steps.validate.outputs.should_deploy }}
+    steps:
+      - id: validate
+        run: echo "should_deploy=true" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: validate
+    if: needs.validate.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+
+    - name: Install Pulumi
+      uses: pulumi/actions@v6
+      with:
+        command: version
+
+    - name: Azure Login
+      run: |
+        cd pulumi
+        dotenvx run -f ../.env.production -- az login --service-principal \
+          -u $AZURE_CLIENT_ID \
+          -p $AZURE_CLIENT_SECRET \
+          --tenant $AZURE_TENANT_ID
+      env:
+        DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
+
+    - name: Build and push Docker image
+      run: |
+        # 使用 release tag 或 commit SHA
+        VERSION_TAG=${{ github.event.release.tag_name || github.sha }}
+        
+        cd pulumi
+        dotenvx run -f ../.env.production -- az acr build \
+          --registry ${{ env.AZURE_ACR_NAME }} \
+          --image ${{ env.IMAGE_NAME }}:latest \
+          --image ${{ env.IMAGE_NAME }}:prod \
+          --image ${{ env.IMAGE_NAME }}:$VERSION_TAG \
+          ..
+      env:
+        DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
+
+    - name: Install dotenvx
+      run: curl -sfS https://dotenvx.sh/install.sh | sh
+
+    - name: Configure Pulumi
+      run: |
+        cd pulumi
+        pulumi login
+      env:
+        PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+    - name: Deploy with Pulumi
+      run: |
+        cd pulumi
+        pnpm install
+        pulumi stack select ${{ env.PULUMI_STACK }}
+        dotenvx run -f ../.env.production -- pulumi up --yes
+      env:
+        PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
+
+    - name: Production Deployment Summary
+      if: always()
+      run: |
+        echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: ${{ github.event.release.tag_name || github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Workflow run**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release notes**: ${{ github.event.release.body || 'Manual deployment' }}" >> $GITHUB_STEP_SUMMARY

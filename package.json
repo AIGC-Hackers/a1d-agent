@@ -4,7 +4,6 @@
   "description": "",
   "main": "src/mastra/index.ts",
   "scripts": {
-    "preinstall": "lefthook install",
     "dev": "run-p dev:*",
     "dev:convex": "dotenvx run -- convex dev",
     "dev:mastra": "dotenvx run -- mastra dev",
