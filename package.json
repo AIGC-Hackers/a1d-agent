@@ -61,8 +61,6 @@
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.48.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.5.1",
-    "@pulumi/azure-native": "^3.5.1",
-    "@pulumi/pulumi": "^3.184.0",
     "@smithy/types": "^4.3.1",
     "@types/bun": "^1.2.18",
     "@types/lodash-es": "^4.17.12",

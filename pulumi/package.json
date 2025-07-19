@@ -1,0 +1,32 @@
+{
+  "name": "a1d-agent-pulumi",
+  "version": "1.0.0",
+  "description": "Pulumi infrastructure configuration for a1d-agent",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "up": "pulumi up",
+    "preview": "pulumi preview",
+    "destroy": "pulumi destroy",
+    "stack:init": "pulumi stack init",
+    "stack:select": "pulumi stack select",
+    "config:set": "pulumi config set"
+  },
+  "keywords": [
+    "pulumi",
+    "infrastructure",
+    "iac"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@pulumi/azure-native": "^3.5.1",
+    "@pulumi/pulumi": "^3.184.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.18",
+    "@types/node": "^24.0.15",
+    "typescript": "^5.8.3"
+  }
+}

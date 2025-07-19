@@ -1,47 +1,33 @@
-# Git
-.git
-.gitignore
+# Include pattern: ignore everything first, then include what we need
+*
 
-# Node
-node_modules
-npm-debug.log
-yarn-error.log
+# Include source code
+!src/
+!src/**
 
-# Build outputs
-dist
-output
-.mastra
+# Include package configuration
+!package.json
+!pnpm-lock.yaml
 
-# Development
-.cursor
-.vscode
-.idea
+# Include TypeScript configuration
+!tsconfig.json
 
-# Documentation
-docs
-README.md
+# Include code formatting configuration
+!.prettierrc*
+!.prettierignore
 
-# Test
-vitest.config.ts
-**/*.test.ts
-**/*.spec.ts
+# Include essential configuration files
+!.env.example
 
-# TypeScript
-*.tsbuildinfo
-
-# Environment
+# Always exclude these even if they match include patterns
+node_modules/
+.git/
 .env
 .env.*
-
-# OS
+!.env.example
+*.log
 .DS_Store
 Thumbs.db
-
-# Logs
-logs
-*.log
-
-# Cache
-.pnpm-store
-pnpm-debug.log*
-.env.keys
+dist/
+output/
+.mastra/
