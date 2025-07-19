@@ -1,0 +1,46 @@
+name: azure-backend-app
+runtime: nodejs
+description: Azure Backend App deployment using Container Apps
+
+config:
+  # Reference to the shared infrastructure stack
+  azure-backend-app:infraStackRef:
+    description: 'Reference to the shared infrastructure stack (format: org/project/stack)'
+    default: 'ethan-huo-org/a1d-pulumi-azure/azure-dev'
+
+  azure-backend-app:appName:
+    description: 'Name of the application'
+    default: 'backend-api-app'
+
+  azure-backend-app:containerImage:
+    description: 'Container image to deploy'
+    default: 'a1dazureacr.azurecr.io/azure-backend-app:latest'
+
+  azure-backend-app:replicas:
+    description: 'Number of container replicas'
+    default: 1
+
+  azure-backend-app:cpu:
+    description: 'CPU allocation (in cores)'
+    default: 0.25
+
+  azure-backend-app:memory:
+    description: 'Memory allocation (in Gi)'
+    default: 0.5
+
+  azure-backend-app:port:
+    description: 'Application port'
+    default: 3000
+
+  # Note: Custom domain configuration is no longer needed
+  # Apps automatically get <appName>.whiteboardanimation.ai domains
+  # through environment-level DNS suffix configuration
+
+template:
+  config:
+    pulumi:tags:
+      value:
+        Project: 'a1d-azure'
+        Environment: 'development'
+        Component: 'backend-app'
+        Platform: 'azure'
