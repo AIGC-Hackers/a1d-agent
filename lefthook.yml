@@ -2,7 +2,7 @@ pre-commit:
   parallel: true
   commands:
     prettier:
-      glob: '*.{ts,tsx,json,css,md,yaml,yml}'
+      glob: 'src/**/*.{ts,tsx,json,css,md}'
       run: bun --bun prettier --check --cache --write --ignore-path .gitignore --ignore-path .prettierignore {staged_files} && git add {staged_files}
     check-env-encryption:
       run: bun scripts/check-env-encryption.ts {staged_files}

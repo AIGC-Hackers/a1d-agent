@@ -1,24 +1,52 @@
 import * as azure from '@pulumi/azure-native'
 import * as pulumi from '@pulumi/pulumi'
 
+// Match Dockerfile EXPOSE
+
+// Environment variables configuration - auto-generated from src/lib/env.ts
+import {
+  envKeyToConfigKey,
+  envKeyToSecretName,
+  getEnvSchema,
+} from './lib/env-config.ts'
+
 // Configuration
 const config = new pulumi.Config()
 const infraStackRef = config.require('infraStackRef')
 
-// Application configuration - simplified for environment-level domains
-const appName = config.get('appName') || 'backend-sample'
+// Application configuration - A1D Agent specific
+const appName = config.get('appName') || 'a1d-agent'
 const containerImage =
-  config.get('containerImage') ||
-  'a1dazureacr.azurecr.io/azure-backend-app:latest'
-// replicas not needed for scale-to-zero configuration
-const cpu = config.getNumber('cpu') || 0.5
-const memory = config.getNumber('memory') || 1
-const port = config.getNumber('port') || 3000
+  config.get('containerImage') || 'a1dazureacr.azurecr.io/a1d-agent:latest'
+const cpu = config.getNumber('cpu') || 0.5 // Sufficient for LLM chat app (mainly API forwarding)
+const memory = config.getNumber('memory') || 1 // 1GB memory, sufficient for Node.js chat app
+const port = config.getNumber('port') || 4111
 
-// Scaling configuration
-const minReplicas = config.getNumber('minReplicas') || 0 // Default to scale-to-zero
-const maxReplicas = config.getNumber('maxReplicas') || 1 // Default to 1 for demo
-const scaleToZero = config.getBoolean('scaleToZero') ?? true // Default enabled
+const { required: requiredEnvVars, optional: optionalEnvVars } = getEnvSchema()
+const allEnvVars = [...requiredEnvVars, ...optionalEnvVars]
+
+// Get environment variable values from config
+const getEnvVarValue = (envVar: {
+  key: string
+  required: boolean
+  defaultValue?: string
+}) => {
+  const configKey = envKeyToConfigKey(envVar.key)
+  if (envVar.required) {
+    return config.requireSecret(configKey)
+  } else {
+    const value = config.getSecret(configKey)
+    return (
+      value ||
+      (envVar.defaultValue ? pulumi.output(envVar.defaultValue) : undefined)
+    )
+  }
+}
+
+// Scaling configuration - Minimal scaling for LLM chat app
+const minReplicas = config.getNumber('minReplicas') || 1 // Always keep 1 running for availability
+const maxReplicas = config.getNumber('maxReplicas') || 2 // Max 2 instances (mainly for zero-downtime deployment)
+const scaleToZero = config.getBoolean('scaleToZero') ?? false // Disable scale-to-zero for always-on service
 const usesEnvironmentLevelDomains =
   config.getBoolean('usesEnvironmentLevelDomains') ?? true
 
@@ -60,6 +88,20 @@ const containerApp = new azure.app.ContainerApp(appName, {
         name: 'acr-password',
         value: acrCredentials.apply((creds) => creds.passwords![0]!.value!),
       },
+      // Generate secrets for all environment variables
+      ...allEnvVars
+        .map((envVar) => {
+          const value = getEnvVarValue(envVar)
+          return value
+            ? {
+                name: envKeyToSecretName(envVar.key),
+                value: value,
+              }
+            : null
+        })
+        .filter(
+          (secret): secret is NonNullable<typeof secret> => secret !== null,
+        ),
     ],
     ingress: {
       external: true,
@@ -75,19 +117,20 @@ const containerApp = new azure.app.ContainerApp(appName, {
     },
   },
   template: {
-    // Scale-to-zero configuration for demo apps
+    // Minimal scaling for LLM chat app (mainly for availability, not performance)
     scale: {
-      minReplicas: minReplicas, // Scale to zero when no traffic
-      maxReplicas: maxReplicas, // Only need 1 replica for demo
+      minReplicas: minReplicas, // Keep 1 replica for availability
+      maxReplicas: maxReplicas, // Max 2 replicas (for zero-downtime deployment)
       rules: [
         {
           name: 'http-scaling-rule',
           http: {
             metadata: {
-              concurrentRequests: '10', // Scale up when > 10 concurrent requests
+              concurrentRequests: '50', // Scale up only when > 50 concurrent requests (chat apps can handle many concurrent connections)
             },
           },
         },
+        // Removed CPU scaling rule - not needed for LLM chat apps since computation is external
       ],
     },
     containers: [
@@ -103,6 +146,18 @@ const containerApp = new azure.app.ContainerApp(appName, {
             name: 'NODE_ENV',
             value: 'production',
           },
+          // Generate environment variables for all configured secrets
+          ...allEnvVars
+            .map((envVar) => {
+              const value = getEnvVarValue(envVar)
+              return value
+                ? {
+                    name: envVar.key,
+                    secretRef: envKeyToSecretName(envVar.key),
+                  }
+                : null
+            })
+            .filter((env): env is NonNullable<typeof env> => env !== null),
         ],
         probes: [
           {
@@ -112,10 +167,10 @@ const containerApp = new azure.app.ContainerApp(appName, {
               port: port,
               scheme: azure.app.Scheme.HTTP,
             },
-            initialDelaySeconds: 30,
+            initialDelaySeconds: 30, // Standard startup time for chat app
             periodSeconds: 30,
-            timeoutSeconds: 5,
-            failureThreshold: 3,
+            timeoutSeconds: 5, // Standard timeout
+            failureThreshold: 3, // Standard failure threshold
           },
           {
             type: azure.app.Type.Readiness,
@@ -124,20 +179,34 @@ const containerApp = new azure.app.ContainerApp(appName, {
               port: port,
               scheme: azure.app.Scheme.HTTP,
             },
-            initialDelaySeconds: 10,
-            periodSeconds: 10,
-            timeoutSeconds: 3,
+            initialDelaySeconds: 10, // Standard readiness check
+            periodSeconds: 15,
+            timeoutSeconds: 5, // Standard timeout
             failureThreshold: 3,
+          },
+          {
+            type: azure.app.Type.Startup,
+            httpGet: {
+              path: '/health',
+              port: port,
+              scheme: azure.app.Scheme.HTTP,
+            },
+            initialDelaySeconds: 5,
+            periodSeconds: 10,
+            timeoutSeconds: 5,
+            failureThreshold: 6, // Allow up to 1 minute for startup
           },
         ],
       },
     ],
   },
   tags: {
-    Project: 'a1d-azure',
-    Environment: 'development',
-    Component: 'backend-app',
+    Project: 'a1d-agent',
+    Environment: config.get('environment') || 'development',
+    Component: 'ai-agent-service',
     Platform: 'azure',
+    Service: 'mastra-ai-agent',
+    AlwaysOn: 'true',
   },
 })
 
@@ -148,20 +217,24 @@ export const containerAppFqdn = containerApp.configuration?.apply(
 )
 export const environmentDomainUrl = pulumi.interpolate`https://${appName}.whiteboardanimation.ai`
 export const environmentHealthCheck = pulumi.interpolate`https://${appName}.whiteboardanimation.ai/health`
-export const environmentRpcEndpoint = pulumi.interpolate`https://${appName}.whiteboardanimation.ai/rpc`
+export const environmentMastraEndpoint = pulumi.interpolate`https://${appName}.whiteboardanimation.ai/mastra`
+export const environmentApiEndpoint = pulumi.interpolate`https://${appName}.whiteboardanimation.ai/api`
 
 // Export application info
 export const applicationInfo = {
   name: appName,
   automaticDomain: pulumi.interpolate`${appName}.whiteboardanimation.ai`,
   containerImage: containerImage,
-  minReplicas: minReplicas, // Scale to zero for cost optimization
-  maxReplicas: maxReplicas, // Demo only needs 1 replica
+  minReplicas: minReplicas, // Always-on AI agent service
+  maxReplicas: maxReplicas, // Allow scaling for AI workloads
   cpu: cpu,
   memory: memory,
   port: port,
   usesEnvironmentLevelDomains: usesEnvironmentLevelDomains,
-  scaleToZero: scaleToZero, // This is a cost-optimized demo app
+  scaleToZero: scaleToZero, // Disabled for always-on AI service
+  serviceType: 'ai-agent',
+  framework: 'mastra',
+  alwaysOn: true,
 }
 
 // Export default Azure Container Apps URL as backup

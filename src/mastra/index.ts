@@ -1,6 +1,6 @@
 import { Mastra } from '@mastra/core/mastra'
 
-import { deepResearchAgent } from './agents/deepresearch-agent'
+import { deepResearchAgent } from './agents/deepresearch-agent.js'
 import { deepResearchEvaluationAgent } from './agents/deepresearch-evaluation-agent'
 import { deepResearchLearningExtractionAgent } from './agents/deepresearch-learning-extraction-agent'
 import { deepResearchReportAgent } from './agents/deepresearch-report-agent'
@@ -48,6 +48,9 @@ export const mastra = new Mastra({
   storage: MastraX.storage.value,
   logger: MastraX.logger,
   server: {
+    apiRoutes: [
+      MastraX.healthRoute(),
+    ],
     middleware: [ContextX.middleware()],
   },
 })

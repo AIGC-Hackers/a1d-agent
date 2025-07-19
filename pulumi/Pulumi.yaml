@@ -1,46 +1,153 @@
-name: azure-backend-app
+name: a1d-agent
 runtime: nodejs
-description: Azure Backend App deployment using Container Apps
+description: A1D Agent AI service deployment using Azure Container Apps
+main: index.ts
 
 config:
-  # Reference to the shared infrastructure stack
-  azure-backend-app:infraStackRef:
-    description: 'Reference to the shared infrastructure stack (format: org/project/stack)'
+  # Infrastructure stack reference
+  a1d-agent:infraStackRef:
+    description: 'Reference to the shared infrastructure stack(format: org/project/stack)'
     default: 'ethan-huo-org/a1d-pulumi-azure/azure-dev'
 
-  azure-backend-app:appName:
-    description: 'Name of the application'
-    default: 'backend-api-app'
+  # Application configuration
+  a1d-agent:appName:
+    description: 'Name of the A1D Agent application'
+    default: 'a1d-agent'
 
-  azure-backend-app:containerImage:
+  a1d-agent:containerImage:
     description: 'Container image to deploy'
-    default: 'a1dazureacr.azurecr.io/azure-backend-app:latest'
+    default: 'a1dazureacr.azurecr.io/a1d-agent:latest'
 
-  azure-backend-app:replicas:
-    description: 'Number of container replicas'
-    default: 1
+  a1d-agent:environment:
+    description: 'Deployment environment'
+    default: 'production'
 
-  azure-backend-app:cpu:
-    description: 'CPU allocation (in cores)'
-    default: 0.25
-
-  azure-backend-app:memory:
-    description: 'Memory allocation (in Gi)'
+  # Resource allocation for LLM chat app
+  a1d-agent:cpu:
+    description: 'CPU allocation (in cores) - sufficient for chat app (mainly API forwarding)'
     default: 0.5
 
-  azure-backend-app:port:
-    description: 'Application port'
-    default: 3000
+  a1d-agent:memory:
+    description: 'Memory allocation (in Gi) - sufficient for Node.js chat app'
+    default: 1
 
-  # Note: Custom domain configuration is no longer needed
-  # Apps automatically get <appName>.whiteboardanimation.ai domains
-  # through environment-level DNS suffix configuration
+  a1d-agent:port:
+    description: 'Application port - match Dockerfile EXPOSE'
+    default: 4111
+
+  # Scaling configuration - Minimal scaling for chat app
+  a1d-agent:minReplicas:
+    description: 'Minimum number of replicas - keep 1 instance running for availability'
+    default: 1
+
+  a1d-agent:maxReplicas:
+    description: 'Maximum number of replicas - mainly for zero-downtime deployment'
+    default: 2
+
+  a1d-agent:scaleToZero:
+    description: 'Allow scaling to zero - disabled for always-on service'
+    default: false
+
+  # Domain configuration
+  a1d-agent:usesEnvironmentLevelDomains:
+    description: 'Use environment-level domains (automatic domain assignment)'
+    default: true
+
+  # Required environment variables (secrets)
+  # Set these using: pulumi config set --secret <key> <value>
+  # Or use the automation script: ./scripts/auto-set-pulumi-env.sh
+
+  # Database
+  a1d-agent:postgresUrl:
+    description: 'PostgreSQL database URL'
+    secret: true
+
+  a1d-agent:convexUrl:
+    description: 'Convex deployment URL'
+    secret: true
+
+  # AI Service API Keys (all optional - set only the ones you use)
+  a1d-agent:anthropicApiKey:
+    description: 'Anthropic API key for Claude'
+    secret: true
+
+  a1d-agent:groqApiKey:
+    description: 'Groq API key'
+    secret: true
+
+  a1d-agent:geminiApiKey:
+    description: 'Google Gemini API key'
+    secret: true
+
+  a1d-agent:falApiKey:
+    description: 'Fal API key'
+    secret: true
+
+  a1d-agent:xaiApiKey:
+    description: 'xAI API key'
+    secret: true
+
+  a1d-agent:openrouterApiKey:
+    description: 'OpenRouter API key'
+    secret: true
+
+  a1d-agent:minimaxApiKey:
+    description: 'Minimax API key'
+    secret: true
+
+  a1d-agent:minimaxGroupId:
+    description: 'Minimax Group ID'
+    secret: true
+
+  a1d-agent:huiyanAApiKey:
+    description: 'Huiyan A API key (Claude + OpenAI)'
+    secret: true
+
+  a1d-agent:huiyanBApiKey:
+    description: 'Huiyan B API key (Claude)'
+    secret: true
+
+  a1d-agent:huiyanCApiKey:
+    description: 'Huiyan C API key (Midjourney)'
+    secret: true
+
+  a1d-agent:speedpainterApiKey:
+    description: 'SpeedPainter API key'
+    secret: true
+
+  a1d-agent:wavespeedApiKey:
+    description: 'WaveSpeed API key'
+    secret: true
+
+  a1d-agent:x302ApiKey:
+    description: 'X 302 API key'
+    secret: true
+
+  # Cloudflare R2 Configuration
+  a1d-agent:cloudflareAccountId:
+    description: 'Cloudflare Account ID'
+    secret: true
+
+  a1d-agent:cloudflareAccessKeyId:
+    description: 'Cloudflare R2 Access Key ID'
+    secret: true
+
+  a1d-agent:cloudflareSecretKey:
+    description: 'Cloudflare R2 Secret Key'
+    secret: true
+
+  a1d-agent:cloudflareR2BucketName:
+    description: 'Cloudflare R2 Bucket Name'
+    default: 'dev'
+    secret: true
 
 template:
   config:
     pulumi:tags:
       value:
-        Project: 'a1d-azure'
-        Environment: 'development'
-        Component: 'backend-app'
+        Project: 'a1d-agent'
+        Environment: 'production'
+        Component: 'ai-agent-service'
         Platform: 'azure'
+        Service: 'mastra-ai-agent'
+        AlwaysOn: 'true'

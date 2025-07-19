@@ -4,6 +4,7 @@ import { lazy } from '@/lib/lazy'
 import { ConvexStorage } from '@/server/vfs/convex-storage'
 import { MemoryStorage } from '@/server/vfs/memory-storage'
 import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
+import { registerApiRoute } from '@mastra/core/server'
 import { PinoLogger } from '@mastra/loggers'
 import { PostgresStore } from '@mastra/pg'
 import { type } from 'arktype'
@@ -27,6 +28,15 @@ export namespace MastraX {
 
   export const logger = createLogger()
   export const storage = lazy(() => createStorage())
+
+  export function healthRoute(path: string = '/health') {
+    return registerApiRoute(path, {
+      method: 'GET',
+      handler: async (c) => {
+        return c.json({ status: 'UP', timestamp: Date.now() })
+      },
+    })
+  }
 }
 
 export function createVirtualFileSystem(projectId: string) {

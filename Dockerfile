@@ -1,5 +1,5 @@
-# Multi-stage build for Node.js application with pnpm on ARM64
-FROM --platform=linux/arm64 node:latest AS base
+# Multi-stage build for Node.js application with pnpm
+FROM node:latest AS base
 
 # Install curl for health checks and enable pnpm
 RUN apt-get update && apt-get install -y curl && \
@@ -13,9 +13,8 @@ FROM base AS deps
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install production dependencies with cache mount
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm fetch --frozen-lockfile && \
+# Install production dependencies
+RUN pnpm fetch --frozen-lockfile && \
     pnpm install --frozen-lockfile --prod
 
 FROM base AS build
@@ -23,8 +22,7 @@ FROM base AS build
 COPY package.json pnpm-lock.yaml ./
 
 # Install all dependencies (including dev) for building
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm fetch --frozen-lockfile && \
+RUN pnpm fetch --frozen-lockfile && \
     pnpm install --frozen-lockfile
 
 # Copy source code and build
@@ -32,7 +30,7 @@ COPY . .
 RUN pnpm build
 
 # Production stage - use distroless or slim image
-FROM --platform=linux/arm64 node:latest AS production
+FROM node:latest AS production
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y curl tini && \
@@ -46,7 +44,7 @@ RUN groupadd -g 1001 nodejs && \
 
 # Copy dependencies from deps stage and built application from build stage
 COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=build --chown=nodejs:nodejs /app/output ./output
+COPY --from=build --chown=nodejs:nodejs /app/.mastra/output ./output
 COPY --chown=nodejs:nodejs package.json pnpm-lock.yaml ./
 
 # Switch to non-root user
