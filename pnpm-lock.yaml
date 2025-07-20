@@ -32,6 +32,9 @@ importers:
       '@convex-dev/auth':
         specifier: ^0.0.87
         version: 0.0.87(@auth/core@0.37.4)(convex@1.25.2(react@19.1.0))(react@19.1.0)
+      '@dotenvx/dotenvx':
+        specifier: ^1.48.0
+        version: 1.48.0
       '@fal-ai/client':
         specifier: ^1.6.0
         version: 1.6.0
@@ -102,9 +105,6 @@ importers:
         specifier: ^3.25.67
         version: 3.25.67
     devDependencies:
-      '@dotenvx/dotenvx':
-        specifier: ^1.48.0
-        version: 1.48.0
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.5.1
         version: 4.5.1(prettier@3.6.2)

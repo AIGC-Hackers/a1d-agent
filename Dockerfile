@@ -45,8 +45,11 @@ RUN groupadd -g 1001 nodejs && \
 # Copy dependencies from deps stage and built application from build stage
 COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=build --chown=nodejs:nodejs /app/.mastra/output ./output
+COPY --from=build --chown=nodejs:nodejs /app/.mastra/playground ./playground
 COPY --from=build --chown=nodejs:nodejs /app/.env.production ./.env.production
 COPY --chown=nodejs:nodejs package.json pnpm-lock.yaml ./
+
+ENV PATH="/app/node_modules/.bin:$PATH"
 
 # Switch to non-root user
 USER nodejs
@@ -62,4 +65,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Start application
-CMD ["node", "--import=./output/instrumentation.mjs", "./output/index.mjs"]
+CMD ["dotenvx", "run", "--env-file=.env.production", "--", "node", "--import=./output/instrumentation.mjs", "./output/index.mjs"]

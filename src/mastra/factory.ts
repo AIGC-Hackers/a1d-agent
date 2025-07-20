@@ -20,16 +20,23 @@ export namespace MastraX {
     })
   }
 
+  export const logger = createLogger()
+
   function createStorage() {
-    return new PostgresStore({
-      connectionString:
-        process.env.NODE_ENV === 'production'
-          ? env.value.POSTGRES_PROD_URL
-          : env.value.POSTGRES_DEV_URL,
+    const url = new URL(
+      process.env.NODE_ENV === 'production'
+        ? env.value.POSTGRES_PROD_URL
+        : env.value.POSTGRES_DEV_URL,
+    )
+    logger.info('Connecting to Postgres: ' + url.host)
+
+    const store = new PostgresStore({
+      connectionString: url.toString(),
     })
+
+    return store
   }
 
-  export const logger = createLogger()
   export const storage = lazy(() => createStorage())
 
   export function healthRoute(path: string = '/health') {
