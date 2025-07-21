@@ -26,9 +26,8 @@ RUN pnpm fetch --frozen-lockfile && \
     pnpm install --frozen-lockfile
 # Copy source code and build
 COPY . .
+RUN pnpm build
 
-# Make build script executable and run build
-RUN chmod +x scripts/build.sh && ./scripts/build.sh
 
 # Production stage - use distroless or slim image
 FROM node:latest AS production

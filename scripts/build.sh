@@ -2,7 +2,7 @@
 
 # Run the original build command
 # Use npx to ensure mastra is found in node_modules
-mastra build
+pnpm mastra build
 
 # Check if build was successful
 if [ $? -eq 0 ]; then
