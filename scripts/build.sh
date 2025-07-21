@@ -1,12 +1,13 @@
 #!/bin/bash
 
 # Run the original build command
+# Use npx to ensure mastra is found in node_modules
 mastra build
 
 # Check if build was successful
 if [ $? -eq 0 ]; then
     echo "Build successful, patching output file..."
-    
+
     # Replace the createNodeServer call to enable playground
     if [ -f ".mastra/output/index.mjs" ]; then
         # Detect OS and use appropriate sed syntax
@@ -21,14 +22,14 @@ if [ $? -eq 0 ]; then
     else
         echo "Warning: .mastra/output/index.mjs not found"
     fi
-    
+
     # Handle playground files based on OS
     if [ -d "node_modules/mastra/src/playground/dist" ]; then
         # Remove existing link or directory if it exists
         if [ -e ".mastra/playground" ]; then
             rm -rf .mastra/playground
         fi
-        
+
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # macOS (development) - create symbolic link
             ln -s ../node_modules/mastra/src/playground/dist .mastra/playground

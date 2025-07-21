@@ -1,5 +1,6 @@
 import type { RuntimeContext } from '@mastra/core/runtime-context'
 import type { Context, Next } from 'hono'
+import { isDev, isProd } from '@/lib/config'
 import { lazy } from '@/lib/lazy'
 import { ConvexStorage } from '@/server/vfs/convex-storage'
 import { MemoryStorage } from '@/server/vfs/memory-storage'
@@ -16,7 +17,7 @@ export namespace MastraX {
   function createLogger() {
     return new PinoLogger({
       name: 'Mastra',
-      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+      level: isProd ? 'info' : 'debug',
     })
   }
 
@@ -24,9 +25,7 @@ export namespace MastraX {
 
   function createStorage() {
     const url = new URL(
-      process.env.NODE_ENV === 'production'
-        ? env.value.POSTGRES_PROD_URL
-        : env.value.POSTGRES_DEV_URL,
+      isProd ? env.value.POSTGRES_PROD_URL : env.value.POSTGRES_DEV_URL,
     )
     logger.info('Connecting to Postgres: ' + url.host)
 
@@ -58,7 +57,7 @@ export function createVirtualFileSystem(projectId: string) {
   }
 
   // 开发环境使用内存存储
-  if (process.env.NODE_ENV === 'development') {
+  if (isDev) {
     return new VirtualFileSystem(new MemoryStorage(projectId))
   }
 

@@ -3,11 +3,7 @@
 
 # Include source code
 !src/
-!src/**
-
-# Include scripts
 !scripts/
-!scripts/**
 
 # Include package configuration
 !package.json
