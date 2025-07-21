@@ -42,7 +42,11 @@ export namespace MastraX {
     return registerApiRoute(path, {
       method: 'GET',
       handler: async (c) => {
-        return c.json({ status: 'UP', timestamp: Date.now() })
+        return c.json({
+          status: 'UP',
+          timestamp: Date.now(),
+          buildTime: env.value.BUILD_TIMESTAMP || 'development',
+        })
       },
     })
   }

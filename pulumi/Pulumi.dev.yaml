@@ -2,3 +2,4 @@ config:
   a1d-agent:infraStackRef: ethan-huo/a1d-pulumi-azure/azure-dev
   a1d-agent:dotenvPrivateKey:
     secure: AAABACP2LcTrnqvKm2X17u8Ubfs/sriIRIP+aZ3nFm2+HRmr3Jzddek8s6/bhZuubp63sfD30qtHw1l8vse4J1zD4fD3KvzN3dSVXM8x+8daoKnwVdD4SnmX48V9C3bI
+  a1d-agent:containerImage: a1dazureacr.azurecr.io/a1d-agent:20250721205509-2e1d99e

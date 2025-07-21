@@ -49,6 +49,11 @@ export const runtimeEnvSchema = type({
   // ----------------------------------
   // GOOGLE_CLOUD_LOCALTION: 'string',
   // GOOGLE_CLOUD_PROJECT_ID: 'string',
+
+  // ----------------------------------
+  // Build Info
+  // ----------------------------------
+  BUILD_TIMESTAMP: 'string | undefined',
 })
 
 export type RuntimeEnv = typeof runtimeEnvSchema.infer

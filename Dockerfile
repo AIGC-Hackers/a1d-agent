@@ -1,6 +1,7 @@
 # Multi-stage build for Node.js application with pnpm
 FROM node:latest AS base
 
+
 # Install curl for health checks and enable pnpm
 RUN apt-get update && apt-get install -y curl && \
     corepack enable && \
@@ -31,6 +32,7 @@ RUN pnpm build
 
 # Production stage - use distroless or slim image
 FROM node:latest AS production
+
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y curl tini && \
