@@ -1,13 +1,18 @@
 import type { RuntimeContext } from '@mastra/core/runtime-context'
+import type { LanguageModelV1 } from 'ai'
 import type { Context, Next } from 'hono'
+import { Groq } from '@/integration/groq'
+import { OpenRouter } from '@/integration/openrouter'
 import { isDev, isProd } from '@/lib/config'
 import { lazy } from '@/lib/lazy'
 import { ConvexStorage } from '@/server/vfs/convex-storage'
 import { MemoryStorage } from '@/server/vfs/memory-storage'
 import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
+import { groq } from '@ai-sdk/groq'
 import { registerApiRoute } from '@mastra/core/server'
 import { PinoLogger } from '@mastra/loggers'
 import { PostgresStore } from '@mastra/pg'
+import { generateText } from 'ai'
 import { type } from 'arktype'
 import { ConvexHttpClient } from 'convex/browser'
 
@@ -47,10 +52,41 @@ export namespace MastraX {
     return registerApiRoute(path, {
       method: 'GET',
       handler: async (c) => {
+        const models: Record<string, string> = {}
+
+        if (c.req.query('model') !== undefined) {
+          const k2AtGroq = Groq.model('moonshotai/kimi-k2-instruct')
+          const gpt4ominiAtOpenRouter = OpenRouter.model(
+            OpenRouter.Model.OpenAIGpt4oMini,
+          )
+
+          const generate = async (model: LanguageModelV1) => {
+            try {
+              const response = await generateText({
+                model,
+                prompt: 'Please respond with "Hello, world!"',
+              })
+              return response.text
+            } catch (error) {
+              return `${model.modelId} is not available: ${error}`
+            }
+          }
+
+          const [k2AtGroqResponse, gpt4ominiAtOpenRouterResponse] =
+            await Promise.all([
+              generate(k2AtGroq),
+              generate(gpt4ominiAtOpenRouter),
+            ])
+
+          models.k2AtGroq = k2AtGroqResponse
+          models.gpt4ominiAtOpenRouter = gpt4ominiAtOpenRouterResponse
+        }
+
         return c.json({
           status: 'UP',
           timestamp: Date.now(),
           buildTime: env.value.BUILD_TIMESTAMP || 'development',
+          models,
         })
       },
     })
