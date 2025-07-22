@@ -17,7 +17,8 @@ export namespace MastraX {
   function createLogger() {
     return new PinoLogger({
       name: 'Mastra',
-      level: isProd ? 'info' : 'debug',
+      // level: isProd ? 'info' : 'debug',
+      level: 'debug',
     })
   }
 
