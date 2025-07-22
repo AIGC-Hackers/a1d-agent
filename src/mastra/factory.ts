@@ -25,8 +25,11 @@ export namespace MastraX {
 
   function createStorage() {
     const url = new URL(
-      isProd ? env.value.POSTGRES_PROD_URL : env.value.POSTGRES_DEV_URL,
+      process.env.NODE_ENV === 'production'
+        ? env.value.POSTGRES_PROD_URL
+        : env.value.POSTGRES_DEV_URL,
     )
+
     logger.info('Connecting to Postgres: ' + url.host)
 
     const store = new PostgresStore({

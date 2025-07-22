@@ -27,6 +27,7 @@ RUN pnpm fetch --frozen-lockfile && \
     pnpm install --frozen-lockfile
 # Copy source code and build
 COPY . .
+ENV NODE_ENV=production
 RUN pnpm build
 
 
@@ -67,4 +68,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # Start application
+# Set NODE_ENV before dotenvx to ensure it's available during module loading
 CMD ["dotenvx", "run", "--env-file=.env.production", "--", "node", "--import=./output/instrumentation.mjs", "./output/index.mjs"]
