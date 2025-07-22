@@ -3,9 +3,9 @@ set -e
 
 echo "🚀 开始部署..."
 
-# 生成时间戳作为镜像标签
-TIMESTAMP=$(date +%Y%m%d%H%M%S)
-IMAGE_TAG="a1d-agent:${TIMESTAMP}"
+# 获取当前 Git commit SHA（短版本）
+GIT_SHA=$(git rev-parse --short HEAD)
+IMAGE_TAG="a1d-agent:${GIT_SHA}"
 IMAGE_TAG_LATEST="a1d-agent:latest"
 
 # 1. Azure 构建容器

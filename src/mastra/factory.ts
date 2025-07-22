@@ -1,6 +1,7 @@
 import type { RuntimeContext } from '@mastra/core/runtime-context'
 import type { LanguageModelV1 } from 'ai'
 import type { Context, Next } from 'hono'
+import { Anthropic } from '@/integration/anthropic'
 import { Groq } from '@/integration/groq'
 import { OpenRouter } from '@/integration/openrouter'
 import { isDev, isProd } from '@/lib/config'
@@ -55,10 +56,11 @@ export namespace MastraX {
         const models: Record<string, string> = {}
 
         if (c.req.query('model') !== undefined) {
-          const k2AtGroq = Groq.model('moonshotai/kimi-k2-instruct')
-          const gpt4ominiAtOpenRouter = OpenRouter.model(
-            OpenRouter.Model.OpenAIGpt4oMini,
-          )
+          const models = [
+            Groq.model('moonshotai/kimi-k2-instruct'),
+            OpenRouter.model(OpenRouter.Model.OpenAIGpt4oMini),
+            Anthropic.model('claude-3-5-haiku-latest'),
+          ]
 
           const generate = async (model: LanguageModelV1) => {
             try {
@@ -66,20 +68,20 @@ export namespace MastraX {
                 model,
                 prompt: 'Please respond with "Hello, world!"',
               })
-              return response.text
+              return { model: model.modelId, response: response.text }
             } catch (error) {
-              return `${model.modelId} is not available: ${error}`
+              return { model: model.modelId, error: error }
             }
           }
 
-          const [k2AtGroqResponse, gpt4ominiAtOpenRouterResponse] =
-            await Promise.all([
-              generate(k2AtGroq),
-              generate(gpt4ominiAtOpenRouter),
-            ])
+          const results = await Promise.all(models.map(generate))
 
-          models.k2AtGroq = k2AtGroqResponse
-          models.gpt4ominiAtOpenRouter = gpt4ominiAtOpenRouterResponse
+          return c.json({
+            status: 'UP',
+            timestamp: Date.now(),
+            buildTime: env.value.BUILD_TIMESTAMP || 'development',
+            models: results,
+          })
         }
 
         return c.json({
