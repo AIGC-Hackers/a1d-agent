@@ -42,6 +42,10 @@ if [ $? -eq 0 ]; then
     else
         echo "Warning: node_modules/mastra/src/playground/dist not found"
     fi
+
+    echo "Setting build timestamp..."
+
+    dotenvx set BUILD_TIMESTAMP "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" -f .env.production
 else
     echo "Build failed"
     exit 1

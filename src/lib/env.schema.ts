@@ -53,7 +53,7 @@ export const runtimeEnvSchema = type({
   // ----------------------------------
   // Build Info
   // ----------------------------------
-  BUILD_TIMESTAMP: 'string | undefined',
+  BUILD_TIMESTAMP: 'string = "development"',
 })
 
 export type RuntimeEnv = typeof runtimeEnvSchema.infer

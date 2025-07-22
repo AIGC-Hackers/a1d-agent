@@ -32,8 +32,6 @@ RUN pnpm fetch --frozen-lockfile && \
 COPY . .
 ENV NODE_ENV=production
 RUN pnpm build
-RUN echo "Setting build timestamp..." && \
-    dotenvx set BUILD_TIMESTAMP "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" -f .env.production
 
 # Production stage - use distroless or slim image
 FROM node:latest AS production
