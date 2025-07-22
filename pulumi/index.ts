@@ -107,7 +107,7 @@ const containerApp = new azure.app.ContainerApp(appName, {
             value: 'production',
           },
           {
-            name: 'DOTENV_PRIVATE_KEY',
+            name: 'DOTENV_PRIVATE_KEY_PRODUCTION',
             secretRef: 'dotenv-private-key',
           },
         ],

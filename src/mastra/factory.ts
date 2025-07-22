@@ -33,6 +33,7 @@ export namespace MastraX {
     logger.info('Connecting to Postgres: ' + url.host)
 
     const store = new PostgresStore({
+      // connectionString: url.toString(),
       connectionString: url.toString(),
     })
 
