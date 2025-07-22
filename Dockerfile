@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y curl && \
 
 WORKDIR /app
 
+ENV PATH="/app/node_modules/.bin:$PATH"
+
 FROM base AS deps
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
@@ -25,11 +27,13 @@ COPY package.json pnpm-lock.yaml ./
 # Install all dependencies (including dev) for building
 RUN pnpm fetch --frozen-lockfile && \
     pnpm install --frozen-lockfile
+
 # Copy source code and build
 COPY . .
 ENV NODE_ENV=production
 RUN pnpm build
-
+RUN echo "Setting build timestamp..." && \
+    dotenvx set BUILD_TIMESTAMP "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" -f .env.production
 
 # Production stage - use distroless or slim image
 FROM node:latest AS production

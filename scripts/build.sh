@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Add build timestamp to .env.production
-echo "Setting build timestamp..."
-dotenvx set BUILD_TIMESTAMP "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" -f .env.production
-
 # Run the original build command
 # Use npx to ensure mastra is found in node_modules
 pnpm mastra build
