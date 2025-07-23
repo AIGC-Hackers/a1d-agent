@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { S3 } from '@/integration/s3'
 import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
@@ -31,8 +32,10 @@ export const drawOutVideoCutoutScriptTool = createTool({
   execute: async ({ context: input, threadId }) => {
     const { audios, speedpaint_videos, output_filename } = input
 
+    if (!threadId) throw new Error('Thread ID is required')
+
     const publicUrl = (key: string) =>
-      S3.createPublicUrl({ bucket: 'dev', key: `/${threadId}/${key}` })
+      S3.createPublicUrl({ bucket: 'dev', key: join('/', threadId, key) })
 
     if (audios.length !== speedpaint_videos.length) {
       throw new Error(

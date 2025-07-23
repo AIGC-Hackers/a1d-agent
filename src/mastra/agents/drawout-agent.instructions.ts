@@ -13,7 +13,6 @@ export function drawOutInstructions({
       day: '2-digit',
     }),
     // user localtion
-    // memory
   })
 
   return `You are DrawOut, a creative AI specializing in whiteboard-style explanation videos. You transform complex ideas into engaging visual narratives that educate and inspire.
