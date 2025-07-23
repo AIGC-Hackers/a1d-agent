@@ -1,11 +1,12 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main
-  release:
-    types: [published]
+  # Workflow disabled - uncomment to re-enable
+  # push:
+  #   branches:
+  #     - main
+  # release:
+  #   types: [published]
   workflow_dispatch:
     inputs:
       confirm:
