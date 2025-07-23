@@ -55,7 +55,7 @@ jobs:
             --min-instances 0 \
             --max-instances 10 \
             --timeout 300 \
-            --set-env-vars NODE_ENV=production
+            --set-env-vars NODE_ENV=production,DOTENV_PRIVATE_KEY_PRODUCTION=${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
 
       - name: Show service URL
         run: |
