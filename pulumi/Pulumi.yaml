@@ -1,69 +1,36 @@
-name: a1d-agent
+name: a1d-agent-aws
 runtime: nodejs
-description: A1D Agent AI service deployment using Azure Container Apps
-main: index.ts
-
-config:
-  # Infrastructure stack reference
-  a1d-agent:infraStackRef:
-    description: 'Reference to the shared infrastructure stack(format: org/project/stack)'
-    default: 'ethan-huo-org/a1d-pulumi-azure/azure-dev'
-
-  # Application configuration
-  a1d-agent:appName:
-    description: 'Name of the A1D Agent application'
-    default: 'a1d-agent'
-
-  a1d-agent:containerImage:
-    description: 'Container image to deploy'
-    default: 'a1dazureacr.azurecr.io/a1d-agent:latest'
-
-  a1d-agent:environment:
-    description: 'Deployment environment'
-    default: 'production'
-
-  # Resource allocation for LLM chat app
-  a1d-agent:cpu:
-    description: 'CPU allocation (in cores) - sufficient for chat app (mainly API forwarding)'
-    default: 0.5
-
-  a1d-agent:memory:
-    description: 'Memory allocation (in Gi) - sufficient for Node.js chat app'
-    default: 1
-
-  a1d-agent:port:
-    description: 'Application port - match Dockerfile EXPOSE'
-    default: 4111
-
-  # Scaling configuration - Minimal scaling for chat app
-  a1d-agent:minReplicas:
-    description: 'Minimum number of replicas - keep 1 instance running for availability'
-    default: 1
-
-  a1d-agent:maxReplicas:
-    description: 'Maximum number of replicas - mainly for zero-downtime deployment'
-    default: 2
-
-  a1d-agent:scaleToZero:
-    description: 'Allow scaling to zero - disabled for always-on service'
-    default: false
-
-  # Domain configuration
-  a1d-agent:usesEnvironmentLevelDomains:
-    description: 'Use environment-level domains (automatic domain assignment)'
-    default: true
-
-  a1d-agent:dotenvPrivateKey:
-    description: 'Dotenv private key'
-    secret: true
+description: A1D Agent deployment on AWS using Fargate and ALB
 
 template:
   config:
-    pulumi:tags:
-      value:
-        Project: 'a1d-agent'
-        Environment: 'production'
-        Component: 'ai-agent-service'
-        Platform: 'azure'
-        Service: 'mastra-ai-agent'
-        AlwaysOn: 'true'
+    aws:region:
+      description: AWS region for deployment
+      default: us-west-2
+    infraStackRef:
+      description: Reference to the infrastructure stack (org/project/stack)
+      default: dio/a1d-aws/dev
+    appName:
+      description: Name of the application
+      default: a1d-agent
+    cpu:
+      description: CPU units for the container (1024 = 1 vCPU)
+      default: 512
+    memory:
+      description: Memory in MB for the container
+      default: 1024
+    port:
+      description: Port the application listens on
+      default: 4111
+    minCapacity:
+      description: Minimum number of running tasks
+      default: 1
+    maxCapacity:
+      description: Maximum number of running tasks
+      default: 3
+    targetCpuUtilization:
+      description: Target CPU utilization percentage for auto scaling
+      default: 70
+    dotenvPrivateKey:
+      description: Private key for dotenv encryption
+      secret: true

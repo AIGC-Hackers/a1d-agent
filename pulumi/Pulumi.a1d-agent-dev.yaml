@@ -1,0 +1,3 @@
+config:
+  a1d-agent-aws:containerImage: 981915232666.dkr.ecr.us-west-2.amazonaws.com/a1d-agent:20250723094947
+  a1d-agent-aws:infraStackRef: ethan-huo/a1d-pulumi-aws/dev

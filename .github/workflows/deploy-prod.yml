@@ -14,9 +14,9 @@ on:
         type: string
 
 env:
-  AZURE_ACR_NAME: a1dazureacr
-  IMAGE_NAME: a1d-agent
-  PULUMI_STACK: ethan-huo/dev
+  AWS_REGION: us-west-2
+  ECR_REPOSITORY: a1d-agent
+  PULUMI_STACK: dio/a1d-aws/prod
 
 jobs:
   validate:
@@ -55,30 +55,52 @@ jobs:
     - name: Install dotenvx
       run: curl -sfS https://dotenvx.sh/install.sh | sh
 
-    - name: Azure Login
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Get AWS Account ID
+      id: aws-account
       run: |
-        cd pulumi
-        dotenvx run -f ../.env.production -- bash -c 'az login --service-principal \
-          -u "$AZURE_CLIENT_ID" \
-          -p "$AZURE_CLIENT_SECRET" \
-          --tenant "$AZURE_TENANT_ID"'
-      env:
-        DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        echo "account-id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+        echo "ECR_REGISTRY=$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
+
+    - name: Create ECR repository if not exists
+      run: |
+        aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} || \
+        aws ecr create-repository \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --image-scanning-configuration scanOnPush=true \
+          --region ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build and push Docker image
       run: |
-        # 使用 release tag 或 commit SHA
+        # 使用 release tag 或 commit SHA (取前7位)
         VERSION_TAG=${{ github.event.release.tag_name || github.sha }}
+        SHORT_SHA=$(echo "$VERSION_TAG" | cut -c1-7)
         
-        cd pulumi
-        dotenvx run -f ../.env.production -- bash -c "az acr build \
-          --registry ${{ env.AZURE_ACR_NAME }} \
-          --image ${{ env.IMAGE_NAME }}:latest \
-          --image ${{ env.IMAGE_NAME }}:prod \
-          --image ${{ env.IMAGE_NAME }}:$VERSION_TAG \
-          .."
-      env:
-        DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
+        ECR_REGISTRY=${{ steps.aws-account.outputs.ECR_REGISTRY }}
+        
+        echo "Building image for ARM64 platform..."
+        docker build --platform linux/arm64 \
+          -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest \
+          -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:prod \
+          -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$SHORT_SHA .
+        
+        echo "Pushing images to ECR..."
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:prod
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$SHORT_SHA
+        
+        echo "IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$SHORT_SHA" >> $GITHUB_ENV
 
     - name: Configure Pulumi
       run: |
@@ -92,6 +114,11 @@ jobs:
         cd pulumi
         pnpm install
         pulumi stack select ${{ env.PULUMI_STACK }}
+        
+        # 设置容器镜像
+        pulumi config set containerImage "${{ env.IMAGE_URI }}"
+        
+        # 运行部署
         dotenvx run -f ../.env.production -- pulumi up --yes
       env:
         DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
@@ -99,9 +126,15 @@ jobs:
     - name: Production Deployment Summary
       if: always()
       run: |
-        echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Version**: ${{ github.event.release.tag_name || github.sha }}" >> $GITHUB_STEP_SUMMARY
+        VERSION_TAG=${{ github.event.release.tag_name || github.sha }}
+        SHORT_SHA=$(echo "$VERSION_TAG" | cut -c1-7)
+        
+        echo "## AWS Fargate Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Platform**: AWS Fargate (ARM64)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: $SHORT_SHA" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image**: ${{ env.IMAGE_URI }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
+        echo "- **Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Workflow run**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Release notes**: ${{ github.event.release.body || 'Manual deployment' }}" >> $GITHUB_STEP_SUMMARY
