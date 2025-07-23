@@ -8,7 +8,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: a1d-agent
-  REGION: asia-east1
+  REGION: asia-northeast1
 
 jobs:
   deploy:
@@ -28,24 +28,24 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker to use gcloud as credential helper
-        run: gcloud auth configure-docker asia-east1-docker.pkg.dev
+        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
 
       - name: Build Docker image
         run: |
           docker build --platform linux/amd64 \
-            -t asia-east1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:$GITHUB_SHA \
-            -t asia-east1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:latest \
+            -t asia-northeast1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:$GITHUB_SHA \
+            -t asia-northeast1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:latest \
             .
 
       - name: Push Docker image
         run: |
-          docker push asia-east1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:$GITHUB_SHA
-          docker push asia-east1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:latest
+          docker push asia-northeast1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:$GITHUB_SHA
+          docker push asia-northeast1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:latest
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy $SERVICE_NAME \
-            --image asia-east1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:$GITHUB_SHA \
+            --image asia-northeast1-docker.pkg.dev/$PROJECT_ID/a1d-agent/$SERVICE_NAME:$GITHUB_SHA \
             --platform managed \
             --region $REGION \
             --allow-unauthenticated \
