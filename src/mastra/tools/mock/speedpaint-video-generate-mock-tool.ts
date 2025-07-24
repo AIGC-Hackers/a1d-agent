@@ -77,8 +77,11 @@ export const speedpaintVideoGenerateMockTool = createTool({
     await delay(3000) // 初始创建任务的延迟
 
     return {
-      file_path: input.output.path,
-      task_id: taskId,
+      inputImagePath: input.image_path,
+      width: 1024, // Mock width
+      height: 1024, // Mock height
+      durationSeconds: input.duration_seconds,
+      fileSavedPath: input.output.path,
     }
   },
 })

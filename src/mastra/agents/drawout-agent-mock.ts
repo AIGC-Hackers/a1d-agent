@@ -5,7 +5,7 @@ import { Memory } from '@mastra/memory'
 import { MastraX } from '../factory'
 import { googleSearchTool } from '../tools/google-search-tool'
 import { kontextImageEditMockTool } from '../tools/mock/kontext-image-edit-mock-tool'
-import { midjourneyImageGenerateMockTool } from '../tools/mock/midjourney-image-generate-mock-tool'
+import { kontextTextToImageMockTool } from '../tools/mock/kontext-text-to-image-mock-tool'
 // Mock tools
 import { minimaxTextToAudioMockTool } from '../tools/mock/minimax-text-to-audio-mock-tool'
 import { speedpaintVideoGenerateMockTool } from '../tools/mock/speedpaint-video-generate-mock-tool'
@@ -18,7 +18,14 @@ export const drawOutAgentMock = new Agent({
   name: 'Drawout.ai Mock',
   description:
     'Mock version of Draw out the story - for development and testing',
-  instructions: drawOutInstructions,
+  instructions: ({ runtimeContext }) => {
+    const instructions = drawOutInstructions({ runtimeContext })
+    return (
+      instructions +
+      '\n' +
+      'You are running in MOCK mode. All tool calls will return MOCK DATA for development and testing purposes.'
+    )
+  },
   model: OpenRouter.model(OpenRouter.Model.AnthropicClaudeSonnet4),
   // model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
   memory: new Memory({
@@ -49,7 +56,7 @@ export const drawOutAgentMock = new Agent({
 
     // Mock tools
     minimaxTextToAudio: minimaxTextToAudioMockTool,
-    midjourneyImageGenerate: midjourneyImageGenerateMockTool,
+    kontextTextToImage: kontextTextToImageMockTool,
     kontextImageEdit: kontextImageEditMockTool,
     speedpaintVideoGenerate: speedpaintVideoGenerateMockTool,
   },

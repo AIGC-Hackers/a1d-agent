@@ -49,13 +49,11 @@ export const kontextImageEditMockTool = createTool({
     const outputPath = input.output.path || `edited-${Date.now()}.jpg`
 
     return {
-      success: true,
-      result: {
-        id: editId,
-        edited_image_path: outputPath,
-        original_image_path: input.image_path,
-        edit_prompt: input.prompt,
-      },
+      id: editId,
+      edited_image_path: outputPath,
+      original_image_path: input.image_path,
+      edit_prompt: input.prompt,
+      model_used: 'mock-kontext-model',
     }
   },
 })
