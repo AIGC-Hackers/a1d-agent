@@ -6,6 +6,7 @@ import { deepResearchEvaluationAgent } from './agents/deepresearch-evaluation-ag
 import { deepResearchLearningExtractionAgent } from './agents/deepresearch-learning-extraction-agent'
 import { deepResearchReportAgent } from './agents/deepresearch-report-agent'
 import { drawOutAgentK2 } from './agents/drawout-agen-k2'
+import { drawOutAgentGlm45 } from './agents/drawout-agen-z.js'
 import { drawOutAgent } from './agents/drawout-agent'
 import { drawOutAgentMock } from './agents/drawout-agent-mock'
 import { drawOutVideoCutoutAgent } from './agents/drawout-composer-agent'
@@ -42,6 +43,7 @@ export const mastra = new Mastra({
 
     drawOut: drawOutAgent,
     drawOutK2: drawOutAgentK2,
+    drawOutGlm45: drawOutAgentGlm45,
     drawOutMock: drawOutAgentMock,
     drawOutDeepResearch: drawOutDeepResearchAgent,
     drawOutVideoCutout: drawOutVideoCutoutAgent,
