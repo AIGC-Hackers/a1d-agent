@@ -26,7 +26,7 @@ export const drawOutAgentMock = new Agent({
     )
   },
   model: ({ runtimeContext }) => {
-    return PreferredModels.select(runtimeContext.get('model'))
+    return PreferredModels.select(runtimeContext.get('model'), 'glm:glm-4.5')
   },
   // model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
   memory: new Memory({
