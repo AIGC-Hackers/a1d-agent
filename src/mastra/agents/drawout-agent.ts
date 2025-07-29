@@ -1,4 +1,6 @@
 import { Anthropic } from '@/integration/anthropic'
+import { Glm } from '@/integration/glm'
+import { Groq } from '@/integration/groq'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
@@ -20,7 +22,19 @@ export const drawOutAgent = new Agent({
     runtimeContext.set('model', 'claude')
     return drawOutInstructions({ runtimeContext })
   },
-  model: Anthropic.model('claude-4-sonnet-20250514'),
+  model: ({ runtimeContext }) => {
+    const model = runtimeContext.get('model')
+
+    switch (model) {
+      case 'glm-4.5':
+        return Glm.model('glm-4.5')
+      case 'k2':
+        return Groq.model('moonshotai/kimi-k2-instruct')
+      case 'claude':
+      default:
+        return Anthropic.model('claude-4-sonnet-20250514')
+    }
+  },
   memory: new Memory({
     storage: MastraX.storage.value,
   }),
