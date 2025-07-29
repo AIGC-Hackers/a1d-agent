@@ -114,6 +114,8 @@ export function createVirtualFileSystem(projectId: string) {
 }
 
 export namespace PreferredModels {
+  export const fallback = Glm.model('glm-4.5-x')
+
   export function select(id: string): LanguageModelV1 {
     const provider = id.split(':', 1)[0]
     const modelId = id.slice(provider.length + 1)
@@ -134,7 +136,7 @@ export namespace PreferredModels {
       default:
         // Fallback to glm-4.5-x
         console.warn(`Unknown provider: ${provider}, falling back to glm-4.5-x`)
-        return Glm.model('glm-4.5-x')
+        return fallback
     }
   }
 }

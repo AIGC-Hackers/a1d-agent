@@ -2,7 +2,10 @@ import { OpenRouter } from '@/integration/openrouter'
 import { Agent, createTool } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 import { streamText } from 'ai'
+import { PermissionDeniedError } from 'openai'
 import { z } from 'zod'
+
+import { PreferredModels } from '../factory'
 
 const toolcallStreamTool = createTool({
   id: 'toolcall-stream',
@@ -39,7 +42,13 @@ export const testAgent = new Agent({
   description: 'Develop and test agent functionality',
   instructions:
     'you are a test agent, Complete agent functionality testing according to user instructions. You can generate images using the mock-image-generate tool for testing real-time event streams.',
-  model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
+  model: ({ runtimeContext }) => {
+    const model = runtimeContext.get('model')
+    if (typeof model === 'string') {
+      return PreferredModels.select(model)
+    }
+    return PreferredModels.fallback
+  },
   tools: {
     stream: toolcallStreamTool,
   },
