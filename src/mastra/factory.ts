@@ -116,7 +116,7 @@ export function createVirtualFileSystem(projectId: string) {
 export namespace PreferredModels {
   export const fallback = Glm.model('glm-4.5-x')
 
-  export function select(id: string): LanguageModelV1 {
+  export function select(id: string, fallback?: string): LanguageModelV1 {
     const provider = id.split(':', 1)[0]
     const modelId = id.slice(provider.length + 1)
 
@@ -134,9 +134,13 @@ export namespace PreferredModels {
         return Groq.model(modelId)
 
       default:
-        // Fallback to glm-4.5-x
-        console.warn(`Unknown provider: ${provider}, falling back to glm-4.5-x`)
-        return fallback
+        if (fallback) {
+          return PreferredModels.select(fallback)
+        }
+        console.warn(
+          `Unknown provider: ${provider}, falling back to ${PreferredModels.fallback.modelId}`,
+        )
+        return PreferredModels.fallback
     }
   }
 }
