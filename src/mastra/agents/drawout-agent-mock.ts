@@ -1,8 +1,7 @@
-import { OpenRouter } from '@/integration/openrouter'
 import { Agent } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 
-import { MastraX } from '../factory'
+import { MastraX, PreferredModels } from '../factory'
 import { googleSearchTool } from '../tools/google-search-tool'
 import { kontextImageEditMockTool } from '../tools/mock/kontext-image-edit-mock-tool'
 import { kontextTextToImageMockTool } from '../tools/mock/kontext-text-to-image-mock-tool'
@@ -26,7 +25,9 @@ export const drawOutAgentMock = new Agent({
       'You are running in MOCK mode. All tool calls will return MOCK DATA for development and testing purposes.'
     )
   },
-  model: OpenRouter.model(OpenRouter.Model.AnthropicClaudeSonnet4),
+  model: ({ runtimeContext }) => {
+    return PreferredModels.select(runtimeContext.get('model'))
+  },
   // model: OpenRouter.model(OpenRouter.Model.OpenAIGpt41),
   memory: new Memory({
     storage: MastraX.storage.value,

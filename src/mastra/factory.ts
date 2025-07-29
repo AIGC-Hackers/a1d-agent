@@ -2,14 +2,14 @@ import type { RuntimeContext } from '@mastra/core/runtime-context'
 import type { LanguageModelV1 } from 'ai'
 import type { Context, Next } from 'hono'
 import { Anthropic } from '@/integration/anthropic'
+import { Glm } from '@/integration/glm'
 import { Groq } from '@/integration/groq'
 import { OpenRouter } from '@/integration/openrouter'
-import { isDev, isProd } from '@/lib/config'
+import { isDev } from '@/lib/config'
 import { lazy } from '@/lib/lazy'
 import { ConvexStorage } from '@/server/vfs/convex-storage'
 import { MemoryStorage } from '@/server/vfs/memory-storage'
 import { VirtualFileSystem } from '@/server/vfs/virtual-file-system'
-import { groq } from '@ai-sdk/groq'
 import { registerApiRoute } from '@mastra/core/server'
 import { PinoLogger } from '@mastra/loggers'
 import { PostgresStore } from '@mastra/pg'
@@ -111,6 +111,32 @@ export function createVirtualFileSystem(projectId: string) {
   throw new Error(
     'VirtualFileSystem requires CONVEX_URL or development environment',
   )
+}
+
+export namespace PreferredModels {
+  export function select(id: string): LanguageModelV1 {
+    const provider = id.split(':', 1)[0]
+    const modelId = id.slice(provider.length + 1)
+
+    switch (provider) {
+      case 'anthropic':
+        return Anthropic.model(modelId)
+
+      case 'glm':
+        return Glm.model(modelId as Glm.Model)
+
+      case 'openrouter':
+        return OpenRouter.model(modelId)
+
+      case 'groq':
+        return Groq.model(modelId)
+
+      default:
+        // Fallback to glm-4.5-x
+        console.warn(`Unknown provider: ${provider}, falling back to glm-4.5-x`)
+        return Glm.model('glm-4.5-x')
+    }
+  }
 }
 
 export namespace ContextX {
