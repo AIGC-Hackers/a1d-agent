@@ -44,7 +44,10 @@ export const googleSearchTool = createTool({
         'Search query content, can be complex instructions or multiple related questions.',
       ),
   }),
-  execute: async ({ context: input }): Promise<GoogleSearchToolResult> => {
+  execute: async ({
+    context: input,
+    writer,
+  }): Promise<GoogleSearchToolResult> => {
     const genai = createGoogleGenAIClient()
 
     const response = await genai.models.generateContent({

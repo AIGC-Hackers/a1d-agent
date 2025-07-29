@@ -1,5 +1,7 @@
 # A1D Agent
 
+该分支等待 mastra next 版本发布, 所有工具调用使用 writer 发射 tool-delta, 并支持 ai sdk v5 Transport 在前端使用 ai sdk 进行对话
+
 ## Agents
 
 | Agent          | Description                                                                                                                                                                |
@@ -12,7 +14,3 @@
 ```sh
 pnpm dev
 ```
-
-## MCP
-
-- https://mcpservers.org/remote-mcp-servers

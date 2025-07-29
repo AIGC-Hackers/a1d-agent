@@ -6,6 +6,7 @@ import { env } from '@/lib/env'
 import { invariant } from '@/lib/invariant'
 import { ContextX, MastraX } from '@/mastra/factory'
 import { MediaFileStorage } from '@/server/vfs/media-file-storage'
+import { StreamEvent } from '@mastra/core'
 import { RuntimeContext } from '@mastra/core/runtime-context'
 import { createTool } from '@mastra/core/tools'
 import { z } from 'zod'
@@ -80,10 +81,11 @@ export const kontextTextToImageTool = createTool({
   description: KONTEXT_TOOL_DESCRIPTION,
   inputSchema: kontextTextToImageInputSchema,
   execute: async (context): Promise<KontextTextToImageOutput> => {
-    const { context: input, resourceId, threadId, runId } = context
+    const { context: input, resourceId, threadId, runId, writer } = context
     const { prompt, output, aspectRatio } = input
 
     invariant(threadId, 'threadId is required')
+    // invariant(writer, 'writer is required')
 
     const { convex } = ContextX.get(context.runtimeContext)
 
