@@ -13,14 +13,14 @@ import { todoReadTool } from '../tools/todo-read-tool'
 import { todoWriteTool } from '../tools/todo-write-tool'
 import { drawOutInstructions } from './drawout-agent.instructions'
 
-export const drawOutAgentK2 = new Agent({
-  name: 'Drawout.ai + K2',
-  description: 'Draw out the story with K2',
+export const drawOutAgentGptOss = new Agent({
+  name: 'Drawout.ai + GPT-OSS',
+  description: 'Draw out the story with GPT-OSS',
   instructions: ({ runtimeContext }) => {
-    runtimeContext.set('model', 'k2')
+    runtimeContext.set('model', 'gpt-oss')
     return drawOutInstructions({ runtimeContext })
   },
-  model: Groq.model('moonshotai/kimi-k2-instruct'),
+  model: Groq.model('openai/gpt-oss-120b'),
   memory: new Memory({
     storage: MastraX.storage.value,
   }),
