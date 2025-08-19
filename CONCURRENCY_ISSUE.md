@@ -348,6 +348,251 @@ export default cronJobs.register({
 2. 动态并发限制调整
 3. 详细的性能分析
 
+### 7. 异步任务取消机制
+
+基于 Convex Agent 框架的最佳实践，实现流式任务的异步取消功能：
+
+#### 7.1 后端流取消实现
+
+```typescript
+// src/convex/streamAbort.ts (参考: https://github.com/get-convex/agent/blob/main/example/convex/chat/streamAbort.ts)
+import { v } from "convex/values";
+import { components } from "./_generated/api";
+import {
+  query,
+  action,
+  mutation,
+  internalMutation,
+} from "./_generated/server";
+import { abortStream, createThread, listStreams } from "@convex-dev/agent";
+import { agent } from "./agents/simple";
+import { authorizeThreadAccess } from "./threads";
+
+// 按线程ID和顺序中止流
+export const abortStreamByOrder = mutation({
+  args: { threadId: v.string(), order: v.number() },
+  handler: async (ctx, { threadId, order }) => {
+    await authorizeThreadAccess(ctx, threadId);
+    
+    if (
+      await abortStream(ctx, components.agent, {
+        threadId,
+        order,
+        reason: "Aborting explicitly",
+      })
+    ) {
+      console.log("Aborted stream", threadId, order);
+    } else {
+      console.log("No stream found", threadId, order);
+    }
+  },
+});
+
+// 按流ID中止流
+export const abortStreamByStreamId = mutation({
+  args: { streamId: v.id("streams") },
+  handler: async (ctx, { streamId }) => {
+    const stream = await ctx.db.get(streamId);
+    if (!stream) throw new Error("Stream not found");
+    
+    await authorizeThreadAccess(ctx, stream.threadId);
+    
+    if (await abortStream(ctx, components.agent, { streamId })) {
+      console.log("Aborted stream by ID", streamId);
+    } else {
+      console.log("Stream not found or already completed", streamId);
+    }
+  },
+});
+
+// 异步流处理与中止信号
+export const streamThenUseAbortSignal = action({
+  args: { threadId: v.string(), prompt: v.string() },
+  handler: async (ctx, { threadId, prompt }) => {
+    const abortController = new AbortController();
+    
+    // 设置超时自动中止
+    const timeoutId = setTimeout(() => {
+      abortController.abort("Task timeout");
+    }, 5 * 60 * 1000); // 5分钟超时
+    
+    try {
+      const result = await agent.run(ctx, {
+        threadId,
+        userMessage: prompt,
+        signal: abortController.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.log("Task was aborted:", error.message);
+        throw new Error("Task was cancelled");
+      }
+      throw error;
+    }
+  },
+});
+```
+
+#### 7.2 前端流取消集成
+
+```typescript
+// src/components/TaskControl.tsx (参考: https://github.com/get-convex/agent/blob/main/example/ui/chat/ChatStreaming.tsx)
+import { useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { useThreadMessages } from "@convex-dev/agent/react";
+
+export function TaskControl({ threadId }: { threadId: string }) {
+  const messages = useThreadMessages(
+    api.chat.streaming.listThreadMessages,
+    { threadId },
+    { initialNumItems: 10, stream: true }
+  );
+  
+  const abortStreamByOrder = useMutation(
+    api.streamAbort.abortStreamByOrder
+  );
+  
+  const sendMessage = useMutation(
+    api.chat.streaming.initiateAsyncStreaming
+  );
+
+  // 检查是否有正在流式处理的任务
+  const streamingMessage = messages.results?.find((m) => m.streaming);
+  const isStreaming = !!streamingMessage;
+
+  const handleAbort = () => {
+    if (streamingMessage) {
+      void abortStreamByOrder({ 
+        threadId, 
+        order: streamingMessage.order 
+      });
+    }
+  };
+
+  return (
+    <div className="task-control">
+      {isStreaming ? (
+        <button
+          onClick={handleAbort}
+          className="abort-button"
+          type="button"
+        >
+          🛑 取消任务
+        </button>
+      ) : (
+        <button
+          onClick={() => sendMessage({ threadId, prompt: "开始新任务" })}
+          className="start-button"
+          type="submit"
+        >
+          ▶️ 开始任务
+        </button>
+      )}
+      
+      <div className="task-status">
+        {isStreaming && (
+          <span className="streaming-indicator">
+            🔄 任务进行中... (可随时取消)
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+#### 7.3 任务生命周期与取消集成
+
+```typescript
+// 扩展任务管理系统以支持取消
+export const createCancellableTask = mutation({
+  args: {
+    threadId: v.string(),
+    taskType: v.string(),
+    userId: v.string(),
+    input: v.any(),
+  },
+  handler: async (ctx, args) => {
+    // 1. 检查并发限制
+    const concurrencyCheck = await checkConcurrencyLimit(ctx, {
+      userId: args.userId,
+      taskType: args.taskType,
+    });
+    
+    if (!concurrencyCheck.allowed) {
+      throw new Error(`并发限制: ${concurrencyCheck.reason}`);
+    }
+
+    // 2. 创建可取消的任务
+    const taskId = await ctx.db.insert('task', {
+      ...args,
+      status: 'started',
+      progress: 0,
+      createdAt: Date.now(),
+      cancellable: true, // 标记为可取消
+      abortController: null, // 将在流开始时设置
+    });
+
+    // 3. 增加用户并发计数
+    await incrementUserConcurrency(ctx, args.userId);
+
+    return taskId;
+  }
+});
+
+export const cancelTask = mutation({
+  args: {
+    taskId: v.id('task'),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const task = await ctx.db.get(args.taskId);
+    if (!task) throw new Error('任务不存在');
+    
+    if (task.status === 'completed' || task.status === 'failed') {
+      throw new Error('任务已完成，无法取消');
+    }
+
+    // 1. 如果有关联的流，中止流
+    if (task.threadId) {
+      const streams = await listStreams(ctx, { threadId: task.threadId });
+      for (const stream of streams) {
+        if (stream.status === 'streaming') {
+          await abortStream(ctx, components.agent, { 
+            streamId: stream._id,
+            reason: args.reason || '用户取消'
+          });
+        }
+      }
+    }
+
+    // 2. 更新任务状态
+    await ctx.db.patch(args.taskId, {
+      status: 'failed',
+      error: `任务被取消: ${args.reason || '用户主动取消'}`,
+      completedAt: Date.now(),
+    });
+
+    // 3. 减少用户并发计数
+    await decrementUserConcurrency(ctx, task.userId);
+
+    // 4. 记录取消事件
+    await ctx.db.insert('task_delta', {
+      taskId: args.taskId,
+      eventType: 'cancelled',
+      timestamp: Date.now(),
+      data: { reason: args.reason },
+    });
+
+    return { success: true };
+  }
+});
+```
+
 ## 预期效果
 
 实施这些改进后，系统将具备：
@@ -357,5 +602,13 @@ export default cronJobs.register({
 3. **任务可靠性**: 自动清理超时和孤儿任务
 4. **用户体验**: 更好的任务状态反馈和错误处理
 5. **系统稳定性**: 更强的容错能力和恢复机制
+6. **实时控制**: 用户可随时取消正在进行的任务
+7. **优雅降级**: 任务取消时的资源清理和状态恢复
 
-这个架构改进将显著提升系统的并发处理能力和稳定性，解决当前暴露的并发问题。
+## 参考实现
+
+- **流取消后端**: [streamAbort.ts](https://github.com/get-convex/agent/blob/main/example/convex/chat/streamAbort.ts)
+- **流取消前端**: [ChatStreaming.tsx](https://github.com/get-convex/agent/blob/main/example/ui/chat/ChatStreaming.tsx)
+- **Convex Agent 文档**: [@convex-dev/agent](https://www.npmjs.com/package/@convex-dev/agent)
+
+这个架构改进将显著提升系统的并发处理能力和稳定性，解决当前暴露的并发问题，并为用户提供完整的任务控制能力。
