@@ -1,4 +1,3 @@
-import { config } from '@dotenvx/dotenvx'
 import { Mastra } from '@mastra/core/mastra'
 
 import { deepResearchAgent } from './agents/deepresearch-agent.js'

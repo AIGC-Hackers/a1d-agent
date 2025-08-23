@@ -2,7 +2,6 @@ import { OpenRouter } from '@/integration/openrouter'
 import { Agent, createTool } from '@mastra/core'
 import { Memory } from '@mastra/memory'
 import { streamText } from 'ai'
-import { PermissionDeniedError } from 'openai'
 import { z } from 'zod'
 
 import { PreferredModels } from '../factory'
@@ -54,3 +53,5 @@ export const testAgent = new Agent({
   },
   memory: new Memory(),
 })
+
+testAgent.streamVNext([])
